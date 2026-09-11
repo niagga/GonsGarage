@@ -1,7 +1,7 @@
 -- Create cars table
 CREATE TABLE IF NOT EXISTS cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     make VARCHAR(100) NOT NULL,
     model VARCHAR(100) NOT NULL,
     year INTEGER NOT NULL CHECK (year >= 1900 AND year <= EXTRACT(year FROM CURRENT_DATE) + 1),
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS cars (
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_cars_client_id ON cars(client_id);
+CREATE INDEX IF NOT EXISTS idx_cars_owner_id ON cars(owner_id);
 CREATE INDEX IF NOT EXISTS idx_cars_license_plate ON cars(license_plate) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_cars_deleted_at ON cars(deleted_at);
 

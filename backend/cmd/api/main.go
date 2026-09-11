@@ -519,7 +519,7 @@ func setupRoutes(
 			repairs.GET("/car/:carId", repairHandler.ListRepairsByCar)
 			repairs.POST("", repairHandler.GinCreateRepair)
 			repairs.GET("/:id", repairHandler.GinGetRepair)
-			repairs.PUT("/:id", repairHandler.GinUpdateRepair)
+			repairs.PATCH("/:id", repairHandler.GinPatchRepair)
 			repairs.DELETE("/:id", repairHandler.GinDeleteRepair)
 		}
 

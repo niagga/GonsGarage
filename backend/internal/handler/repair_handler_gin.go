@@ -234,7 +234,7 @@ func (h *RepairHandler) GinGetRepair(c *gin.Context) {
 	c.JSON(http.StatusOK, repair)
 }
 
-// UpdateRepair updates a repair (employee/manager/admin only).
+// PatchRepair updates a repair (employee/manager/admin only).
 // @Summary     Actualizar reparación
 // @Tags        repairs
 // @Security    BearerAuth
@@ -247,8 +247,8 @@ func (h *RepairHandler) GinGetRepair(c *gin.Context) {
 // @Failure     401 {object} SwaggerMessage
 // @Failure     403 {object} SwaggerMessage
 // @Failure     404 {object} SwaggerMessage
-// @Router      /api/v1/repairs/{id} [put]
-func (h *RepairHandler) GinUpdateRepair(c *gin.Context) {
+// @Router      /api/v1/repairs/{id} [patch]
+func (h *RepairHandler) GinPatchRepair(c *gin.Context) {
 	userIDStr, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
