@@ -158,18 +158,21 @@ html[data-theme='light'] {
 
 html[data-theme='dark'] {
   color-scheme: dark;
-  --color-primary: #60a5fa;
-  --color-primary-hover: #93c5fd;
+
+  /* Acentos más amables ("Cute") */
+  --color-primary: #5D9CEC;
+  --color-primary-hover: #77AFF1;
   --color-secondary: #94a3b8;
-  --color-success: #34d399;
+  --color-success: #6FCF97;
   --color-success-hover: color-mix(in srgb, var(--color-success) 78%, #000);
-  --color-warning: #fbbf24;
-  --color-error: #f87171;
+  --color-warning: #F2C94C;
+  --color-error: #EB5757;
   --brand-signal-hover: color-mix(in srgb, var(--color-error) 82%, #000);
 
+  /* Estructura "Gentleman" (Profundidad y Sofisticación) */
   --color-white: #0f141c;
   --color-black: #f8fafc;
-  --color-gray-50: #070b10;
+  --color-gray-50: #0A111A;  /* Fondo página */
   --color-gray-100: #0f141c;
   --color-gray-200: #1a2230;
   --color-gray-300: #243044;
@@ -182,27 +185,28 @@ html[data-theme='dark'] {
 
   --surface-page: var(--color-gray-50);
   /* Panels ligeramente más claros que la página para jerarquía (evita “todo negro plano”). */
-  --surface-panel: #0e1522;
-  --surface-elevated: #141d2d;
+  --surface-panel: #151E28;   /* Fondo cards */
+  --surface-elevated: #1C2734; /* Cards elevadas/hover */
   --surface-muted: #121a28;
   --surface-header: #0f141c;
-  --border-default: var(--color-gray-200);
-  --border-strong: var(--color-gray-300);
+  --border-default: #2A3847;
+  --border-strong: #3D4E60;
 
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
+  --text-primary: #E0E6ED;
+  --text-secondary: #B0BCC8;
   /* Más legible sobre `--surface-page` / paneles oscuros que gray-500 puro. */
-  --text-muted: var(--color-gray-400);
+  --text-muted: #8E9AAF;
   --text-on-primary: #0f172a;
   --text-on-signal: #ffffff;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.45);
-  --shadow-md: 0 8px 20px -4px rgb(0 0 0 / 0.5);
-  --shadow-lg: 0 16px 40px -8px rgb(0 0 0 / 0.55);
+  /* Ajuste de sombras para mayor suavidad */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 16px 40px -8px rgb(0 0 0 / 0.5);
 
-  --focus-ring: 0 0 0 3px rgb(96 165 250 / 0.35);
-  --focus-ring-error: 0 0 0 3px rgb(248 113 113 / 0.3);
+  --focus-ring: 0 0 0 3px rgb(93 156 236 / 0.35);
+  --focus-ring-error: 0 0 0 3px rgb(235 87 87 / 0.3);
 
   --scrollbar-track: var(--color-gray-100);
   --scrollbar-thumb: var(--color-gray-300);
@@ -221,6 +225,6 @@ html[data-theme='dark'] {
   --marketing-footer-border: #1e293b;
 
   --chip-info-fg: var(--color-primary);
-  --chip-success-fg: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
-  --chip-warning-fg: color-mix(in srgb, var(--color-warning) 55%, var(--color-gray-900));
+  --chip-success-fg: color-mix(in srgb, var(--color-success) 65%, var(--text-primary));
+  --chip-warning-fg: color-mix(in srgb, var(--color-warning) 55%, var(--text-primary));
 }
