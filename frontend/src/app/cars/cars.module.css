@@ -273,7 +273,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-gray-300);
-  background-color: white;
+  background-color: var(--surface-panel);
   border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--transition-fast);

@@ -172,10 +172,10 @@ html[data-theme='dark'] {
   /* Estructura "Gentleman" (Profundidad y Sofisticación) */
   --color-white: #0f141c;
   --color-black: #f8fafc;
-  --color-gray-50: #0A111A;  /* Fondo página */
-  --color-gray-100: #0f141c;
-  --color-gray-200: #1a2230;
-  --color-gray-300: #243044;
+  --color-gray-50: #12100e;  /* Fondo página (warm charcoal) */
+  --color-gray-100: #161412;
+  --color-gray-200: #221f1c;
+  --color-gray-300: #2e2a26;
   --color-gray-400: #64748b;
   --color-gray-500: #94a3b8;
   --color-gray-600: #cbd5e1;
@@ -184,13 +184,13 @@ html[data-theme='dark'] {
   --color-gray-900: #f8fafc;
 
   --surface-page: var(--color-gray-50);
-  /* Panels ligeramente más claros que la página para jerarquía (evita “todo negro plano”). */
-  --surface-panel: #151E28;   /* Fondo cards */
-  --surface-elevated: #1C2734; /* Cards elevadas/hover */
-  --surface-muted: #121a28;
-  --surface-header: #0f141c;
-  --border-default: #2A3847;
-  --border-strong: #3D4E60;
+  /* Panels slightly above page — warm stone (gentleman-cute comfort) */
+  --surface-panel: #1c1916;
+  --surface-elevated: #252119;
+  --surface-muted: #181614;
+  --surface-header: #161412;
+  --border-default: #3a342e;
+  --border-strong: #4d453c;
 
   --text-primary: #E0E6ED;
   --text-secondary: #B0BCC8;

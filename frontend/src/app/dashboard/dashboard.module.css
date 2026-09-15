@@ -4,7 +4,7 @@
 }
 
 .header {
-  background-color: white;
+  background-color: var(--surface-header);
   box-shadow: var(--shadow-sm);
   border-bottom: 1px solid var(--color-gray-200);
 }
@@ -82,7 +82,7 @@
 }
 
 .navigation {
-  background-color: white;
+  background-color: var(--surface-header);
   border-bottom: 1px solid var(--color-gray-200);
 }
 
@@ -147,7 +147,7 @@
 }
 
 .statCard {
-  background-color: white;
+  background-color: var(--surface-header);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -193,7 +193,7 @@
 }
 
 .card {
-  background-color: white;
+  background-color: var(--surface-header);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -386,7 +386,7 @@
   gap: var(--space-3);
   margin-bottom: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: white;
+  background: var(--surface-panel);
   border: 1px solid var(--color-gray-200);
   border-radius: var(--radius);
 }

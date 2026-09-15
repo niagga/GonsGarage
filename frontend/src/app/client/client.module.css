@@ -4,7 +4,7 @@
 }
 
 .header {
-  background-color: white;
+  background-color: var(--surface-header);
   box-shadow: var(--shadow-sm);
   border-bottom: 1px solid var(--color-gray-200);
 }
@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-on-primary);
 }
 
 .logoIcon svg {
@@ -44,13 +44,13 @@
 .logoSection h1 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .logoSection p {
   font-size: 0.75rem;
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -62,12 +62,12 @@
 
 .userSection span {
   font-size: 0.875rem;
-  color: var(--color-gray-700);
+  color: var(--text-secondary);
 }
 
 .logoutButton {
   background-color: #dc2626;
-  color: white;
+  color: var(--text-on-primary);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius);
   font-size: 0.875rem;
@@ -82,7 +82,7 @@
 }
 
 .navigation {
-  background-color: white;
+  background-color: var(--surface-header);
   border-bottom: 1px solid var(--color-gray-200);
 }
 
@@ -144,9 +144,9 @@
 }
 
 .errorAlert {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background-color: var(--chip-danger-bg);
+  border: 1px solid var(--chip-danger-border);
+  color: var(--chip-danger-fg);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
   margin-bottom: var(--space-4);
@@ -160,7 +160,7 @@
 }
 
 .statCard {
-  background-color: white;
+  background-color: var(--surface-header);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -177,7 +177,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-on-primary);
 }
 
 .statIcon svg {
@@ -188,14 +188,14 @@
 .statCard h3 {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-gray-600);
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .statNumber {
   font-size: 1.875rem;
   font-weight: 700;
-  color: var(--color-gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -206,7 +206,7 @@
 }
 
 .card {
-  background-color: white;
+  background-color: var(--surface-header);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -223,7 +223,7 @@
 .cardHeader h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -257,7 +257,7 @@
 
 .primaryButton {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--text-on-primary);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
   border: none;
@@ -306,13 +306,13 @@
 .carInfo h4 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .carInfo p {
   font-size: 0.75rem;
-  color: var(--color-gray-500);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -329,7 +329,7 @@
 
 .viewButton:hover {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--text-on-primary);
 }
 
 .repairsList {
@@ -386,13 +386,13 @@
 .repairInfo h4 {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .repairInfo p {
   font-size: 0.75rem;
-  color: var(--color-gray-500);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -407,9 +407,10 @@
 
 /* Ensure proper spacing in client dashboard */
 .clientCarsContainer > * {
-  background: white;
+  background: var(--surface-panel);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-default);
 }
 
 @media (max-width: 600px) {

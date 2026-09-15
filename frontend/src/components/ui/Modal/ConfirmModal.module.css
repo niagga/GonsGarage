@@ -22,7 +22,7 @@
 }
 
 .modal {
-  background: white;
+  background: var(--surface-panel);
   border-radius: 12px;
   width: 90%;
   max-width: 450px;
@@ -135,7 +135,7 @@
 }
 
 .cancelButton {
-  background-color: white;
+  background-color: var(--surface-elevated);
   color: #374151;
   border: 1px solid #d1d5db;
 }

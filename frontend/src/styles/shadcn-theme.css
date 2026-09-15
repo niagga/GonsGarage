@@ -27,23 +27,24 @@
 }
 
 html[data-theme='dark'] {
-    --background: 220 35% 6%;
-    --foreground: 210 40% 98%;
-    --card: 220 28% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 28% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 215 20% 65%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 22% 12%;
-    --muted-foreground: 215 16% 60%;
-    --accent: 220 22% 14%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62% 55%;
+    /* Warm dark — aligned with tokens.css gentleman-cute */
+    --background: 30 12% 7%;
+    --foreground: 35 18% 92%;
+    --card: 30 10% 11%;
+    --card-foreground: 35 18% 92%;
+    --popover: 30 10% 11%;
+    --popover-foreground: 35 18% 92%;
+    --primary: 212 72% 62%;
+    --primary-foreground: 30 20% 10%;
+    --secondary: 30 8% 55%;
+    --secondary-foreground: 35 18% 92%;
+    --muted: 30 8% 14%;
+    --muted-foreground: 30 10% 62%;
+    --accent: 30 10% 16%;
+    --accent-foreground: 35 18% 92%;
+    --destructive: 0 55% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 18% 18%;
-    --input: 220 18% 22%;
-    --ring: 217 91% 60%;
+    --border: 30 10% 22%;
+    --input: 30 10% 18%;
+    --ring: 212 72% 62%;
 }
