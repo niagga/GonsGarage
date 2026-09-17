@@ -851,3 +851,60 @@ func TestMVPAccess_ServiceJobFlow_ReceptionHandoverGetClosed(t *testing.T) {
 	assert.Equal(t, domain.ServiceJobStatusClosed, detail.Job.Status)
 	assert.NotNil(t, detail.Handover)
 }
+
+func openServiceJobForReception(t *testing.T, secret string) (*gin.Engine, string, string) {
+	t.Helper()
+	empID := uuid.New()
+	carID := uuid.New()
+	ownerID := uuid.New()
+	emp, err := domain.NewUser("erec@test.local", "x", "E", "M", domain.RoleEmployee)
+	require.NoError(t, err)
+	emp.ID = empID
+	users := &mvpUserRepo{byID: map[uuid.UUID]*domain.User{empID: emp}}
+	cars := &mvpCarRepo{car: &domain.Car{ID: carID, OwnerID: ownerID}}
+	sj := &mvpSJRepo{byID: map[uuid.UUID]*domain.ServiceJob{}, byCar: map[uuid.UUID][]*domain.ServiceJob{carID: {}}}
+
+	r := serviceJobWorkshopRouter(t, secret, users, cars, sj)
+	auth := "Bearer " + testJWT(t, secret, empID, domain.RoleEmployee)
+
+	postBody, _ := json.Marshal(map[string]any{"car_id": carID.String()})
+	preq := httptest.NewRequest(http.MethodPost, "/api/v1/service-jobs", bytes.NewReader(postBody))
+	preq.Header.Set("Content-Type", "application/json")
+	preq.Header.Set("Authorization", auth)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, preq)
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+	var created domain.ServiceJob
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &created))
+	return r, created.ID.String(), auth
+}
+
+func putServiceJobReception(r *gin.Engine, jobID, auth, raw string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/service-jobs/"+jobID+"/reception", strings.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", auth)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
+func TestMVPAccess_ServiceJobReception_EmptyBody_Not2xx(t *testing.T) {
+	t.Parallel()
+	r, jid, auth := openServiceJobForReception(t, "mvp-sj-rec-empty")
+	w := putServiceJobReception(r, jid, auth, `{}`)
+	assert.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+}
+
+func TestMVPAccess_ServiceJobReception_NotesWithoutOdometer_Not2xx(t *testing.T) {
+	t.Parallel()
+	r, jid, auth := openServiceJobForReception(t, "mvp-sj-rec-notes")
+	w := putServiceJobReception(r, jid, auth, `{"general_notes":"x"}`)
+	assert.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+}
+
+func TestMVPAccess_ServiceJobReception_OdometerZero_PresentOK(t *testing.T) {
+	t.Parallel()
+	r, jid, auth := openServiceJobForReception(t, "mvp-sj-rec-zero")
+	w := putServiceJobReception(r, jid, auth, `{"odometer_km":0}`)
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+}

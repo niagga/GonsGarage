@@ -12,7 +12,6 @@ import { AppLoading } from '@/components/ui/AppLoading';
 import { Button } from '@/components/ui/button';
 
 const KINDS: { value: BillingDocumentKind; label: string }[] = [
-  { value: 'client_invoice', label: 'Fatura cliente' },
   { value: 'payroll', label: 'Salários' },
   { value: 'irs', label: 'IRS' },
   { value: 'other', label: 'Outro' },

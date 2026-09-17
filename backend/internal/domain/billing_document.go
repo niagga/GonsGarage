@@ -12,23 +12,22 @@ import (
 type BillingDocumentKind string
 
 const (
-	BillingDocumentKindClientInvoice BillingDocumentKind = "client_invoice"
-	BillingDocumentKindPayroll       BillingDocumentKind = "payroll"
-	BillingDocumentKindIRS           BillingDocumentKind = "irs"
-	BillingDocumentKindOther         BillingDocumentKind = "other"
+	BillingDocumentKindPayroll BillingDocumentKind = "payroll"
+	BillingDocumentKindIRS     BillingDocumentKind = "irs"
+	BillingDocumentKindOther   BillingDocumentKind = "other"
 )
 
 // IsValid reports whether k is one of the supported kinds.
 func (k BillingDocumentKind) IsValid() bool {
 	switch k {
-	case BillingDocumentKindClientInvoice, BillingDocumentKindPayroll, BillingDocumentKindIRS, BillingDocumentKindOther:
+	case BillingDocumentKindPayroll, BillingDocumentKindIRS, BillingDocumentKindOther:
 		return true
 	default:
 		return false
 	}
 }
 
-// BillingDocument is an issued document (client invoice, payroll, IRS, etc.).
+// BillingDocument is an issued staff document (payroll, IRS, or other). Client-emitted invoices are domain.Invoice.
 type BillingDocument struct {
 	ID          uuid.UUID           `json:"id" gorm:"type:uuid;primaryKey"`
 	Kind        BillingDocumentKind `json:"kind" gorm:"type:varchar(32);not null;index"`

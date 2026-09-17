@@ -18,7 +18,6 @@ import {
 import { BillingDocumentCreateForm } from './BillingDocumentCreateForm';
 
 const kindLabel: Record<string, string> = {
-  client_invoice: 'Fatura cliente',
   payroll: 'Salários',
   irs: 'IRS',
   other: 'Outro',

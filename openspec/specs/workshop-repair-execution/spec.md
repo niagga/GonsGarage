@@ -45,8 +45,8 @@ La visita **SHALL** aceptar **recepción** (p. ej. km, fluidos, neumáticos, not
 #### Scenario: Recepción incompleta
 
 - GIVEN la misma visita
-- WHEN faltan campos obligatorios
-- THEN la API **MUST** rechazar (no 2xx) con error interpretable
+- WHEN faltan campos obligatorios (`odometer_km` **MUST** estar presente en el cuerpo JSON; `0` explícito es válido; oil/coolant/tires/notes siguen opcionales)
+- THEN la API **MUST** rechazar (no 2xx) con error interpretable — un `odometer_km` ausente **MUST NOT** ser 2xx
 
 #### Scenario: Cierre
 

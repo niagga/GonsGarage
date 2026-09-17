@@ -33,7 +33,7 @@ type serviceJobDetailResponse struct {
 }
 
 type putReceptionJSON struct {
-	OdometerKM   int    `json:"odometer_km"`
+	OdometerKM   *int   `json:"odometer_km"`
 	OilLevel     string `json:"oil_level"`
 	CoolantLevel string `json:"coolant_level"`
 	TiresNote    string `json:"tires_note"`
@@ -206,8 +206,12 @@ func (h *ServiceJobHandler) PutReception(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+	if body.OdometerKM == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "odometer_km is required"})
+		return
+	}
 	out, err := h.svc.SaveReception(c.Request.Context(), jid, servicejob.SaveReceptionInput{
-		OdometerKM:   body.OdometerKM,
+		OdometerKM:   *body.OdometerKM,
 		OilLevel:     strings.TrimSpace(body.OilLevel),
 		CoolantLevel: strings.TrimSpace(body.CoolantLevel),
 		TiresNote:    strings.TrimSpace(body.TiresNote),

@@ -47,7 +47,7 @@ Fuente: `setupRoutes` en `backend/cmd/api/main.go`. JSON **camelCase** en respue
 | Taller (*service jobs*) | `POST\|GET /service-jobs`, `GET /service-jobs/car/:carId`, `GET\|PUT /service-jobs/:id/...` | Recepción `PUT …/reception`, entrega `PUT …/handover`; stub OBD `GET …/:id/obd` |
 | Proveedores | CRUD `/suppliers/...` | Contabilidad P1 |
 | Facturas recibidas | CRUD `/received-invoices/...` | Contabilidad P1 |
-| Documentos billing | CRUD `/billing-documents/...` | Tipos: `client_invoice`, `payroll`, `irs`, `other` |
+| Documentos billing | CRUD `/billing-documents/...` | Tipos: `payroll`, `irs`, `other` (facturas emitidas a clientes: agregado `Invoice` / `/invoices`) |
 | Facturas emitidas | `GET /invoices/me`, `GET\|PATCH /invoices/:id` (cliente); staff `POST\|GET\|DELETE /invoices` | Cliente ve las suyas; staff emite y lista |
 
 **Regresión por rol:** `backend/internal/handler/mvp_role_access_test.go`; spec [`openspec/specs/mvp-role-access/spec.md`](../openspec/specs/mvp-role-access/spec.md).

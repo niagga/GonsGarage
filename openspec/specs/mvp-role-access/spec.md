@@ -19,10 +19,13 @@ Reproducible **MVP verification** by **role** (`client`, `employee`, `manager`, 
 | Staff user management UI (`/admin/users` via shell) | MUST NOT | MUST NOT | MUST | MUST |
 | Parts inventory HTTP (`GET/POST/PATCH/DELETE /api/v1/parts`) and UI (`/admin/parts` via shell, `canManageUsers`) | MUST NOT | MUST NOT | MUST | MUST |
 | Workshop / service job (taller) `POST/PUT/PATCH` bajo `/api/v1/service-jobs` y *checklists* (muta) | MUST NOT | MUST* | MUST* | MUST* |
-| Invoices HTTP/UI (MVP v1) | **Deferred** (`p1-accounting-defer`) | — | — | — |
+| Issued invoices HTTP (`/api/v1/invoices`, `/api/v1/invoices/me`) + UI (`/accounting/issued-invoices`, `/my-invoices`) | MUST (own-only) | MUST (staff CRUD) | MUST (staff CRUD) | MUST (staff CRUD) |
+| Received invoices HTTP (`/api/v1/received-invoices`) + UI (`/accounting/received-invoices`) | MUST NOT | MUST | MUST | MUST |
+| Billing documents HTTP (`/api/v1/billing-documents`, kinds payroll/irs/other) + UI (`/accounting/billing-documents`) | MUST NOT | MUST | MUST | MUST |
 
 \*Subject to existing service rules (car ownership, etc.).  
-\*\*`manager` **MAY** create only `employee` and `client` per `openspec/specs/staff-user-provisioning/spec.md`.
+\*\*`manager` **MAY** create only `employee` and `client` per `openspec/specs/staff-user-provisioning/spec.md`.  
+Staff trio on billing/received/issued invoices: `admin` = `manager` = `employee` (`RequireWorkshopStaff` / `User.IsEmployee`). Historical MVP v1 deferral of accounting HTTP is in `openspec/specs/p1-accounting-defer/spec.md` (history, not current P1 HTTP).
 
 ## Requirements
 
@@ -36,11 +39,25 @@ MVP verification docs **SHALL** expose the matrix above (or equivalent), includi
 - WHEN a reviewer scans role coverage
 - THEN all four roles appear with MUST/MUST NOT per row
 
-#### Scenario: Invoices marked deferred
+#### Scenario: Issued invoices own-only for client, staff CRUD
 
 - GIVEN the matrix
-- WHEN the invoices row is read
-- THEN it defers HTTP/UI per `openspec/specs/p1-accounting-defer/spec.md`
+- WHEN the issued invoices row is read (`/api/v1/invoices`, `/api/v1/invoices/me`, UI `/accounting/issued-invoices` and `/my-invoices`)
+- THEN `client` is MUST own-only and `employee` / `manager` / `admin` are MUST staff CRUD
+
+#### Scenario: Received invoices staff-only
+
+- GIVEN the matrix
+- WHEN the received invoices row is read (`/api/v1/received-invoices`)
+- THEN `client` is MUST NOT and `employee` / `manager` / `admin` are MUST
+
+#### Scenario: Billing documents staff-only
+
+- GIVEN the matrix
+- WHEN the billing documents row is read (`/api/v1/billing-documents`, kinds payroll/irs/other)
+- THEN `client` is MUST NOT and `employee` / `manager` / `admin` are MUST
+
+Historical pointer: MVP v1 deferral of accounting HTTP remains in `openspec/specs/p1-accounting-defer/spec.md` as history, not as current deferral of P1 HTTP.
 
 #### Scenario: Provisioning row present
 
@@ -202,15 +219,15 @@ Automated tests **SHALL** fail CI if a `client` gets 2xx from mutating a documen
 - WHEN a test sends a service-job *create* with JWT `client`
 - THEN the response is not 2xx success
 
-### Requirement: Invoices not in MVP acceptance
+### Requirement: Invoices not in MVP acceptance (historical)
 
-MVP completion **SHALL NOT** depend on invoice Gin routes nor Next invoice pages until a superseding accounting change.
+MVP **v1** completion **SHALL NOT** have depended on invoice Gin routes nor Next invoice pages. That deferral is history in `openspec/specs/p1-accounting-defer/spec.md`. Current P1 HTTP/UI for issued invoices, received invoices, and billing documents **SHALL** match the matrix rows above (not a current deferral).
 
-#### Scenario: Checklist omits invoice HTTP
+#### Scenario: Checklist omits invoice HTTP (MVP v1 history)
 
-- GIVEN MVP role verification sign-off
-- WHEN criteria are checked
-- THEN success does not require invoice handlers in `cmd/api`
+- GIVEN MVP v1 role verification sign-off
+- WHEN historical criteria are checked
+- THEN success did not require invoice handlers in `cmd/api`; P1 implementation is documented separately in the matrix and `p1-accounting-defer`
 
 ### Requirement: CI authorization regression tests
 

@@ -1,0 +1,14 @@
+{
+  "agents": [
+    {
+      "name": "frontend-worker",
+      "description": "Worker para tareas del frontend",
+      "workspace": "frontend"
+    },
+    {
+      "name": "backend-worker",
+      "description": "Worker para tareas del backend",
+      "workspace": "backend"
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 /** P1 accounting / billing types (camelCase, aligned with Go JSON). */
 
 export type BillingDocumentKind =
-  | 'client_invoice'
   | 'payroll'
   | 'irs'
   | 'other';
