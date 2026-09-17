@@ -115,9 +115,9 @@ export default function CarModal({
         <form onSubmit={handleSubmit} className={styles.modalForm}>
             {errors.general && (
               <div style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
+                backgroundColor: 'var(--chip-danger-bg)',
+                border: '1px solid var(--chip-danger-border)',
+                color: 'var(--chip-danger-fg)',
                 padding: 'var(--space-3)',
                 borderRadius: 'var(--radius)',
                 marginBottom: 'var(--space-4)',

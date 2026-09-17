@@ -3,14 +3,14 @@
 .appointmentCard {
   background-color: var(--surface-panel);
   border-radius: var(--radius-lg, 12px);
-  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: box-shadow 0.2s ease;
-  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border: 1px solid var(--color-gray-200);
 }
 
 .appointmentCard:hover {
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-md);
 }
 
 /* Header */
@@ -19,8 +19,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-  background-color: var(--color-gray-50, #f9fafb);
+  border-bottom: 1px solid var(--color-gray-200);
+  background-color: var(--color-gray-50);
 }
 
 .appointmentDate {
@@ -31,7 +31,7 @@
 
 .dateLabel {
   font-size: 0.75rem;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-gray-500);
   text-transform: uppercase;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -39,7 +39,7 @@
 
 .dateValue {
   font-size: 0.875rem;
-  color: var(--color-gray-900, #111827);
+  color: var(--color-gray-900);
   font-weight: 600;
 }
 
@@ -54,28 +54,33 @@
 }
 
 .statusBadge.scheduled {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--chip-info-bg);
+  color: var(--chip-info-fg);
+  border: 1px solid var(--chip-info-border);
 }
 
 .statusBadge.confirmed {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: var(--chip-success-bg);
+  color: var(--chip-success-fg);
+  border: 1px solid var(--chip-success-border);
 }
 
 .statusBadge.inProgress {
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: var(--chip-warning-bg);
+  color: var(--chip-warning-fg);
+  border: 1px solid var(--chip-warning-border);
 }
 
 .statusBadge.completed {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--chip-neutral-bg);
+  color: var(--chip-neutral-fg);
+  border: 1px solid var(--chip-neutral-border);
 }
 
 .statusBadge.cancelled {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--chip-danger-bg);
+  color: var(--chip-danger-fg);
+  border: 1px solid var(--chip-danger-border);
 }
 
 /* Body */
@@ -94,13 +99,13 @@
 .serviceType {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-gray-900, #111827);
+  color: var(--color-gray-900);
   margin: 0 0 0.5rem 0;
 }
 
 .notes {
   font-size: 0.875rem;
-  color: var(--color-gray-600, #4b5563);
+  color: var(--color-gray-600);
   margin: 0;
   line-height: 1.5;
 }
@@ -111,9 +116,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background-color: var(--color-gray-50, #f9fafb);
+  background-color: var(--color-gray-50);
   border-radius: var(--radius, 8px);
-  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border: 1px solid var(--color-gray-200);
   min-width: 200px;
 }
 
@@ -125,13 +130,13 @@
 .carDetails h4 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-gray-900, #111827);
+  color: var(--color-gray-900);
   margin: 0 0 0.25rem 0;
 }
 
 .carDetails p {
   font-size: 0.75rem;
-  color: var(--color-gray-500, #6b7280);
+  color: var(--color-gray-500);
   margin: 0;
   font-family: 'Courier New', monospace;
 }
@@ -139,11 +144,11 @@
 /* Footer */
 .appointmentFooter {
   padding: 1rem;
-  border-top: 1px solid var(--color-gray-200, #e5e7eb);
+  border-top: 1px solid var(--color-gray-200);
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  background-color: var(--color-gray-50, #f9fafb);
+  background-color: var(--color-gray-50);
 }
 
 /* Actions */
@@ -171,69 +176,69 @@
 
 /* Button Variants */
 .confirmButton {
-  background-color: #059669;
-  color: white;
-  border-color: #059669;
+  background-color: var(--color-success);
+  color: var(--text-on-primary);
+  border-color: var(--color-success);
 }
 
 .confirmButton:hover:not(:disabled) {
-  background-color: #047857;
-  border-color: #047857;
+  background-color: var(--color-success-hover);
+  border-color: var(--color-success-hover);
 }
 
 .editButton {
-  background-color: #0ea5e9;
-  color: white;
-  border-color: #0ea5e9;
+  background-color: var(--brand-accent-soft);
+  color: var(--text-on-primary);
+  border-color: var(--brand-accent-soft);
 }
 
 .editButton:hover:not(:disabled) {
-  background-color: #0284c7;
-  border-color: #0284c7;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .cancelButton {
-  background-color: #dc2626;
-  color: white;
-  border-color: #dc2626;
+  background-color: var(--color-error);
+  color: var(--text-on-signal);
+  border-color: var(--color-error);
 }
 
 .cancelButton:hover:not(:disabled) {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
+  background-color: var(--brand-signal-hover);
+  border-color: var(--brand-signal-hover);
 }
 
 .completeButton {
-  background-color: #7c3aed;
-  color: white;
-  border-color: #7c3aed;
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
 }
 
 .completeButton:hover:not(:disabled) {
-  background-color: #6d28d9;
-  border-color: #6d28d9;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .viewButton {
-  background-color: var(--color-gray-100, #f3f4f6);
-  color: var(--color-gray-700, #374151);
-  border-color: var(--color-gray-300, #d1d5db);
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-300);
 }
 
 .viewButton:hover:not(:disabled) {
-  background-color: var(--color-gray-200, #e5e7eb);
-  border-color: var(--color-gray-400, #9ca3af);
+  background-color: var(--color-gray-200);
+  border-color: var(--color-gray-400);
 }
 
 .rescheduleButton {
-  background-color: #f59e0b;
-  color: white;
-  border-color: #f59e0b;
+  background-color: var(--color-warning);
+  color: var(--text-on-signal);
+  border-color: var(--color-warning);
 }
 
 .rescheduleButton:hover:not(:disabled) {
-  background-color: #d97706;
-  border-color: #d97706;
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
 }
 
 /* Responsive Design */

@@ -7,7 +7,7 @@
   text-align: center;
   background: var(--surface-panel);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   min-height: 400px;
 }
 
@@ -20,13 +20,13 @@
 .emptyStateTitle {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .emptyStateDescription {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   max-width: 400px;
   margin: 0 0 2rem 0;
   line-height: 1.6;
@@ -37,8 +37,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -53,9 +53,9 @@
 }
 
 .emptyStateButton:hover {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--shadow-primary-glow);
 }
 
 .emptyStateButton:active {

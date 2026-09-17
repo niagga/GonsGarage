@@ -525,9 +525,9 @@
 .staffRepairPanel {
   margin: var(--space-4) 0 var(--space-5);
   padding: var(--space-4);
-  border: 1px solid var(--color-border-subtle, #e5e7eb);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg, 12px);
-  background: var(--color-surface-muted, #f9fafb);
+  background: var(--surface-muted);
 }
 
 .staffRepairTitle {
@@ -548,17 +548,17 @@
   flex-direction: column;
   gap: var(--space-1);
   font-size: 0.8rem;
-  color: var(--color-text-muted, #6b7280);
+  color: var(--text-muted);
 }
 
 .staffInput,
 .staffInputNarrow,
 .staffSelect {
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border-subtle, #d1d5db);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md, 8px);
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--surface-panel);
 }
 
 .staffInputNarrow {
@@ -578,8 +578,8 @@
 }
 
 .staffPrimaryBtn {
-  background: var(--color-primary, #2563eb);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
 }
 
 .staffPrimaryBtn:disabled {
@@ -588,18 +588,18 @@
 }
 
 .staffSecondaryBtn {
-  background: var(--color-gray-200, #e5e7eb);
-  color: var(--color-text, #111827);
+  background: var(--color-gray-200);
+  color: var(--text-primary);
 }
 
 .staffGhostBtn {
   background: transparent;
-  border: 1px solid var(--color-border-subtle, #d1d5db);
+  border: 1px solid var(--border-strong);
 }
 
 .staffDangerBtn {
-  background: var(--color-error-bg, #fef2f2);
-  color: var(--color-error, #b91c1c);
+  background: var(--chip-danger-bg);
+  color: var(--chip-danger-fg);
 }
 
 .repairStaffRow {
@@ -608,7 +608,7 @@
   gap: var(--space-2);
   align-items: center;
   padding: var(--space-3) var(--space-4) var(--space-4);
-  border-top: 1px solid var(--color-border-subtle, #f3f4f6);
+  border-top: 1px solid var(--border-default);
 }
 
 /* Responsive Design */
