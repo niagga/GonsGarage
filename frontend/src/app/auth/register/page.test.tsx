@@ -11,24 +11,30 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+const { mockRegister, mockPush, mockReplace, authState } = vi.hoisted(() => ({
+  mockRegister: vi.fn().mockResolvedValue({ success: false }),
+  mockPush: vi.fn(),
+  mockReplace: vi.fn(),
+  authState: { isAuthenticated: false },
 }));
 
-const { mockRegister } = vi.hoisted(() => ({
-  mockRegister: vi.fn().mockResolvedValue({ success: false }),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 vi.mock('@/stores', () => ({
   useAuth: () => ({
     register: mockRegister,
-    isAuthenticated: false,
+    isAuthenticated: authState.isAuthenticated,
   }),
 }));
 
 beforeEach(() => {
   mockRegister.mockReset();
   mockRegister.mockResolvedValue({ success: false });
+  mockPush.mockReset();
+  mockReplace.mockReset();
+  authState.isAuthenticated = false;
 });
 
 describe('RegisterPage', () => {
@@ -71,5 +77,14 @@ describe('RegisterPage', () => {
     expect(alert).toHaveTextContent('Falha de rede');
     expect(alert.textContent).not.toMatch(/^Error:/);
     await waitFor(() => expect(mockRegister).toHaveBeenCalled());
+  });
+
+  it('redirects an already authenticated visitor to /dashboard', async () => {
+    authState.isAuthenticated = true;
+    render(<RegisterPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/dashboard');
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/employees');
   });
 });

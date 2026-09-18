@@ -18,4 +18,4 @@ Login (`/auth/login`) and registration (`/auth/register`) share one auth experie
 
 ## Residuals
 - Unused CSS modules (`login.module.css` / `register.module.css`) still contain dead ad-hoc colours.
-- Register `isAuthenticated` redirect is `/employees`; login is `/dashboard` (out of the five shell requirements).
+- Authenticated visitors on register now `replace('/dashboard')`, same destination as login.

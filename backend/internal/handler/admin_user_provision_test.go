@@ -228,3 +228,135 @@ func TestProvisionUser_ManagerCreatesEmployee_201(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
 	assert.Equal(t, domain.RoleEmployee, out.User.Role)
 }
+
+func TestProvisionUser_AdminCreatesManager_201(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-adm-mgr"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "mgrnew@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": domain.RoleManager,
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleAdmin))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusCreated, w.Code)
+	var out struct {
+		User domain.User `json:"user"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
+	assert.Equal(t, domain.RoleManager, out.User.Role)
+	assert.Empty(t, out.User.Password)
+}
+
+func TestProvisionUser_AdminCreatesEmployee_201(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-adm-emp"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "empfromadm@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": domain.RoleEmployee,
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleAdmin))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusCreated, w.Code)
+	var out struct {
+		User domain.User `json:"user"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
+	assert.Equal(t, domain.RoleEmployee, out.User.Role)
+}
+
+func TestProvisionUser_ManagerCreatesClient_201(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-mgr-client"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "clientfrommgr@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": domain.RoleClient,
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleManager))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusCreated, w.Code)
+	var out struct {
+		User domain.User `json:"user"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
+	assert.Equal(t, domain.RoleClient, out.User.Role)
+}
+
+func TestProvisionUser_ManagerCreatesAdmin_Not2xx(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-mgr-admin"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "admfrommgr@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": domain.RoleAdmin,
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleManager))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.NotEqual(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestProvisionUser_AdminUnknownRole_Not2xx(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-adm-super"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "super@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": "superuser",
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleAdmin))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.NotEqual(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestProvisionUser_UnknownJWTRole_Forbidden(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-jwt-unknown"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	body := map[string]string{
+		"email": "x@example.com", "password": "secret12", "firstName": "A", "lastName": "B", "role": domain.RoleClient,
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), "superuser"))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
