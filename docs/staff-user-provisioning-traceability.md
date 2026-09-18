@@ -25,4 +25,4 @@ Authenticated `POST /api/v1/admin/users` with a caller × target role matrix. No
 ## Residuals
 - Several allowed cells lack dedicated HTTP tests (admin→manager/employee, manager→client, `superuser` HTTP).
 - Role normalisation is trim-only, not case-fold (`Client` → 400).
-- `Register` (out of this endpoint) may still allow `admin`.
+- Public `Register` no longer allows `admin` or `manager` (self-service is `client` default and `employee` only). Staff creation stays on `POST /api/v1/admin/users` (`ProvisionUser`).

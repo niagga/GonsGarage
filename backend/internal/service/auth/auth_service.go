@@ -61,17 +61,11 @@ func (uc *AuthService) Register(ctx context.Context, req ports.RegisterRequest) 
 		req.Role = domain.RoleClient
 	}
 
-	// Validate role is one of the allowed values
-	allowedRoles := []string{"admin", "manager", "employee", "client"}
-	validRole := false
-	for _, role := range allowedRoles {
-		if req.Role == role {
-			validRole = true
-			break
-		}
-	}
-	if !validRole {
-		return nil, errors.New("invalid role. Must be one of: admin, manager, employee, client")
+	// Self-service: client (default) and employee. Admin/manager go through ProvisionUser.
+	switch req.Role {
+	case domain.RoleClient, domain.RoleEmployee:
+	default:
+		return nil, domain.ErrInvalidRole
 	}
 
 	user, err := domain.NewUser(req.Email, req.Password, req.FirstName, req.LastName, req.Role)

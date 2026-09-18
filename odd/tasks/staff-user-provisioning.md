@@ -11,7 +11,8 @@ Authenticated `POST /api/v1/admin/users` with caller×target role matrix. Spec: 
 
 ## Findings
 - **COMPLIANT** on JWT, matrix, no admin via this flow, unknown roles.
-- Residual: some HTTP test holes; Register (other endpoint) may still allow admin.
+- Residual: some HTTP test holes.
+- Public `AuthService.Register` now rejects `admin`/`manager` (body tampering). Self-service roles remain `client` (empty default) and `employee`. Staff creation stays on `POST /api/v1/admin/users` (`ProvisionUser`).
 
 ## Next Step
 - Closed with UI sibling (`odd/tasks/staff-user-management-ui.md`). Next module: `client-auth-shell`.

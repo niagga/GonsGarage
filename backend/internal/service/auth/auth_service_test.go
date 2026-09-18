@@ -113,8 +113,62 @@ func TestAuthService_Register_InvalidRole(t *testing.T) {
 		LastName:  "B",
 		Role:      "superuser",
 	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid role")
+	require.ErrorIs(t, err, domain.ErrInvalidRole)
+	assert.NotContains(t, err.Error(), domain.RoleAdmin)
+	assert.NotContains(t, err.Error(), domain.RoleManager)
+	assert.Empty(t, repo.created)
+}
+
+func TestAuthService_Register_RejectsAdmin(t *testing.T) {
+	t.Parallel()
+	repo := newStubUserRepo()
+	svc := NewAuthService(repo, "unit-test-secret", 24)
+	user, err := svc.Register(context.Background(), ports.RegisterRequest{
+		Email:     "admin@example.com",
+		Password:  "secret123",
+		FirstName: "A",
+		LastName:  "B",
+		Role:      domain.RoleAdmin,
+	})
+	require.ErrorIs(t, err, domain.ErrInvalidRole)
+	assert.Nil(t, user)
+	assert.Empty(t, repo.created)
+}
+
+func TestAuthService_Register_RejectsManager(t *testing.T) {
+	t.Parallel()
+	repo := newStubUserRepo()
+	svc := NewAuthService(repo, "unit-test-secret", 24)
+	user, err := svc.Register(context.Background(), ports.RegisterRequest{
+		Email:     "manager@example.com",
+		Password:  "secret123",
+		FirstName: "A",
+		LastName:  "B",
+		Role:      domain.RoleManager,
+	})
+	require.ErrorIs(t, err, domain.ErrInvalidRole)
+	assert.Nil(t, user)
+	assert.Empty(t, repo.created)
+}
+
+func TestAuthService_Register_NewEmployee(t *testing.T) {
+	t.Parallel()
+	repo := newStubUserRepo()
+	svc := NewAuthService(repo, "unit-test-secret", 24)
+
+	user, err := svc.Register(context.Background(), ports.RegisterRequest{
+		Email:     "employee@example.com",
+		Password:  "secret123",
+		FirstName: "Col",
+		LastName:  "Aborador",
+		Role:      domain.RoleEmployee,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	assert.Equal(t, "employee@example.com", user.Email)
+	assert.Equal(t, domain.RoleEmployee, user.Role)
+	assert.Empty(t, user.Password)
+	assert.Len(t, repo.created, 1)
 }
 
 func TestAuthService_Login_Success(t *testing.T) {
