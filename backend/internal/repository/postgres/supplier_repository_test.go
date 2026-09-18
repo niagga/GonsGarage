@@ -25,12 +25,13 @@ type SupplierRepositoryTestSuite struct {
 func (suite *SupplierRepositoryTestSuite) SetupSuite() {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(suite.T(), err)
-	require.NoError(suite.T(), db.AutoMigrate(&domain.Supplier{}))
+	require.NoError(suite.T(), db.AutoMigrate(&domain.Supplier{}, &domain.ReceivedInvoice{}))
 	suite.db = db
 	suite.repo = NewPostgresSupplierRepository(db)
 }
 
 func (suite *SupplierRepositoryTestSuite) TearDownTest() {
+	suite.db.Exec("DELETE FROM received_invoices")
 	suite.db.Exec("DELETE FROM suppliers")
 }
 
@@ -69,6 +70,36 @@ func (suite *SupplierRepositoryTestSuite) TestDelete_SoftThenInvisible() {
 	_, err := suite.repo.GetByID(context.Background(), id)
 	require.Error(suite.T(), err)
 	assert.ErrorIs(suite.T(), err, domain.ErrSupplierNotFound)
+}
+
+func (suite *SupplierRepositoryTestSuite) TestDelete_NullsReceivedInvoiceSupplierID() {
+	id := uuid.New()
+	s := &domain.Supplier{ID: id, Name: "DelCo", IsActive: true, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	require.NoError(suite.T(), suite.repo.Create(context.Background(), s))
+
+	invID := uuid.New()
+	inv := &domain.ReceivedInvoice{
+		ID:          invID,
+		SupplierID:  &id,
+		VendorName:  "Paper Co",
+		Category:    "supplies",
+		Amount:      120.5,
+		InvoiceDate: time.Date(2025, 3, 10, 12, 0, 0, 0, time.UTC),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	require.NoError(suite.T(), suite.db.Create(inv).Error)
+
+	require.NoError(suite.T(), suite.repo.Delete(context.Background(), id))
+
+	_, err := suite.repo.GetByID(context.Background(), id)
+	require.Error(suite.T(), err)
+	assert.ErrorIs(suite.T(), err, domain.ErrSupplierNotFound)
+
+	var got domain.ReceivedInvoice
+	require.NoError(suite.T(), suite.db.Where("id = ?", invID).First(&got).Error)
+	assert.Nil(suite.T(), got.SupplierID)
+	assert.Nil(suite.T(), got.DeletedAt)
 }
 
 func (suite *SupplierRepositoryTestSuite) TestList_TotalAndPagination() {

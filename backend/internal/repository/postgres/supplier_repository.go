@@ -164,29 +164,60 @@ WHERE id = $8 AND deleted_at IS NULL`
 func (r *postgresSupplierRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	queryCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+	now := time.Now().UTC()
 	if r.sqlx != nil {
-		const q = `UPDATE suppliers SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`
-		res, err := r.sqlx.ExecContext(queryCtx, q, time.Now().UTC(), id)
-		if err != nil {
+		return r.deleteSupplierSQLX(queryCtx, id, now)
+	}
+	err := r.db.WithContext(queryCtx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&domain.ReceivedInvoice{}).
+			Where("supplier_id = ?", id).
+			Updates(map[string]interface{}{
+				"supplier_id": nil,
+				"updated_at":  now,
+			}).Error; err != nil {
 			return fmt.Errorf("failed to delete supplier: %w", err)
 		}
-		n, err := res.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to read rows affected: %w", err)
+		res := tx.Model(&SupplierModel{}).
+			Where("id = ? AND deleted_at IS NULL", id).
+			Update("deleted_at", now)
+		if res.Error != nil {
+			return fmt.Errorf("failed to delete supplier: %w", res.Error)
 		}
-		if n == 0 {
+		if res.RowsAffected == 0 {
 			return domain.ErrSupplierNotFound
 		}
 		return nil
+	})
+	if err != nil {
+		return err
 	}
-	res := r.db.WithContext(queryCtx).Model(&SupplierModel{}).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Update("deleted_at", time.Now().UTC())
-	if res.Error != nil {
-		return fmt.Errorf("failed to delete supplier: %w", res.Error)
+	return nil
+}
+
+func (r *postgresSupplierRepository) deleteSupplierSQLX(ctx context.Context, id uuid.UUID, now time.Time) error {
+	tx, err := r.sqlx.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete supplier: %w", err)
 	}
-	if res.RowsAffected == 0 {
+	defer func() { _ = tx.Rollback() }()
+	const nullInvoices = `UPDATE received_invoices SET supplier_id = NULL, updated_at = $1 WHERE supplier_id = $2`
+	if _, err := tx.ExecContext(ctx, nullInvoices, now, id); err != nil {
+		return fmt.Errorf("failed to delete supplier: %w", err)
+	}
+	const q = `UPDATE suppliers SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`
+	res, err := tx.ExecContext(ctx, q, now, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete supplier: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to read rows affected: %w", err)
+	}
+	if n == 0 {
 		return domain.ErrSupplierNotFound
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to delete supplier: %w", err)
 	}
 	return nil
 }

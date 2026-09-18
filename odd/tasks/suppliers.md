@@ -15,7 +15,7 @@ P1 **suppliers** is the workshop vendor master, optionally linked to received in
 
 ## Findings
 - **COMPLIANT:** staff CRUD, client 403, min fields, optional `supplier_id` on received invoices.
-- **Residual:** soft-delete does not trigger FK SET NULL; contact fields optional-empty; no name-search API.
+- **Residual:** contact fields optional-empty; no name-search API. Soft-delete now nulls `received_invoices.supplier_id` before `suppliers.deleted_at` (honors SQL `ON DELETE SET NULL` intent without hard-delete).
 
 ## Next Step
 - P1 accounting cluster (defer / parts-inventory / billing / invoices / suppliers / accounting layout) is audited. Pick next module outside this cluster, or remediate residuals.

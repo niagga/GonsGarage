@@ -17,13 +17,13 @@ Related: [docs/invoices-traceability.md](./invoices-traceability.md), [docs/bill
 
 | Requirement | Spec rule | Audited implementation | Status |
 | :--- | :--- | :--- | :--- |
-| Staff CRUD | Alta, list, detalle, update, baixa/soft-delete | `SupplierHandler` + `SupplierService` + postgres repo; `deleted_at` soft-delete | Compliant |
+| Staff CRUD | Alta, list, detalle, update, baixa/soft-delete | `SupplierHandler` + `SupplierService` + postgres repo; `deleted_at` soft-delete; Delete nulls `received_invoices.supplier_id` | Compliant |
 | Client denied | Client MUST NOT access supplier CRUD | Middleware 403 + service `requireEmployee`; `TestP1Accounting_ClientGETSuppliers_403`; accounting layout | Compliant |
 | Min fields | Commercial id, contact, optional tax id, optional notes | `name` required; `contactEmail`/`contactPhone`; `taxId`; `notes` | Compliant |
 | Optional invoice link | Received invoice without supplier MUST save | `ReceivedInvoice.SupplierID *uuid`; UI field optional; POST without `supplierId` 201 | Compliant |
 
 ## Residuals
-- App delete is **soft-delete**, so SQL `ON DELETE SET NULL` does not run; received invoices may keep `supplier_id` pointing at a hidden row.
+- App delete remains **soft-delete** (SQL `ON DELETE SET NULL` still does not fire). Delete now nulls `received_invoices.supplier_id` (and `updated_at`) before setting `suppliers.deleted_at`, including rows that still pointed at the supplier. See [odd/tasks/suppliers.md](../odd/tasks/suppliers.md).
 - Contact email/phone may be empty.
 - List is paginated; no dedicated name-search API.
 - Client 403 is asserted on GET list; other methods rely on the same group middleware.
