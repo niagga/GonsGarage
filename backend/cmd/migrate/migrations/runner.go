@@ -1,48 +1,16 @@
-// File: backend/scripts/run_migrations.go
-package main
+// File: backend/cmd/migrate/migrations/runner.go
+package migrations
 
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	_ "github.com/lib/pq"
 )
 
-func main() {
-	// Database connection
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://admindb:gonsgarage123@localhost:5432/gonsgarage?sslmode=disable"
-	}
-
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-	defer db.Close()
-
-	// Test connection
-	if err := db.Ping(); err != nil {
-		log.Fatal("Failed to ping database:", err)
-	}
-
-	// Create migrations table if it doesn't exist
-	createMigrationsTable(db)
-
-	// Run migrations
-	if err := runMigrations(db); err != nil {
-		log.Fatal("Failed to run migrations:", err)
-	}
-
-	fmt.Println("✅ All migrations completed successfully!")
-}
-
-func createMigrationsTable(db *sql.DB) {
+func createMigrationsTable(db *sql.DB) error {
 	query := `
     CREATE TABLE IF NOT EXISTS schema_migrations (
         version VARCHAR(255) PRIMARY KEY,
@@ -50,16 +18,23 @@ func createMigrationsTable(db *sql.DB) {
     );`
 
 	if _, err := db.Exec(query); err != nil {
-		log.Fatal("Failed to create schema_migrations table:", err)
+		return fmt.Errorf("failed to create schema_migrations table: %w", err)
 	}
+	return nil
 }
 
-func runMigrations(db *sql.DB) error {
+// Run applies pending migrations from migrationsDir.
+func Run(db *sql.DB, migrationsDir string) error {
+	// Create migrations table if it doesn't exist
+	if err := createMigrationsTable(db); err != nil {
+		return err
+	}
+
 	// Get applied migrations
 	appliedMigrations := getAppliedMigrations(db)
 
 	// Get migration files
-	migrationFiles, err := getMigrationFiles()
+	migrationFiles, err := getMigrationFiles(migrationsDir)
 	if err != nil {
 		return err
 	}
@@ -79,7 +54,7 @@ func runMigrations(db *sql.DB) error {
 
 		fmt.Printf("🔄 Running migration: %s\n", version)
 
-		if err := runMigration(db, file, version); err != nil {
+		if err := runMigration(db, migrationsDir, file, version); err != nil {
 			return fmt.Errorf("failed to run migration %s: %w", version, err)
 		}
 
@@ -108,9 +83,7 @@ func getAppliedMigrations(db *sql.DB) map[string]bool {
 	return applied
 }
 
-func getMigrationFiles() ([]string, error) {
-	migrationsDir := "migrations"
-
+func getMigrationFiles(migrationsDir string) ([]string, error) {
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read migrations directory: %w", err)
@@ -127,9 +100,9 @@ func getMigrationFiles() ([]string, error) {
 	return migrationFiles, nil
 }
 
-func runMigration(db *sql.DB, filename, version string) error {
+func runMigration(db *sql.DB, migrationsDir, filename, version string) error {
 	// Read migration file
-	content, err := os.ReadFile(filepath.Join("migrations", filename))
+	content, err := os.ReadFile(filepath.Join(migrationsDir, filename))
 	if err != nil {
 		return fmt.Errorf("failed to read migration file: %w", err)
 	}

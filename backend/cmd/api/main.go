@@ -110,6 +110,15 @@ func main() {
 	if sqlxDB == nil {
 		log.Fatal("sqlx wrap failed: nil *sql.DB")
 	}
+	// Fiscal tables are explicit migrations, never AutoMigrate. Legacy startup is
+	// unchanged while the additive capability is disabled.
+	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
+		schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer schemaCancel()
+		if err := postgresRepo.VerifyFiscalSchema(schemaCtx, sqlDB); err != nil {
+			log.Fatalf("fiscal capability requires migration 011: %v", err)
+		}
+	}
 
 	// Check if we need to reset database (for development)
 	resetDB := os.Getenv("RESET_DATABASE")
