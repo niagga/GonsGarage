@@ -20,11 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-const UOM_OPTIONS: { value: PartUOM; label: string }[] = [
-  { value: 'unit', label: 'Unidade (unit)' },
-  { value: 'liter', label: 'Litro (liter)' },
-];
+import { PART_UOM_OPTIONS } from '../part-uom-options';
 
 export interface PartCreateModalProps {
   open: boolean;
@@ -139,7 +135,7 @@ export function PartCreateModal({ open, onOpenChange, onSuccess }: Readonly<Part
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {UOM_OPTIONS.map(o => (
+                {PART_UOM_OPTIONS.map(o => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
                   </SelectItem>

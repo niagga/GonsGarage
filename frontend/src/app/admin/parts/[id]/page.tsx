@@ -17,11 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const UOM_OPTIONS: { value: PartUOM; label: string }[] = [
-  { value: 'unit', label: 'Unidade (unit)' },
-  { value: 'liter', label: 'Litro (liter)' },
-];
+import { PART_UOM_OPTIONS } from '../part-uom-options';
 
 export default function AdminPartDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -171,7 +167,7 @@ export default function AdminPartDetailPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {UOM_OPTIONS.map((o) => (
+                {PART_UOM_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
                   </SelectItem>
