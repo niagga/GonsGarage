@@ -7,23 +7,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 
 const UOM_OPTIONS: { value: PartUOM; label: string }[] = [
   { value: 'unit', label: 'Unidade (unit)' },
   { value: 'liter', label: 'Litro (liter)' },
 ];
-
-const fieldInputClass = cn(
-  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
-  'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-);
 
 export interface PartCreateModalProps {
   open: boolean;
@@ -133,19 +134,18 @@ export function PartCreateModal({ open, onOpenChange, onSuccess }: Readonly<Part
           </div>
           <div className="grid gap-2">
             <Label htmlFor="part-modal-uom">Unidade de medida</Label>
-            <select
-              id="part-modal-uom"
-              value={uom}
-              onChange={ev => setUom(ev.target.value as PartUOM)}
-              required
-              className={fieldInputClass}
-            >
-              {UOM_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <Select value={uom} onValueChange={value => setUom(value as PartUOM)}>
+              <SelectTrigger id="part-modal-uom">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UOM_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="part-modal-min">Quantidade mínima (opcional)</Label>

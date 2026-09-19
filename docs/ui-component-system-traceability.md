@@ -10,12 +10,12 @@ Shadcn-style canonical primitives in `frontend/src/components/ui/`, mapped to br
 | Requirement | Implementation | Status |
 | :--- | :--- | :--- |
 | Foundation dir | `dialog.tsx`, `button.tsx`, `input.tsx`, `label.tsx`, `select.tsx`; `components.json` | Compliant |
-| Auth on system primitives | Login/register use `Button`/`Input`/`Label` | Compliant |
-| Parts create | `PartCreateModal` uses `Dialog`/`Button`/`Input`/`Label` | Compliant |
-| Workshop Nova visita | `Dialog` + `Button` on `/workshop` | Compliant |
+| Auth on system primitives | Login/register use `Button`/`Input`/`Label`; register Perfil uses `Select` | Compliant |
+| Parts create | `PartCreateModal` uses `Dialog`/`Button`/`Input`/`Label`/`Select` (UoM) | Compliant |
+| Workshop Nova visita | `Dialog` + `Button` on `/workshop`; car pickers on `/workshop` and `/workshop/recepcion` use `Select` | Compliant |
 | Theme mapping | `docs/ui-shadcn-theme.md` + `shadcn-theme.css` | Compliant |
 
 ## Residuals
-- Native `<select>` still used (register Perfil, parts UoM, workshop car picker) while `select.tsx` exists.
+- Native selects on register Perfil, parts UoM, and workshop car pickers now use system Select.
 - Legacy widgets remain in the same `components/ui/` tree (`ConfirmModal`, CSS-module FormField).
 - Theme table does not name `--brand-navy`.

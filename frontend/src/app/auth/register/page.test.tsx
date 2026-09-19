@@ -61,6 +61,12 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Confirmar palavra-passe')).toBeInTheDocument();
   });
 
+  it('renders Perfil as a system combobox, not a native select', () => {
+    render(<RegisterPage />);
+    expect(screen.getByRole('combobox', { name: 'Perfil' })).toBeInTheDocument();
+    expect(document.querySelector('select#role')).toBeNull();
+  });
+
   it('does not prefix unexpected errors with English "Error:"', async () => {
     const user = userEvent.setup();
     mockRegister.mockRejectedValueOnce(new Error('Falha de rede'));

@@ -7,6 +7,13 @@ import { useAuth } from '@/stores';
 import { useAuthHydrationReady } from '@/hooks/useAuthHydrationReady';
 import AppShell from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiClient, type Car, type ServiceJob, type ServiceJobDetail } from '@/lib/api';
 import styles from '../workshop.module.css';
 
@@ -279,20 +286,19 @@ function WorkshopRecepcionInner() {
       </p>
       <div className={styles.select}>
         <label htmlFor="recepcion-car">Viatura</label>
-        <select
-          id="recepcion-car"
-          value={carId}
-          onChange={e => {
-            setCarId(e.target.value);
-          }}
-        >
-          <option value="">—</option>
-          {cars.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.license_plate} — {c.make} {c.model}
-            </option>
-          ))}
-        </select>
+        <Select value={carId || '__none__'} onValueChange={value => setCarId(value === '__none__' ? '' : value)}>
+          <SelectTrigger id="recepcion-car">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">—</SelectItem>
+                {cars.map(c => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.license_plate} — {c.make} {c.model}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       {carId && openForCar.length === 0 ? (
         <p className={styles.muted}>Nenhuma visita aberta para este veículo. Crie uma em Lista taller.</p>

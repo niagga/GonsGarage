@@ -9,6 +9,13 @@ import { AuthShell, AuthShellFooter } from '@/components/auth/AuthShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import styles from './register.module.css';
 
@@ -90,7 +97,7 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -101,6 +108,20 @@ export default function RegisterPage() {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
+      }));
+    }
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      role: value,
+    }));
+
+    if (errors.role) {
+      setErrors((prev) => ({
+        ...prev,
+        role: '',
       }));
     }
   };
@@ -302,17 +323,15 @@ export default function RegisterPage() {
 
           <div className="grid gap-2">
             <Label htmlFor="role">Perfil</Label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-invalid={Boolean(errors.role)}
-            >
-              <option value="client">Cliente</option>
-              <option value="employee">Colaborador</option>
-            </select>
+            <Select value={formData.role} onValueChange={handleRoleChange}>
+              <SelectTrigger id="role" aria-invalid={Boolean(errors.role)}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Cliente</SelectItem>
+                <SelectItem value="employee">Colaborador</SelectItem>
+              </SelectContent>
+            </Select>
             {errors.role ? <p className="text-sm text-destructive">{errors.role}</p> : null}
           </div>
         </div>

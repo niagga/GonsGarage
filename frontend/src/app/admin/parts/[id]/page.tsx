@@ -10,6 +10,13 @@ import type { PartItem, PartItemWriteBody, PartUOM } from '@/types/parts';
 import styles from '../admin-parts.module.css';
 import { AppLoading } from '@/components/ui/AppLoading';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const UOM_OPTIONS: { value: PartUOM; label: string }[] = [
   { value: 'unit', label: 'Unidade (unit)' },
@@ -159,13 +166,18 @@ export default function AdminPartDetailPage() {
           </div>
           <div className={styles.field}>
             <label htmlFor="uom">Unidade de medida</label>
-            <select id="uom" value={uom} onChange={(ev) => setUom(ev.target.value as PartUOM)} required>
-              {UOM_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <Select value={uom} onValueChange={(value) => setUom(value as PartUOM)}>
+              <SelectTrigger id="uom">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UOM_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className={styles.field}>
             <label htmlFor="minimumQuantity">Quantidade mínima (opcional)</label>

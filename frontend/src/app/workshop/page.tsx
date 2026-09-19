@@ -14,6 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiClient, type Car, type ServiceJob } from '@/lib/api';
 import styles from './workshop.module.css';
 
@@ -200,20 +207,19 @@ export default function WorkshopListPage() {
       <p className={styles.hint}>Seleccione um veículo para listar e abrir visitas de oficina.</p>
       <div className={styles.select}>
         <label htmlFor="workshop-car">Viatura</label>
-        <select
-          id="workshop-car"
-          value={carId}
-          onChange={e => {
-            setCarId(e.target.value);
-          }}
-        >
-          <option value="">—</option>
-          {cars.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.license_plate} — {c.make} {c.model}
-            </option>
-          ))}
-        </select>
+        <Select value={carId || '__none__'} onValueChange={value => setCarId(value === '__none__' ? '' : value)}>
+          <SelectTrigger id="workshop-car">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">—</SelectItem>
+                {cars.map(c => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.license_plate} — {c.make} {c.model}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       {err ? <p className={styles.err}>{err}</p> : null}
       {listLoading ? <p>A carregar…</p> : null}
