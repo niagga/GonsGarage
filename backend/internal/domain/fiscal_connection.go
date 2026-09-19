@@ -22,11 +22,11 @@ var (
 type FiscalConnectionState string
 
 const (
-	FiscalConnectionStateDisconnected  FiscalConnectionState = "disconnected"
-	FiscalConnectionStateAuthorizing   FiscalConnectionState = "authorizing"
-	FiscalConnectionStateConnected     FiscalConnectionState = "connected"
-	FiscalConnectionStateActionNeeded  FiscalConnectionState = "action_required"
-	FiscalConnectionStateRevoked       FiscalConnectionState = "revoked"
+	FiscalConnectionStateDisconnected FiscalConnectionState = "disconnected"
+	FiscalConnectionStateAuthorizing  FiscalConnectionState = "authorizing"
+	FiscalConnectionStateConnected    FiscalConnectionState = "connected"
+	FiscalConnectionStateActionNeeded FiscalConnectionState = "action_required"
+	FiscalConnectionStateRevoked      FiscalConnectionState = "revoked"
 )
 
 // IsValid reports whether the state is recognized.
@@ -75,25 +75,25 @@ func (a FiscalConnectionAction) IsValid() bool {
 
 // FiscalConnection is the provider-neutral connection aggregate.
 type FiscalConnection struct {
-	ID                      uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey"`
-	ScopeKey                string     `json:"scopeKey" gorm:"type:varchar(80);not null;default:default;index"`
-	ProviderKey             string     `json:"providerKey" gorm:"type:varchar(40);not null;index"`
+	ID                      uuid.UUID             `json:"id" gorm:"type:uuid;primaryKey"`
+	ScopeKey                string                `json:"scopeKey" gorm:"type:varchar(80);not null;default:default;index"`
+	ProviderKey             string                `json:"providerKey" gorm:"type:varchar(40);not null;index"`
 	State                   FiscalConnectionState `json:"state" gorm:"type:varchar(24);not null;index"`
-	ProviderOrganizationRef string     `json:"providerOrganizationRef,omitempty" gorm:"column:provider_organization_ref;type:varchar(255)"`
-	GrantedScopes           []string   `json:"grantedScopes,omitempty" gorm:"type:text[]"`
-	AccessExpiresAt         *time.Time `json:"accessExpiresAt,omitempty" gorm:"column:access_expires_at"`
-	CredentialCiphertext    []byte     `json:"credentialCiphertext,omitempty" gorm:"column:credential_ciphertext"`
-	CredentialNonce         []byte     `json:"credentialNonce,omitempty" gorm:"column:credential_nonce"`
-	CredentialKeyVersion    string     `json:"credentialKeyVersion,omitempty" gorm:"column:credential_key_version;type:varchar(40)"`
-	CredentialFormatVersion int        `json:"credentialFormatVersion,omitempty" gorm:"column:credential_format_version"`
-	LastVerifiedAt          *time.Time `json:"lastVerifiedAt,omitempty" gorm:"column:last_verified_at"`
-	ConnectedAt             *time.Time `json:"connectedAt,omitempty" gorm:"column:connected_at"`
-	RevokedAt               *time.Time `json:"revokedAt,omitempty" gorm:"column:revoked_at"`
-	CreatedBy               uuid.UUID  `json:"createdBy" gorm:"type:uuid;not null;index"`
-	UpdatedBy               *uuid.UUID `json:"updatedBy,omitempty" gorm:"type:uuid;index"`
-	CreatedAt               time.Time  `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt               time.Time  `json:"updatedAt" gorm:"column:updated_at;autoUpdateTime"`
-	Version                 int        `json:"version" gorm:"not null;default:1"`
+	ProviderOrganizationRef string                `json:"providerOrganizationRef,omitempty" gorm:"column:provider_organization_ref;type:varchar(255)"`
+	GrantedScopes           []string              `json:"grantedScopes,omitempty" gorm:"type:text[]"`
+	AccessExpiresAt         *time.Time            `json:"accessExpiresAt,omitempty" gorm:"column:access_expires_at"`
+	CredentialCiphertext    []byte                `json:"credentialCiphertext,omitempty" gorm:"column:credential_ciphertext"`
+	CredentialNonce         []byte                `json:"credentialNonce,omitempty" gorm:"column:credential_nonce"`
+	CredentialKeyVersion    string                `json:"credentialKeyVersion,omitempty" gorm:"column:credential_key_version;type:varchar(40)"`
+	CredentialFormatVersion int                   `json:"credentialFormatVersion,omitempty" gorm:"column:credential_format_version"`
+	LastVerifiedAt          *time.Time            `json:"lastVerifiedAt,omitempty" gorm:"column:last_verified_at"`
+	ConnectedAt             *time.Time            `json:"connectedAt,omitempty" gorm:"column:connected_at"`
+	RevokedAt               *time.Time            `json:"revokedAt,omitempty" gorm:"column:revoked_at"`
+	CreatedBy               uuid.UUID             `json:"createdBy" gorm:"type:uuid;not null;index"`
+	UpdatedBy               *uuid.UUID            `json:"updatedBy,omitempty" gorm:"type:uuid;index"`
+	CreatedAt               time.Time             `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt               time.Time             `json:"updatedAt" gorm:"column:updated_at;autoUpdateTime"`
+	Version                 int                   `json:"version" gorm:"not null;default:1"`
 }
 
 func (FiscalConnection) TableName() string {
@@ -125,20 +125,20 @@ func (c FiscalConnection) Snapshot() FiscalConnection {
 		ProviderKey:             c.ProviderKey,
 		State:                   c.State,
 		ProviderOrganizationRef: c.ProviderOrganizationRef,
-		GrantedScopes:            cloneStrings(c.GrantedScopes),
-		AccessExpiresAt:          cloneTimePtr(c.AccessExpiresAt),
-		CredentialCiphertext:     cloneBytes(c.CredentialCiphertext),
-		CredentialNonce:          cloneBytes(c.CredentialNonce),
-		CredentialKeyVersion:     c.CredentialKeyVersion,
-		CredentialFormatVersion:   c.CredentialFormatVersion,
-		LastVerifiedAt:           cloneTimePtr(c.LastVerifiedAt),
-		ConnectedAt:              cloneTimePtr(c.ConnectedAt),
-		RevokedAt:                cloneTimePtr(c.RevokedAt),
-		CreatedBy:                c.CreatedBy,
-		UpdatedBy:                cloneUUIDPtr(c.UpdatedBy),
-		CreatedAt:                c.CreatedAt,
-		UpdatedAt:                c.UpdatedAt,
-		Version:                  c.Version,
+		GrantedScopes:           cloneStrings(c.GrantedScopes),
+		AccessExpiresAt:         cloneTimePtr(c.AccessExpiresAt),
+		CredentialCiphertext:    cloneBytes(c.CredentialCiphertext),
+		CredentialNonce:         cloneBytes(c.CredentialNonce),
+		CredentialKeyVersion:    c.CredentialKeyVersion,
+		CredentialFormatVersion: c.CredentialFormatVersion,
+		LastVerifiedAt:          cloneTimePtr(c.LastVerifiedAt),
+		ConnectedAt:             cloneTimePtr(c.ConnectedAt),
+		RevokedAt:               cloneTimePtr(c.RevokedAt),
+		CreatedBy:               c.CreatedBy,
+		UpdatedBy:               cloneUUIDPtr(c.UpdatedBy),
+		CreatedAt:               c.CreatedAt,
+		UpdatedAt:               c.UpdatedAt,
+		Version:                 c.Version,
 	}
 }
 

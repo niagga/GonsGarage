@@ -165,12 +165,12 @@ func (r AdjustmentRange) Contains(value Decimal) bool {
 
 // TaxTreatmentRule describes a tax treatment code and its behavior.
 type TaxTreatmentRule struct {
-	Code                     string                  `json:"code"`
-	AllowedKinds             map[DocumentKind]bool   `json:"allowedKinds,omitempty"`
-	Rate                     Decimal                 `json:"rate"`
-	Exempt                   bool                    `json:"exempt"`
-	ExemptionCodeRequired    bool                    `json:"exemptionCodeRequired"`
-	ExemptionReasonRequired  bool                    `json:"exemptionReasonRequired"`
+	Code                    string                `json:"code"`
+	AllowedKinds            map[DocumentKind]bool `json:"allowedKinds,omitempty"`
+	Rate                    Decimal               `json:"rate"`
+	Exempt                  bool                  `json:"exempt"`
+	ExemptionCodeRequired   bool                  `json:"exemptionCodeRequired"`
+	ExemptionReasonRequired bool                  `json:"exemptionReasonRequired"`
 }
 
 func (r TaxTreatmentRule) Validate(maxRateScale int32) error {
@@ -199,26 +199,26 @@ func (r TaxTreatmentRule) Validate(maxRateScale int32) error {
 
 // CustomerIdentityRequirement specifies which identity fields are mandatory.
 type CustomerIdentityRequirement struct {
-	LegalName    bool `json:"legalName"`
+	LegalName     bool `json:"legalName"`
 	TaxIdentifier bool `json:"taxIdentifier"`
-	CountryCode  bool `json:"countryCode"`
+	CountryCode   bool `json:"countryCode"`
 }
 
 // PolicyConfig captures the schema-versioned policy JSON.
 type PolicyConfig struct {
-	Currency               string                             `json:"currency"`
-	CurrencyScale          int32                              `json:"currencyScale"`
-	MaximumQuantityScale   int32                              `json:"maximumQuantityScale"`
-	MaximumUnitPriceScale  int32                              `json:"maximumUnitPriceScale"`
-	MaximumTaxRateScale    int32                              `json:"maximumTaxRateScale"`
-	RoundingMode           RoundingMode                       `json:"roundingMode"`
-	RoundingScope          RoundingScope                      `json:"roundingScope"`
-	AdjustmentRange        AdjustmentRange                    `json:"adjustmentRange"`
-	AllowedKinds           map[DocumentKind]bool              `json:"allowedKinds,omitempty"`
-	VoidAllowedKinds       map[DocumentKind]bool              `json:"voidAllowedKinds,omitempty"`
-	TaxTreatments          map[string]TaxTreatmentRule        `json:"taxTreatments,omitempty"`
-	CustomerRequirements   map[DocumentKind]CustomerIdentityRequirement `json:"customerRequirements,omitempty"`
-	DiscountKinds          map[DiscountKind]bool              `json:"discountKinds,omitempty"`
+	Currency              string                                       `json:"currency"`
+	CurrencyScale         int32                                        `json:"currencyScale"`
+	MaximumQuantityScale  int32                                        `json:"maximumQuantityScale"`
+	MaximumUnitPriceScale int32                                        `json:"maximumUnitPriceScale"`
+	MaximumTaxRateScale   int32                                        `json:"maximumTaxRateScale"`
+	RoundingMode          RoundingMode                                 `json:"roundingMode"`
+	RoundingScope         RoundingScope                                `json:"roundingScope"`
+	AdjustmentRange       AdjustmentRange                              `json:"adjustmentRange"`
+	AllowedKinds          map[DocumentKind]bool                        `json:"allowedKinds,omitempty"`
+	VoidAllowedKinds      map[DocumentKind]bool                        `json:"voidAllowedKinds,omitempty"`
+	TaxTreatments         map[string]TaxTreatmentRule                  `json:"taxTreatments,omitempty"`
+	CustomerRequirements  map[DocumentKind]CustomerIdentityRequirement `json:"customerRequirements,omitempty"`
+	DiscountKinds         map[DiscountKind]bool                        `json:"discountKinds,omitempty"`
 }
 
 // CanonicalBytes returns the canonical JSON payload for the policy configuration.
@@ -264,9 +264,9 @@ func (c PolicyConfig) Validate() error {
 	}
 	for name, scale := range map[string]int32{
 		"currencyScale":         c.CurrencyScale,
-		"maximumQuantityScale":   c.MaximumQuantityScale,
-		"maximumUnitPriceScale":  c.MaximumUnitPriceScale,
-		"maximumTaxRateScale":    c.MaximumTaxRateScale,
+		"maximumQuantityScale":  c.MaximumQuantityScale,
+		"maximumUnitPriceScale": c.MaximumUnitPriceScale,
+		"maximumTaxRateScale":   c.MaximumTaxRateScale,
 	} {
 		if scale < 0 || scale > 18 {
 			return fmt.Errorf("%w: %s out of range: %d", ErrPolicyConfigInvalid, name, scale)
@@ -326,14 +326,14 @@ func (c PolicyConfig) Validate() error {
 
 // PolicyVersion captures the stored policy row metadata.
 type PolicyVersion struct {
-	PolicyKey      string            `json:"policyKey"`
-	Version        int               `json:"version"`
-	SchemaVersion  int               `json:"schemaVersion"`
+	PolicyKey      string               `json:"policyKey"`
+	Version        int                  `json:"version"`
+	SchemaVersion  int                  `json:"schemaVersion"`
 	Classification PolicyClassification `json:"classification"`
-	Status         PolicyStatus      `json:"status"`
-	Config         PolicyConfig      `json:"config"`
-	ConfigSHA256   string            `json:"configSha256"`
-	ApprovedAt     *time.Time        `json:"approvedAt,omitempty"`
+	Status         PolicyStatus         `json:"status"`
+	Config         PolicyConfig         `json:"config"`
+	ConfigSHA256   string               `json:"configSha256"`
+	ApprovedAt     *time.Time           `json:"approvedAt,omitempty"`
 }
 
 // Resolve converts an approved policy row into an immutable arithmetic policy.
@@ -392,24 +392,24 @@ func (v PolicyVersion) Resolve() (ArithmeticPolicy, error) {
 
 // ArithmeticPolicy is the immutable policy consumed by the calculator.
 type ArithmeticPolicy struct {
-	PolicyKey             string                             `json:"policyKey"`
-	Version               int                                `json:"version"`
-	SchemaVersion         int                                `json:"schemaVersion"`
-	Classification        PolicyClassification               `json:"classification"`
-	Currency              string                             `json:"currency"`
-	CurrencyScale         int32                              `json:"currencyScale"`
-	MaximumQuantityScale  int32                              `json:"maximumQuantityScale"`
-	MaximumUnitPriceScale int32                              `json:"maximumUnitPriceScale"`
-	MaximumTaxRateScale   int32                              `json:"maximumTaxRateScale"`
-	RoundingMode          RoundingMode                       `json:"roundingMode"`
-	RoundingScope         RoundingScope                      `json:"roundingScope"`
-	AdjustmentRange       AdjustmentRange                    `json:"adjustmentRange"`
-	AllowedKinds          map[DocumentKind]bool              `json:"allowedKinds,omitempty"`
-	VoidAllowedKinds      map[DocumentKind]bool              `json:"voidAllowedKinds,omitempty"`
-	TaxTreatments         map[string]TaxTreatmentRule        `json:"taxTreatments,omitempty"`
+	PolicyKey             string                                       `json:"policyKey"`
+	Version               int                                          `json:"version"`
+	SchemaVersion         int                                          `json:"schemaVersion"`
+	Classification        PolicyClassification                         `json:"classification"`
+	Currency              string                                       `json:"currency"`
+	CurrencyScale         int32                                        `json:"currencyScale"`
+	MaximumQuantityScale  int32                                        `json:"maximumQuantityScale"`
+	MaximumUnitPriceScale int32                                        `json:"maximumUnitPriceScale"`
+	MaximumTaxRateScale   int32                                        `json:"maximumTaxRateScale"`
+	RoundingMode          RoundingMode                                 `json:"roundingMode"`
+	RoundingScope         RoundingScope                                `json:"roundingScope"`
+	AdjustmentRange       AdjustmentRange                              `json:"adjustmentRange"`
+	AllowedKinds          map[DocumentKind]bool                        `json:"allowedKinds,omitempty"`
+	VoidAllowedKinds      map[DocumentKind]bool                        `json:"voidAllowedKinds,omitempty"`
+	TaxTreatments         map[string]TaxTreatmentRule                  `json:"taxTreatments,omitempty"`
 	CustomerRequirements  map[DocumentKind]CustomerIdentityRequirement `json:"customerRequirements,omitempty"`
-	DiscountKinds         map[DiscountKind]bool              `json:"discountKinds,omitempty"`
-	ConfigSHA256          string                             `json:"configSha256"`
+	DiscountKinds         map[DiscountKind]bool                        `json:"discountKinds,omitempty"`
+	ConfigSHA256          string                                       `json:"configSha256"`
 }
 
 // CanIssue reports whether the policy authorizes the supplied document kind.
@@ -463,9 +463,9 @@ func (r StaticFiscalPolicyResolver) Resolve(policyKey string, version int) (Arit
 
 // CustomerIdentity captures the customer inputs used by the calculator.
 type CustomerIdentity struct {
-	LegalName    string `json:"legalName,omitempty"`
+	LegalName     string `json:"legalName,omitempty"`
 	TaxIdentifier string `json:"taxIdentifier,omitempty"`
-	CountryCode  string `json:"countryCode,omitempty"`
+	CountryCode   string `json:"countryCode,omitempty"`
 }
 
 // DiscountInput describes the requested line discount.
@@ -492,68 +492,68 @@ type LineInput struct {
 
 // DeclaredTotals holds optional caller-provided comparison values.
 type DeclaredTotals struct {
-	GrossTotal       *Decimal `json:"grossTotal,omitempty"`
-	DiscountTotal    *Decimal `json:"discountTotal,omitempty"`
-	NetTotal        *Decimal `json:"netTotal,omitempty"`
-	TaxTotal        *Decimal `json:"taxTotal,omitempty"`
+	GrossTotal         *Decimal `json:"grossTotal,omitempty"`
+	DiscountTotal      *Decimal `json:"discountTotal,omitempty"`
+	NetTotal           *Decimal `json:"netTotal,omitempty"`
+	TaxTotal           *Decimal `json:"taxTotal,omitempty"`
 	RoundingAdjustment *Decimal `json:"roundingAdjustment,omitempty"`
-	PayableTotal    *Decimal `json:"payableTotal,omitempty"`
+	PayableTotal       *Decimal `json:"payableTotal,omitempty"`
 }
 
 // CalculationInput provides the exact line inputs for the calculator.
 type CalculationInput struct {
-	Kind           DocumentKind   `json:"kind"`
-	Currency       string         `json:"currency"`
+	Kind           DocumentKind     `json:"kind"`
+	Currency       string           `json:"currency"`
 	Customer       CustomerIdentity `json:"customer"`
-	Lines          []LineInput    `json:"lines"`
-	DeclaredTotals *DeclaredTotals `json:"declaredTotals,omitempty"`
+	Lines          []LineInput      `json:"lines"`
+	DeclaredTotals *DeclaredTotals  `json:"declaredTotals,omitempty"`
 }
 
 // CalculatedLine is the canonical output for a single line.
 type CalculatedLine struct {
-	Position         int           `json:"position"`
-	Description      string        `json:"description,omitempty"`
-	UnitCode         string        `json:"unitCode,omitempty"`
-	Quantity         Decimal       `json:"quantity"`
-	UnitPrice        Decimal       `json:"unitPrice"`
-	DiscountKind     DiscountKind  `json:"discountKind"`
-	DiscountValue    Decimal       `json:"discountValue"`
-	DiscountAmount   Decimal       `json:"discountAmount"`
-	GrossAmount      Decimal       `json:"grossAmount"`
-	NetAmount        Decimal       `json:"netAmount"`
-	TaxTreatmentCode string        `json:"taxTreatmentCode"`
-	TaxRate          Decimal       `json:"taxRate"`
-	TaxAmount        Decimal       `json:"taxAmount"`
-	ExemptionCode    string        `json:"exemptionCode,omitempty"`
-	ExemptionReason  string        `json:"exemptionReason,omitempty"`
-	SourceType       string        `json:"sourceType,omitempty"`
-	SourceID         string        `json:"sourceId,omitempty"`
-	LineTotal        Decimal       `json:"lineTotal"`
+	Position         int          `json:"position"`
+	Description      string       `json:"description,omitempty"`
+	UnitCode         string       `json:"unitCode,omitempty"`
+	Quantity         Decimal      `json:"quantity"`
+	UnitPrice        Decimal      `json:"unitPrice"`
+	DiscountKind     DiscountKind `json:"discountKind"`
+	DiscountValue    Decimal      `json:"discountValue"`
+	DiscountAmount   Decimal      `json:"discountAmount"`
+	GrossAmount      Decimal      `json:"grossAmount"`
+	NetAmount        Decimal      `json:"netAmount"`
+	TaxTreatmentCode string       `json:"taxTreatmentCode"`
+	TaxRate          Decimal      `json:"taxRate"`
+	TaxAmount        Decimal      `json:"taxAmount"`
+	ExemptionCode    string       `json:"exemptionCode,omitempty"`
+	ExemptionReason  string       `json:"exemptionReason,omitempty"`
+	SourceType       string       `json:"sourceType,omitempty"`
+	SourceID         string       `json:"sourceId,omitempty"`
+	LineTotal        Decimal      `json:"lineTotal"`
 }
 
 // Totals aggregates the calculated monetary totals.
 type Totals struct {
-	GrossTotal        Decimal `json:"grossTotal"`
-	DiscountTotal     Decimal `json:"discountTotal"`
-	NetTotal         Decimal `json:"netTotal"`
-	TaxTotal         Decimal `json:"taxTotal"`
+	GrossTotal         Decimal `json:"grossTotal"`
+	DiscountTotal      Decimal `json:"discountTotal"`
+	NetTotal           Decimal `json:"netTotal"`
+	TaxTotal           Decimal `json:"taxTotal"`
 	RoundingAdjustment Decimal `json:"roundingAdjustment"`
-	PayableTotal     Decimal `json:"payableTotal"`
+	PayableTotal       Decimal `json:"payableTotal"`
 }
 
 // CalculationResult is the canonical snapshot-like output from the pure calculator.
 type CalculationResult struct {
-	PolicyKey        string          `json:"policyKey"`
-	PolicyVersion    int             `json:"policyVersion"`
-	SchemaVersion    int             `json:"schemaVersion"`
-	Classification   PolicyClassification `json:"classification"`
-	Kind             DocumentKind    `json:"kind"`
-	Currency         string          `json:"currency"`
-	Customer         CustomerIdentity `json:"customer"`
-	Lines            []CalculatedLine `json:"lines"`
-	Totals           Totals          `json:"totals"`
-	CanonicalBytes   []byte          `json:"canonicalBytes,omitempty"`
-	CanonicalSHA256  string          `json:"canonicalSha256,omitempty"`
+	PolicyKey       string               `json:"policyKey"`
+	PolicyVersion   int                  `json:"policyVersion"`
+	SchemaVersion   int                  `json:"schemaVersion"`
+	Classification  PolicyClassification `json:"classification"`
+	Kind            DocumentKind         `json:"kind"`
+	Currency        string               `json:"currency"`
+	Customer        CustomerIdentity     `json:"customer"`
+	Lines           []CalculatedLine     `json:"lines"`
+	Totals          Totals               `json:"totals"`
+	CanonicalBytes  []byte               `json:"canonicalBytes,omitempty"`
+	CanonicalSHA256 string               `json:"canonicalSha256,omitempty"`
 }
 
 // Calculate performs the pure exact-amount computation under a resolved policy.
@@ -639,12 +639,12 @@ func Calculate(policy ArithmeticPolicy, input CalculationInput) (CalculationResu
 		Customer:       input.Customer,
 		Lines:          calculatedLines,
 		Totals: Totals{
-			GrossTotal:        roundedGross,
-			DiscountTotal:     roundedDiscount,
-			NetTotal:          roundedNet,
-			TaxTotal:          roundedTax,
+			GrossTotal:         roundedGross,
+			DiscountTotal:      roundedDiscount,
+			NetTotal:           roundedNet,
+			TaxTotal:           roundedTax,
 			RoundingAdjustment: adjustment,
-			PayableTotal:      payableRounded,
+			PayableTotal:       payableRounded,
 		},
 	}
 
@@ -662,10 +662,10 @@ func Calculate(policy ArithmeticPolicy, input CalculationInput) (CalculationResu
 }
 
 type lineExactTotals struct {
-	Gross   Decimal
+	Gross    Decimal
 	Discount Decimal
-	Net     Decimal
-	Tax     Decimal
+	Net      Decimal
+	Tax      Decimal
 }
 
 func calculateLine(policy ArithmeticPolicy, kind DocumentKind, line LineInput) (CalculatedLine, lineExactTotals, error) {
@@ -772,7 +772,6 @@ func calculateLine(policy ArithmeticPolicy, kind DocumentKind, line LineInput) (
 		}
 		taxAmount = net.Mul(rule.Rate).Div(MustParseDecimal("100"))
 	}
-
 
 	roundedGross, err := gross.Round(policy.CurrencyScale, policy.RoundingMode)
 	if err != nil {
@@ -885,14 +884,14 @@ func (r CalculationResult) canonicalBytes() ([]byte, string, error) {
 
 	payload := calculationCanonical{
 		PolicyKey:      r.PolicyKey,
-		PolicyVersion:   r.PolicyVersion,
-		SchemaVersion:   r.SchemaVersion,
-		Classification:  r.Classification,
-		Kind:            r.Kind,
-		Currency:        r.Currency,
-		Customer:        r.Customer,
-		Lines:           orderedLines,
-		Totals:          r.Totals,
+		PolicyVersion:  r.PolicyVersion,
+		SchemaVersion:  r.SchemaVersion,
+		Classification: r.Classification,
+		Kind:           r.Kind,
+		Currency:       r.Currency,
+		Customer:       r.Customer,
+		Lines:          orderedLines,
+		Totals:         r.Totals,
 	}
 
 	bytes, err := json.Marshal(payload)
@@ -1024,29 +1023,29 @@ func cloneTaxTreatmentRules(src map[string]TaxTreatmentRule) map[string]TaxTreat
 }
 
 type policyConfigCanonical struct {
-	Currency              string                             `json:"currency"`
-	CurrencyScale         int32                              `json:"currencyScale"`
-	MaximumQuantityScale  int32                              `json:"maximumQuantityScale"`
-	MaximumUnitPriceScale int32                              `json:"maximumUnitPriceScale"`
-	MaximumTaxRateScale   int32                              `json:"maximumTaxRateScale"`
-	RoundingMode          RoundingMode                       `json:"roundingMode"`
-	RoundingScope         RoundingScope                      `json:"roundingScope"`
-	AdjustmentRange       AdjustmentRange                    `json:"adjustmentRange"`
-	AllowedKinds          map[DocumentKind]bool              `json:"allowedKinds,omitempty"`
-	VoidAllowedKinds      map[DocumentKind]bool              `json:"voidAllowedKinds,omitempty"`
-	TaxTreatments         map[string]TaxTreatmentRule        `json:"taxTreatments,omitempty"`
+	Currency              string                                       `json:"currency"`
+	CurrencyScale         int32                                        `json:"currencyScale"`
+	MaximumQuantityScale  int32                                        `json:"maximumQuantityScale"`
+	MaximumUnitPriceScale int32                                        `json:"maximumUnitPriceScale"`
+	MaximumTaxRateScale   int32                                        `json:"maximumTaxRateScale"`
+	RoundingMode          RoundingMode                                 `json:"roundingMode"`
+	RoundingScope         RoundingScope                                `json:"roundingScope"`
+	AdjustmentRange       AdjustmentRange                              `json:"adjustmentRange"`
+	AllowedKinds          map[DocumentKind]bool                        `json:"allowedKinds,omitempty"`
+	VoidAllowedKinds      map[DocumentKind]bool                        `json:"voidAllowedKinds,omitempty"`
+	TaxTreatments         map[string]TaxTreatmentRule                  `json:"taxTreatments,omitempty"`
 	CustomerRequirements  map[DocumentKind]CustomerIdentityRequirement `json:"customerRequirements,omitempty"`
-	DiscountKinds         map[DiscountKind]bool              `json:"discountKinds,omitempty"`
+	DiscountKinds         map[DiscountKind]bool                        `json:"discountKinds,omitempty"`
 }
 
 type calculationCanonical struct {
-	PolicyKey      string            `json:"policyKey"`
-	PolicyVersion   int               `json:"policyVersion"`
-	SchemaVersion   int               `json:"schemaVersion"`
-	Classification  PolicyClassification `json:"classification"`
-	Kind            DocumentKind     `json:"kind"`
-	Currency        string           `json:"currency"`
-	Customer        CustomerIdentity `json:"customer"`
-	Lines           []CalculatedLine `json:"lines"`
-	Totals          Totals           `json:"totals"`
+	PolicyKey      string               `json:"policyKey"`
+	PolicyVersion  int                  `json:"policyVersion"`
+	SchemaVersion  int                  `json:"schemaVersion"`
+	Classification PolicyClassification `json:"classification"`
+	Kind           DocumentKind         `json:"kind"`
+	Currency       string               `json:"currency"`
+	Customer       CustomerIdentity     `json:"customer"`
+	Lines          []CalculatedLine     `json:"lines"`
+	Totals         Totals               `json:"totals"`
 }

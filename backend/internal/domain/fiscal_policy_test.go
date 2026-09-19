@@ -56,7 +56,7 @@ func TestCalculate_TaxableAndExemptLines_CanonicalOrderingForFTAndFR(t *testing.
 	baseInput := CalculationInput{
 		Currency: policy.Currency,
 		Customer: CustomerIdentity{
-			LegalName:    "Garage Customer",
+			LegalName:     "Garage Customer",
 			TaxIdentifier: "PT123456789",
 			CountryCode:   "PT",
 		},
@@ -129,7 +129,7 @@ func TestCalculate_DocumentRoundingAdjustmentAndDeclaredMismatch(t *testing.T) {
 		Kind:     DocumentKindFT,
 		Currency: policy.Currency,
 		Customer: CustomerIdentity{
-			LegalName:    "Garage Customer",
+			LegalName:     "Garage Customer",
 			TaxIdentifier: "PT123456789",
 			CountryCode:   "PT",
 		},
@@ -229,9 +229,9 @@ func testApprovedPolicyVersion(t *testing.T, scope RoundingScope) PolicyVersion 
 				},
 			},
 			"EXEMPT": {
-				Rate:                   MustParseDecimal("0"),
-				Exempt:                 true,
-				ExemptionCodeRequired:  true,
+				Rate:                    MustParseDecimal("0"),
+				Exempt:                  true,
+				ExemptionCodeRequired:   true,
 				ExemptionReasonRequired: true,
 				AllowedKinds: map[DocumentKind]bool{
 					DocumentKindFT: true,
@@ -241,12 +241,12 @@ func testApprovedPolicyVersion(t *testing.T, scope RoundingScope) PolicyVersion 
 		},
 		CustomerRequirements: map[DocumentKind]CustomerIdentityRequirement{
 			DocumentKindFT: {
-				LegalName:    true,
+				LegalName:     true,
 				TaxIdentifier: true,
 				CountryCode:   true,
 			},
 			DocumentKindFR: {
-				LegalName:  true,
+				LegalName:   true,
 				CountryCode: true,
 			},
 		},

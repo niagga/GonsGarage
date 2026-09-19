@@ -70,9 +70,9 @@ type FiscalPresentationState string
 const (
 	FiscalPresentationStateDraft       FiscalPresentationState = "draft"
 	FiscalPresentationStatePending     FiscalPresentationState = "pending"
-	FiscalPresentationStateFinalized    FiscalPresentationState = "finalized"
+	FiscalPresentationStateFinalized   FiscalPresentationState = "finalized"
 	FiscalPresentationStateVoided      FiscalPresentationState = "voided"
-	FiscalPresentationStateUnavailable  FiscalPresentationState = "unavailable"
+	FiscalPresentationStateUnavailable FiscalPresentationState = "unavailable"
 )
 
 // Presentation maps the lifecycle to the simplified client-facing state.
@@ -170,25 +170,25 @@ type FiscalFreezeInput struct {
 
 // FrozenFiscalDocument is the immutable DTO used after finalization.
 type FrozenFiscalDocument struct {
-	ID                 uuid.UUID
-	SourceInvoiceID    uuid.UUID
-	IntentSlot         string
-	Kind               DocumentKind
-	State              FiscalDocumentState
-	Version            int64
+	ID                   uuid.UUID
+	SourceInvoiceID      uuid.UUID
+	IntentSlot           string
+	Kind                 DocumentKind
+	State                FiscalDocumentState
+	Version              int64
 	SupersedesDocumentID *uuid.UUID
-	ProviderKey        string
-	ConnectionID       *uuid.UUID
-	IntentKey          *uuid.UUID
-	IssueOperationKey  string
-	VoidOperationKey   string
-	ProviderReference  string
-	ProviderNumber     string
-	ProviderConfirmedAt *time.Time
-	IssuedAt           *time.Time
-	VoidedAt           *time.Time
-	FrozenAt           *time.Time
-	FinalizedBy        *uuid.UUID
+	ProviderKey          string
+	ConnectionID         *uuid.UUID
+	IntentKey            *uuid.UUID
+	IssueOperationKey    string
+	VoidOperationKey     string
+	ProviderReference    string
+	ProviderNumber       string
+	ProviderConfirmedAt  *time.Time
+	IssuedAt             *time.Time
+	VoidedAt             *time.Time
+	FrozenAt             *time.Time
+	FinalizedBy          *uuid.UUID
 }
 
 // HasProviderFixation reports whether the provider, connection, and intent were fixed.
@@ -198,32 +198,32 @@ func (f FrozenFiscalDocument) HasProviderFixation() bool {
 
 // FiscalDocument is the lifecycle aggregate persisted by the schema.
 type FiscalDocument struct {
-	ID                   uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey"`
-	SourceInvoiceID      uuid.UUID  `json:"sourceInvoiceId" gorm:"type:uuid;not null;index"`
-	IntentSlot           string     `json:"intentSlot" gorm:"type:varchar(40);not null;default:primary_sale;index"`
-	Kind                 DocumentKind `json:"kind" gorm:"type:varchar(2);not null;index"`
+	ID                   uuid.UUID           `json:"id" gorm:"type:uuid;primaryKey"`
+	SourceInvoiceID      uuid.UUID           `json:"sourceInvoiceId" gorm:"type:uuid;not null;index"`
+	IntentSlot           string              `json:"intentSlot" gorm:"type:varchar(40);not null;default:primary_sale;index"`
+	Kind                 DocumentKind        `json:"kind" gorm:"type:varchar(2);not null;index"`
 	State                FiscalDocumentState `json:"state" gorm:"type:varchar(32);not null;index"`
-	Version              int64      `json:"version" gorm:"not null;default:1"`
-	SupersedesDocumentID *uuid.UUID `json:"supersedesDocumentId,omitempty" gorm:"type:uuid;index"`
-	SupersededAt         *time.Time `json:"supersededAt,omitempty" gorm:"column:superseded_at;index"`
-	ProviderKey          string     `json:"providerKey,omitempty" gorm:"type:varchar(40);index"`
-	ConnectionID         *uuid.UUID `json:"connectionId,omitempty" gorm:"type:uuid;index"`
-	IntentKey            *uuid.UUID `json:"intentKey,omitempty" gorm:"type:uuid;index"`
-	IssueOperationKey    string     `json:"issueOperationKey,omitempty" gorm:"type:varchar(160);index"`
-	VoidOperationKey     string     `json:"voidOperationKey,omitempty" gorm:"type:varchar(160);index"`
-	ProviderReference    string     `json:"providerReference,omitempty" gorm:"type:varchar(255);index"`
-	ProviderNumber       string     `json:"providerNumber,omitempty" gorm:"type:varchar(255)"`
-	ProviderConfirmedAt  *time.Time `json:"providerConfirmedAt,omitempty" gorm:"column:provider_confirmed_at"`
-	IssuedAt             *time.Time `json:"issuedAt,omitempty" gorm:"column:issued_at"`
-	VoidedAt             *time.Time `json:"voidedAt,omitempty" gorm:"column:voided_at"`
-	FrozenAt             *time.Time `json:"frozenAt,omitempty" gorm:"column:frozen_at"`
-	LastErrorClass       string     `json:"lastErrorClass,omitempty" gorm:"column:last_error_class;type:varchar(32)"`
-	LastErrorCode        string     `json:"lastErrorCode,omitempty" gorm:"column:last_error_code;type:varchar(80)"`
-	LastErrorMessage     string     `json:"lastErrorMessage,omitempty" gorm:"column:last_error_message;type:text"`
-	CreatedBy            uuid.UUID  `json:"createdBy" gorm:"type:uuid;not null;index"`
-	FinalizedBy          *uuid.UUID `json:"finalizedBy,omitempty" gorm:"type:uuid;index"`
-	CreatedAt            time.Time  `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt            time.Time  `json:"updatedAt" gorm:"column:updated_at;autoUpdateTime"`
+	Version              int64               `json:"version" gorm:"not null;default:1"`
+	SupersedesDocumentID *uuid.UUID          `json:"supersedesDocumentId,omitempty" gorm:"type:uuid;index"`
+	SupersededAt         *time.Time          `json:"supersededAt,omitempty" gorm:"column:superseded_at;index"`
+	ProviderKey          string              `json:"providerKey,omitempty" gorm:"type:varchar(40);index"`
+	ConnectionID         *uuid.UUID          `json:"connectionId,omitempty" gorm:"type:uuid;index"`
+	IntentKey            *uuid.UUID          `json:"intentKey,omitempty" gorm:"type:uuid;index"`
+	IssueOperationKey    string              `json:"issueOperationKey,omitempty" gorm:"type:varchar(160);index"`
+	VoidOperationKey     string              `json:"voidOperationKey,omitempty" gorm:"type:varchar(160);index"`
+	ProviderReference    string              `json:"providerReference,omitempty" gorm:"type:varchar(255);index"`
+	ProviderNumber       string              `json:"providerNumber,omitempty" gorm:"type:varchar(255)"`
+	ProviderConfirmedAt  *time.Time          `json:"providerConfirmedAt,omitempty" gorm:"column:provider_confirmed_at"`
+	IssuedAt             *time.Time          `json:"issuedAt,omitempty" gorm:"column:issued_at"`
+	VoidedAt             *time.Time          `json:"voidedAt,omitempty" gorm:"column:voided_at"`
+	FrozenAt             *time.Time          `json:"frozenAt,omitempty" gorm:"column:frozen_at"`
+	LastErrorClass       string              `json:"lastErrorClass,omitempty" gorm:"column:last_error_class;type:varchar(32)"`
+	LastErrorCode        string              `json:"lastErrorCode,omitempty" gorm:"column:last_error_code;type:varchar(80)"`
+	LastErrorMessage     string              `json:"lastErrorMessage,omitempty" gorm:"column:last_error_message;type:text"`
+	CreatedBy            uuid.UUID           `json:"createdBy" gorm:"type:uuid;not null;index"`
+	FinalizedBy          *uuid.UUID          `json:"finalizedBy,omitempty" gorm:"type:uuid;index"`
+	CreatedAt            time.Time           `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt            time.Time           `json:"updatedAt" gorm:"column:updated_at;autoUpdateTime"`
 }
 
 func (FiscalDocument) TableName() string {
@@ -509,20 +509,20 @@ var fiscalDocumentTransitionAllowed = map[FiscalDocumentState]map[FiscalDocument
 	FiscalDocumentStateOutcomeUnknown: {
 		FiscalDocumentStateIssued:           true,
 		FiscalDocumentStateRejected:         true,
-		FiscalDocumentStateRetryableFailure:  true,
-		FiscalDocumentStateOutcomeUnknown:    true,
+		FiscalDocumentStateRetryableFailure: true,
+		FiscalDocumentStateOutcomeUnknown:   true,
 	},
 	FiscalDocumentStateIssued: {
 		FiscalDocumentStateVoidPending: true,
 	},
 	FiscalDocumentStateVoidPending: {
 		FiscalDocumentStateIssued:             true,
-		FiscalDocumentStateVoidOutcomeUnknown:  true,
+		FiscalDocumentStateVoidOutcomeUnknown: true,
 		FiscalDocumentStateVoided:             true,
 	},
 	FiscalDocumentStateVoidOutcomeUnknown: {
 		FiscalDocumentStateIssued:             true,
-		FiscalDocumentStateVoidOutcomeUnknown:  true,
+		FiscalDocumentStateVoidOutcomeUnknown: true,
 		FiscalDocumentStateVoided:             true,
 	},
 	FiscalDocumentStateVoided: {},

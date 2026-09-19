@@ -33,9 +33,9 @@ type FiscalArtifactStatus string
 
 const (
 	FiscalArtifactStatusPending     FiscalArtifactStatus = "pending"
-	FiscalArtifactStatusAvailable    FiscalArtifactStatus = "available"
-	FiscalArtifactStatusUnavailable  FiscalArtifactStatus = "unavailable"
-	FiscalArtifactStatusCompromised  FiscalArtifactStatus = "compromised"
+	FiscalArtifactStatusAvailable   FiscalArtifactStatus = "available"
+	FiscalArtifactStatusUnavailable FiscalArtifactStatus = "unavailable"
+	FiscalArtifactStatusCompromised FiscalArtifactStatus = "compromised"
 )
 
 // IsValid reports whether the status is recognized.
@@ -90,23 +90,23 @@ func (a FiscalArtifactAction) IsValid() bool {
 
 // FiscalArtifact is the private PDF evidence aggregate.
 type FiscalArtifact struct {
-	ID               uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey"`
-	FiscalDocumentID  uuid.UUID  `json:"fiscalDocumentId" gorm:"type:uuid;not null;index"`
-	SourceInvoiceID   uuid.UUID  `json:"sourceInvoiceId" gorm:"type:uuid;not null;index"`
-	Kind             FiscalArtifactKind `json:"kind" gorm:"type:varchar(24);not null;index"`
-	Status           FiscalArtifactStatus `json:"status" gorm:"type:varchar(16);not null;index"`
-	Classification   FiscalArtifactClassification `json:"classification" gorm:"type:varchar(16);not null;index"`
-	StorageKey       string     `json:"storageKey,omitempty" gorm:"column:storage_key;type:text;uniqueIndex"`
-	MediaType        string     `json:"mediaType,omitempty" gorm:"column:media_type;type:varchar(100)"`
-	ByteSize         int64      `json:"byteSize,omitempty" gorm:"column:byte_size"`
-	SHA256           string     `json:"sha256,omitempty" gorm:"type:char(64)"`
-	ProviderReference string    `json:"providerReference,omitempty" gorm:"column:provider_reference;type:varchar(255)"`
-	ProviderVersion  string     `json:"providerVersion,omitempty" gorm:"column:provider_version;type:varchar(80)"`
-	CreatedAt        time.Time  `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
-	AvailableAt      *time.Time `json:"availableAt,omitempty" gorm:"column:available_at"`
-	LastVerifiedAt   *time.Time `json:"lastVerifiedAt,omitempty" gorm:"column:last_verified_at"`
-	LastErrorCode    string     `json:"lastErrorCode,omitempty" gorm:"column:last_error_code;type:varchar(80)"`
-	LastErrorMessage string     `json:"lastErrorMessage,omitempty" gorm:"column:last_error_message;type:text"`
+	ID                uuid.UUID                    `json:"id" gorm:"type:uuid;primaryKey"`
+	FiscalDocumentID  uuid.UUID                    `json:"fiscalDocumentId" gorm:"type:uuid;not null;index"`
+	SourceInvoiceID   uuid.UUID                    `json:"sourceInvoiceId" gorm:"type:uuid;not null;index"`
+	Kind              FiscalArtifactKind           `json:"kind" gorm:"type:varchar(24);not null;index"`
+	Status            FiscalArtifactStatus         `json:"status" gorm:"type:varchar(16);not null;index"`
+	Classification    FiscalArtifactClassification `json:"classification" gorm:"type:varchar(16);not null;index"`
+	StorageKey        string                       `json:"storageKey,omitempty" gorm:"column:storage_key;type:text;uniqueIndex"`
+	MediaType         string                       `json:"mediaType,omitempty" gorm:"column:media_type;type:varchar(100)"`
+	ByteSize          int64                        `json:"byteSize,omitempty" gorm:"column:byte_size"`
+	SHA256            string                       `json:"sha256,omitempty" gorm:"type:char(64)"`
+	ProviderReference string                       `json:"providerReference,omitempty" gorm:"column:provider_reference;type:varchar(255)"`
+	ProviderVersion   string                       `json:"providerVersion,omitempty" gorm:"column:provider_version;type:varchar(80)"`
+	CreatedAt         time.Time                    `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
+	AvailableAt       *time.Time                   `json:"availableAt,omitempty" gorm:"column:available_at"`
+	LastVerifiedAt    *time.Time                   `json:"lastVerifiedAt,omitempty" gorm:"column:last_verified_at"`
+	LastErrorCode     string                       `json:"lastErrorCode,omitempty" gorm:"column:last_error_code;type:varchar(80)"`
+	LastErrorMessage  string                       `json:"lastErrorMessage,omitempty" gorm:"column:last_error_message;type:text"`
 }
 
 func (FiscalArtifact) TableName() string {
