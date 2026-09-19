@@ -40,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
+    "e2e",
+    "playwright.config.ts",
     "__tests__/app/appointments/page.test.tsx",
     "src/app/cars/__tests__/cars.test.tsx"
   ]
