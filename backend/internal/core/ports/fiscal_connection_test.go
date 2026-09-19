@@ -16,6 +16,10 @@ func (noopFiscalConnectionRepository) GetByID(context.Context, uuid.UUID) (*Fisc
 	return nil, nil
 }
 
+func (noopFiscalConnectionRepository) GetByScopeProvider(context.Context, string, string) (*FiscalConnectionRecord, error) {
+	return nil, nil
+}
+
 func (noopFiscalConnectionRepository) Save(context.Context, *FiscalConnectionRecord) error {
 	return nil
 }
@@ -65,6 +69,8 @@ func TestFiscalConnectionRecordClone(t *testing.T) {
 		LastVerifiedAt:          &lastVerifiedAt,
 		ConnectedAt:             &connectedAt,
 		RevokedAt:               &revokedAt,
+		CreatedBy:               uuid.New(),
+		UpdatedBy:               func() *uuid.UUID { v := uuid.New(); return &v }(),
 		CreatedAt:               time.Unix(1, 0).UTC(),
 		UpdatedAt:               time.Unix(2, 0).UTC(),
 		Version:                 1,
@@ -91,4 +97,9 @@ func TestFiscalConnectionRecordClone(t *testing.T) {
 	assert.Equal(t, time.Date(2026, 1, 2, 12, 5, 0, 0, time.UTC), *clone.LastVerifiedAt)
 	assert.Equal(t, time.Date(2026, 1, 2, 12, 10, 0, 0, time.UTC), *clone.ConnectedAt)
 	assert.Equal(t, time.Date(2026, 1, 2, 12, 15, 0, 0, time.UTC), *clone.RevokedAt)
+	if assert.NotNil(t, clone.UpdatedBy) {
+		assert.NotNil(t, record.UpdatedBy)
+		assert.NotSame(t, record.UpdatedBy, clone.UpdatedBy)
+		assert.Equal(t, *record.UpdatedBy, *clone.UpdatedBy)
+	}
 }

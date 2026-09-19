@@ -53,6 +53,8 @@ type FiscalConnectionRecord struct {
 	LastVerifiedAt          *time.Time
 	ConnectedAt             *time.Time
 	RevokedAt               *time.Time
+	CreatedBy               uuid.UUID
+	UpdatedBy               *uuid.UUID
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 	Version                 int
@@ -75,6 +77,8 @@ func (r FiscalConnectionRecord) Clone() FiscalConnectionRecord {
 		LastVerifiedAt:          cloneTimePtr(r.LastVerifiedAt),
 		ConnectedAt:             cloneTimePtr(r.ConnectedAt),
 		RevokedAt:               cloneTimePtr(r.RevokedAt),
+		CreatedBy:               r.CreatedBy,
+		UpdatedBy:               cloneUUIDPtr(r.UpdatedBy),
 		CreatedAt:               r.CreatedAt,
 		UpdatedAt:               r.UpdatedAt,
 		Version:                 r.Version,
@@ -84,6 +88,7 @@ func (r FiscalConnectionRecord) Clone() FiscalConnectionRecord {
 // FiscalConnectionRepository persists provider-neutral connection records.
 type FiscalConnectionRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*FiscalConnectionRecord, error)
+	GetByScopeProvider(ctx context.Context, scopeKey, providerKey string) (*FiscalConnectionRecord, error)
 	Save(ctx context.Context, record *FiscalConnectionRecord) error
 }
 
@@ -102,6 +107,14 @@ func cloneBytes(values []byte) []byte {
 }
 
 func cloneTimePtr(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	clone := *value
+	return &clone
+}
+
+func cloneUUIDPtr(value *uuid.UUID) *uuid.UUID {
 	if value == nil {
 		return nil
 	}

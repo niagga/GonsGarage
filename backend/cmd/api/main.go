@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,7 +26,9 @@ import (
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/core/ports"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/domain"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/handler"
+	fiscalmock "github.com/gaston-garcia-cegid/gonsgarage/internal/integration/fiscal/mock"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/middleware"
+	fiscalcrypto "github.com/gaston-garcia-cegid/gonsgarage/internal/platform/crypto"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/platform/sqlxdb"
 	redisRepo "github.com/gaston-garcia-cegid/gonsgarage/internal/repository/redis"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/appointment"
@@ -33,6 +36,7 @@ import (
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/billing_document"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/car"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/employee"
+	fiscalsvc "github.com/gaston-garcia-cegid/gonsgarage/internal/service/fiscal"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/invoice"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/part"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/service/received_invoice"
@@ -235,6 +239,35 @@ func main() {
 	invoiceService := invoice.NewInvoiceService(invoiceRepo, userRepo)
 	partService := part.NewPartService(partItemRepo, userRepo)
 
+	var fiscalIntegrationHandler *handler.FiscalIntegrationHandler
+	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
+		fiscalConnectionRepo := postgresRepo.NewPostgresFiscalConnectionRepository(db)
+		credentialKeyVersion := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY_VERSION"))
+		if credentialKeyVersion == "" {
+			credentialKeyVersion = "v1"
+		}
+		var credentialKey []byte
+		if encoded := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY_B64")); encoded != "" {
+			decoded, decodeErr := base64.StdEncoding.DecodeString(encoded)
+			if decodeErr != nil {
+				log.Printf("Warning: fiscal integration disabled: invalid FISCAL_CREDENTIAL_KEY_B64: %v", decodeErr)
+			} else {
+				credentialKey = decoded
+			}
+		} else if rawKey := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY")); rawKey != "" {
+			credentialKey = []byte(rawKey)
+		}
+		if len(credentialKey) == 0 {
+			log.Printf("Warning: fiscal integration disabled: missing FISCAL_CREDENTIAL_KEY or FISCAL_CREDENTIAL_KEY_B64")
+		} else if cipher, cipherErr := fiscalcrypto.NewFiscalCredentialCipher(credentialKeyVersion, credentialKey); cipherErr != nil {
+			log.Printf("Warning: fiscal integration disabled: %v", cipherErr)
+		} else {
+			fiscalService := fiscalsvc.NewConnectionService(fiscalConnectionRepo, userRepo, fiscalmock.NewProvider(), cipher, credentialKeyVersion)
+			fiscalIntegrationHandler = handler.NewFiscalIntegrationHandler(fiscalService)
+			log.Printf("Fiscal integration foundation wired with deterministic mock provider")
+		}
+	}
+
 	log.Printf("Use cases initialized")
 
 	// Initialize middleware
@@ -270,7 +303,7 @@ func main() {
 
 	// Setup routes
 	setupRoutes(router, authHandler, adminUserHandler, employeeHandler, carHandler, appointmentHandler, repairHandler, serviceJobHandler,
-		supplierHandler, receivedInvoiceHandler, billingDocumentHandler, invoiceHandler, partHandler,
+		supplierHandler, receivedInvoiceHandler, billingDocumentHandler, invoiceHandler, partHandler, fiscalIntegrationHandler,
 		authMiddleware, sqlxDB)
 
 	log.Printf("Routes set up")
@@ -435,6 +468,7 @@ func setupRoutes(
 	billingDocumentHandler *handler.BillingDocumentHandler,
 	invoiceHandler *handler.InvoiceHandler,
 	partHandler *handler.PartHandler,
+	fiscalIntegrationHandler *handler.FiscalIntegrationHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	sqlxDB *sqlx.DB,
 ) {
@@ -586,6 +620,20 @@ func setupRoutes(
 			}
 			invoices.GET("/:id", invoiceHandler.GetIssuedInvoice)
 			invoices.PATCH("/:id", invoiceHandler.PatchIssuedInvoice)
+		}
+
+		if fiscalIntegrationHandler != nil {
+			fiscal := protected.Group("/fiscal")
+			fiscal.Use(middleware.RequireStaffManagers())
+			{
+				connections := fiscal.Group("/connections/:scopeKey/:providerKey")
+				{
+					connections.GET("", fiscalIntegrationHandler.Status)
+					connections.PUT("", fiscalIntegrationHandler.SetupConnection)
+					connections.POST("/verify", fiscalIntegrationHandler.VerifyConnection)
+					connections.DELETE("", fiscalIntegrationHandler.RevokeConnection)
+				}
+			}
 		}
 	}
 }
