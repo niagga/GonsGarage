@@ -10,15 +10,20 @@ Next.js **15.5** (App Router), React **19**, TypeScript, Zustand. Package manage
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev           # http://localhost:3000
 pnpm lint
 pnpm typecheck
-pnpm test         # Vitest (default; same as CI)
+pnpm test          # Vitest (default; same as CI)
 pnpm test:coverage # Vitest + V8 coverage (text + coverage/coverage-summary.json)
+pnpm e2e           # Playwright end-to-end tests (frontend + backend running)
+pnpm e2e:headed    # Playwright in headed mode
+pnpm e2e:ui        # Playwright interactive UI
 pnpm build
 ```
 
 Copy [`./.env.local.example`](./.env.local.example) to `.env.local` and set `NEXT_PUBLIC_API_URL` if your API is not at `http://localhost:8080`.
+
+For Playwright, keep the frontend running on `http://localhost:3000` and the API on `http://localhost:8080` (or set `PLAYWRIGHT_BASE_URL` to point elsewhere before running `pnpm e2e`).
 
 ## Create Next App
 
