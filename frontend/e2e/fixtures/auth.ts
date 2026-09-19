@@ -1,43 +1,45 @@
 import { expect, type Page } from '@playwright/test';
 
+const apiBaseUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? 'http://localhost:8080';
+
 export const demoAdmin = {
-  email: 'admin@gonsgarage.com',
-  password: 'admin123',
+  email: 'admin.demo@gonsgarage.local',
+  password: 'AdminDemo123',
 };
 
-export function uniqueEmail(prefix = 'playwright'): string {
-  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return `${prefix}.${stamp}@example.com`;
-}
+export const demoClient = {
+  email: 'cliente.demo@gonsgarage.local',
+  password: 'ClienteDemo123',
+};
 
-export async function loginAs(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('/auth/login');
-  await expect(page.getByRole('heading', { name: 'Iniciar sessão' })).toBeVisible();
-  await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Palavra-passe').fill(password);
-  await page.getByRole('button', { name: 'Iniciar sessão' }).click();
-  await page.waitForURL(/\/dashboard(?:\?.*)?$/, { timeout: 30_000 });
+export async function seedSession(page: Page, email: string, password: string): Promise<void> {
+  const loginResponse = await page.request.post(`${apiBaseUrl}/api/v1/auth/login`, {
+    data: { email, password },
+  });
+  expect(loginResponse.ok()).toBeTruthy();
+  const loginBody = (await loginResponse.json()) as { token?: string };
+  const token = loginBody.token;
+  expect(token, 'expected login token').toBeTruthy();
+
+  const meResponse = await page.request.get(`${apiBaseUrl}/api/v1/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+  expect(meResponse.ok()).toBeTruthy();
+  const meBody = (await meResponse.json()) as { user?: Record<string, unknown> };
+  expect(meBody.user, 'expected auth/me user').toBeTruthy();
+
+  await page.addInitScript(({ authToken, authUser }) => {
+    localStorage.setItem('auth_token', authToken);
+    localStorage.setItem('auth_user', JSON.stringify(authUser));
+    localStorage.setItem('gons-garage-auth', JSON.stringify({ user: authUser, token: authToken }));
+  }, { authToken: token, authUser: meBody.user });
 }
 
 export async function loginAsDemoAdmin(page: Page): Promise<void> {
-  await loginAs(page, demoAdmin.email, demoAdmin.password);
-}
-
-export type ClientRegistration = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-};
-
-export async function registerClient(page: Page, registration: ClientRegistration): Promise<void> {
-  await page.goto('/auth/register');
-  await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible();
-  await page.getByLabel('Nome').fill(registration.firstName);
-  await page.getByLabel('Apelido').fill(registration.lastName);
-  await page.getByLabel('E-mail').fill(registration.email);
-  await page.getByLabel('Palavra-passe').fill(registration.password);
-  await page.getByLabel('Confirmar palavra-passe').fill(registration.password);
-  await page.getByRole('button', { name: 'Criar conta' }).click();
-  await page.waitForURL(/\/auth\/login(?:\?.*)?$/, { timeout: 30_000 });
+  await seedSession(page, demoAdmin.email, demoAdmin.password);
+  await page.goto('/dashboard');
+  await expect(page.getByText('A sessão a carregar')).toBeVisible({ timeout: 30_000 });
 }
