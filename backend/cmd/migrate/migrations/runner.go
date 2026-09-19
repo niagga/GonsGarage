@@ -107,6 +107,8 @@ func runMigration(db *sql.DB, migrationsDir, filename, version string) error {
 		return fmt.Errorf("failed to read migration file: %w", err)
 	}
 
+	normalized := normalizeMigrationContent(string(content))
+
 	// Begin transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -115,7 +117,7 @@ func runMigration(db *sql.DB, migrationsDir, filename, version string) error {
 	defer tx.Rollback()
 
 	// Execute migration
-	if _, err := tx.Exec(string(content)); err != nil {
+	if _, err := tx.Exec(normalized); err != nil {
 		return fmt.Errorf("failed to execute migration: %w", err)
 	}
 
@@ -130,4 +132,17 @@ func runMigration(db *sql.DB, migrationsDir, filename, version string) error {
 	}
 
 	return nil
+}
+
+func normalizeMigrationContent(content string) string {
+	lines := strings.Split(content, "\n")
+	filtered := make([]string, 0, len(lines))
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "BEGIN;" || trimmed == "COMMIT;" {
+			continue
+		}
+		filtered = append(filtered, line)
+	}
+	return strings.Join(filtered, "\n")
 }
