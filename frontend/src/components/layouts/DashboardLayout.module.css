@@ -2,6 +2,7 @@
 .container {
   min-height: 100vh;
   background-color: var(--surface-page);
+  overflow-x: clip;
 }
 
 .header {
@@ -11,24 +12,31 @@
 }
 
 .headerContent {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0.75rem 1rem;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  height: 64px;
+  min-height: 64px;
+  gap: 0.75rem 1rem;
 }
 
 .logoSection {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 16rem;
   transition: transform 0.2s ease;
 }
 
 .logoSection:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .logoIcon {
@@ -41,6 +49,12 @@
   justify-content: center;
   padding: 4px;
   box-shadow: var(--shadow-sm);
+  flex: 0 0 auto;
+}
+
+.logoText {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .logoSection h1 {
@@ -48,26 +62,43 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logoSection p {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .userSection {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
 }
 
 .userSection span {
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
 .logoutButton {
+  flex: 0 0 auto;
   background-color: var(--brand-signal);
   color: var(--text-on-signal);
   padding: 0.5rem 0.75rem;
@@ -76,33 +107,48 @@
   font-weight: 500;
   border: none;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .logoutButton:hover {
   background-color: var(--brand-signal-hover);
 }
 
+.logoutButton:active {
+  transform: scale(0.98);
+}
+
 .navigation {
+  box-sizing: border-box;
+  width: 100%;
   background-color: var(--surface-header);
   border-bottom: 1px solid var(--border-default);
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .navButton {
-  padding: 0.75rem 0;
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: 0.75rem 0.5rem;
   background: none;
   border: none;
+  border-radius: 0;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .navButton:hover {
@@ -115,7 +161,10 @@
 }
 
 .main {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 1200px;
+  min-width: 0;
   margin: 0 auto;
   padding: 1.5rem 1rem;
 }
@@ -129,4 +178,90 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .headerContent {
+    padding: 0.75rem;
+  }
+
+  .navigation {
+    padding: 0 0.75rem;
+  }
+
+  .main {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .pageHeader {
+    margin-bottom: 1.5rem;
+  }
+
+  .pageHeader h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .headerContent {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .logoSection {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .logoSection:hover {
+    transform: none;
+  }
+
+  .userSection {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .userSection span {
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .headerContent {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .logoSection h1 {
+    font-size: 1.125rem;
+  }
+
+  .logoSection p {
+    font-size: 0.6875rem;
+  }
+
+  .userSection {
+    gap: 0.5rem;
+  }
+
+  .logoutButton {
+    padding-inline: 0.5rem;
+  }
+
+  .navigation {
+    padding: 0 0.5rem;
+  }
+
+  .main {
+    padding: 1rem 0.75rem;
+  }
+
+  .pageHeader {
+    margin-bottom: 1rem;
+  }
+
+  .pageHeader h2 {
+    font-size: 1.375rem;
+  }
 }

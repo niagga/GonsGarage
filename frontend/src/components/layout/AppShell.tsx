@@ -74,7 +74,7 @@ export default function AppShell({
                 </svg>
               )}
             </div>
-            <div>
+            <div className={styles.logoText}>
               <h1>GonsGarage</h1>
               <p>{subtitle}</p>
             </div>

@@ -1,11 +1,12 @@
 .root {
   position: fixed;
-  bottom: var(--space-4);
-  right: var(--space-4);
-  z-index: 10001;
+  bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  right: max(var(--space-4), env(safe-area-inset-right));
+  z-index: 900;
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  max-width: calc(100vw - (var(--space-4) * 2));
   padding: var(--space-2) var(--space-3);
   background: var(--surface-panel);
   border: 1px solid var(--border-default);
@@ -22,6 +23,7 @@
 }
 
 .select {
+  min-height: 2.25rem;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-primary);
@@ -38,8 +40,30 @@
   box-shadow: var(--focus-ring);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  .root {
+    right: auto;
+    left: max(var(--space-3), env(safe-area-inset-left));
+    bottom: max(var(--space-3), env(safe-area-inset-bottom));
+    max-width: calc(100vw - (var(--space-3) * 2));
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    opacity: 0.94;
+  }
+
+  .root:focus-within,
+  .root:hover {
+    opacity: 1;
+  }
+
   .label {
     display: none;
+  }
+
+  .select {
+    max-width: 7rem;
+    min-height: 2rem;
+    font-size: 0.75rem;
   }
 }

@@ -1,6 +1,7 @@
 .container {
   min-height: 100vh;
   background-color: var(--surface-page);
+  overflow-x: clip;
 }
 
 .header {
@@ -10,26 +11,33 @@
 }
 
 .headerContent {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   min-height: 64px;
-  gap: var(--space-4);
+  gap: var(--space-3) var(--space-4);
 }
 
 .logoSection {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 16rem;
   cursor: pointer;
   border: none;
   background: none;
   padding: 0;
   text-align: left;
   font: inherit;
+  white-space: normal;
 }
 
 .logoSection:focus-visible {
@@ -57,12 +65,20 @@
   height: 18px;
 }
 
+.logoText {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .logoSection h1 {
   font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logoSection p {
@@ -72,16 +88,24 @@
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .userSection {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
-  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
 }
 
 .userSection span {
+  min-width: 0;
+  flex: 1 1 auto;
   font-size: 0.8125rem;
   color: var(--text-secondary);
   max-width: 14rem;
@@ -91,6 +115,7 @@
 }
 
 .logoutButton {
+  flex: 0 0 auto;
   background-color: var(--brand-signal);
   color: var(--text-on-signal);
   padding: var(--space-2) var(--space-3);
@@ -111,17 +136,26 @@
 }
 
 .navigation {
+  box-sizing: border-box;
+  width: 100%;
   background-color: var(--surface-header);
   border-bottom: 1px solid var(--border-default);
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-4);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .navButton {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
   padding: var(--space-3) var(--space-2);
   background: none;
   border: none;
@@ -130,7 +164,8 @@
   color: var(--text-muted);
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  border-radius: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .navButton:hover {
@@ -143,7 +178,10 @@
 }
 
 .main {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 1200px;
+  min-width: 0;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
 }
@@ -163,4 +201,95 @@
   letter-spacing: -0.02em;
   color: var(--text-primary);
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .headerContent {
+    padding: var(--space-3);
+  }
+
+  .navigation {
+    padding: 0 var(--space-3);
+  }
+
+  .main {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .pageToolbar {
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+}
+
+@media (max-width: 640px) {
+  .headerContent {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .logoSection {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .userSection {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .userSection span {
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .headerContent {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .logoIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logoSection h1 {
+    font-size: 1rem;
+  }
+
+  .logoSection p {
+    font-size: 0.625rem;
+  }
+
+  .userSection {
+    gap: var(--space-2);
+  }
+
+  .logoutButton {
+    padding-inline: var(--space-2);
+  }
+
+  .navigation {
+    padding: 0 var(--space-2);
+  }
+
+  .navButton {
+    min-height: 2.75rem;
+    padding: var(--space-3) var(--space-2);
+  }
+
+  .main {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .pageToolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: var(--space-4);
+  }
+
+  .pageToolbar h1 {
+    font-size: 1.25rem;
+  }
 }

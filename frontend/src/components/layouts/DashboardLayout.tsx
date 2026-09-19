@@ -58,7 +58,7 @@ export default function DashboardLayout({
             <div className={styles.logoIcon}>
               <BrandLogo alt="GonsGarage Logo" width={24} height={24} style={{ objectFit: 'contain' }} />
             </div>
-            <div>
+            <div className={styles.logoText}>
               <h1>GonsGarage</h1>
               <p>{subtitle}</p>
             </div>
@@ -74,7 +74,7 @@ export default function DashboardLayout({
       </header>
 
       {/* Navigation */}
-      <nav className={styles.navigation}>
+      <nav className={styles.navigation} aria-label="Cliente">
         {navigationItems.map((item) => (
           <Button
             key={item.key}
