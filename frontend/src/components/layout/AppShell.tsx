@@ -154,7 +154,7 @@ export default function AppShell({
           >
             As minhas faturas
           </Button>
-        ) : (
+        ) : canManageUsers(user) ? (
           <Button
             type="button"
             variant="ghost"
@@ -163,7 +163,7 @@ export default function AppShell({
           >
             Contabilidade
           </Button>
-        )}
+        ) : null}
       </nav>
 
       <main className={styles.main}>
