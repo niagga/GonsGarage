@@ -40,14 +40,25 @@ function userWithRole(role: UserRole): User {
   };
 }
 
-describe('AccountingLayout staff gate', () => {
+describe('AccountingLayout accounting gate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authState.user = null;
   });
 
-  it('renders children for workshop staff', () => {
-    authState.user = userWithRole(UserRole.EMPLOYEE);
+  it('renders children for manager', () => {
+    authState.user = userWithRole(UserRole.MANAGER);
+    render(
+      <AccountingLayout>
+        <div>staff-only</div>
+      </AccountingLayout>,
+    );
+    expect(screen.getByText('staff-only')).toBeInTheDocument();
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  it('renders children for admin', () => {
+    authState.user = userWithRole(UserRole.ADMIN);
     render(
       <AccountingLayout>
         <div>staff-only</div>
@@ -59,6 +70,19 @@ describe('AccountingLayout staff gate', () => {
 
   it('redirects a client to /dashboard and does not render children', async () => {
     authState.user = userWithRole(UserRole.CLIENT);
+    render(
+      <AccountingLayout>
+        <div>staff-only</div>
+      </AccountingLayout>,
+    );
+    expect(screen.queryByText('staff-only')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  it('redirects an employee to /dashboard and does not render children', async () => {
+    authState.user = userWithRole(UserRole.EMPLOYEE);
     render(
       <AccountingLayout>
         <div>staff-only</div>

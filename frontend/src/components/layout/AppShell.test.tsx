@@ -93,6 +93,58 @@ describe('AppShell staff user management nav', () => {
   });
 });
 
+describe('AppShell accounting nav (manager/admin only)', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
+  it('shows Contabilidade and navigates to /accounting for manager', async () => {
+    const user = userEvent.setup();
+    const manager = buildUser({ role: UserRole.MANAGER });
+    render(
+      <AppShell user={manager} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>Conteúdo</p>
+      </AppShell>,
+    );
+
+    const navAccounting = screen.getByRole('button', { name: 'Contabilidade' });
+    expect(navAccounting).toBeInTheDocument();
+    await user.click(navAccounting);
+    expect(mockPush).toHaveBeenCalledWith('/accounting');
+  });
+
+  it('shows Contabilidade for admin', () => {
+    const admin = buildUser({ role: UserRole.ADMIN });
+    render(
+      <AppShell user={admin} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.getByRole('button', { name: 'Contabilidade' })).toBeInTheDocument();
+  });
+
+  it('does not show Contabilidade for employee', () => {
+    const employee = buildUser({ role: UserRole.EMPLOYEE });
+    render(
+      <AppShell user={employee} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.queryByRole('button', { name: 'Contabilidade' })).not.toBeInTheDocument();
+  });
+
+  it('shows As minhas faturas for client and hides Contabilidade', () => {
+    const client = buildUser({ role: UserRole.CLIENT });
+    render(
+      <AppShell user={client} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.getByRole('button', { name: 'As minhas faturas' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Contabilidade' })).not.toBeInTheDocument();
+  });
+});
+
 describe('AppShell parts inventory nav (manager/admin only)', () => {
   beforeEach(() => {
     mockPush.mockClear();

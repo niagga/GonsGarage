@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/stores';
 import { useAuthHydrationReady } from '@/hooks/useAuthHydrationReady';
-import { isWorkshopStaff } from '@/types/user';
+import { canManageUsers } from '@/types/user';
 import { AppLoading } from '@/components/ui/AppLoading';
 
 export default function AccountingLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -18,12 +18,12 @@ export default function AccountingLayout({ children }: Readonly<{ children: Reac
       router.replace('/auth/login');
       return;
     }
-    if (!isWorkshopStaff(user)) {
+    if (!canManageUsers(user)) {
       router.replace('/dashboard');
     }
   }, [authHydrated, user, router]);
 
-  if (!authHydrated || !user || !isWorkshopStaff(user)) {
+  if (!authHydrated || !user || !canManageUsers(user)) {
     return (
       <div className="loadingScreen" aria-busy="true">
         <AppLoading size="lg" aria-busy={false} label="A carregar contabilidade" />
