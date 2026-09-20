@@ -107,17 +107,17 @@ func (s *stubBillingDocRepo) List(ctx context.Context, limit, offset int) ([]*do
 	return out, int64(len(out)), nil
 }
 
-func TestBillingDocumentService_Create_StaffOK(t *testing.T) {
+func TestBillingDocumentService_Create_ManagerOK(t *testing.T) {
 	t.Parallel()
-	empID := uuid.New()
-	emp, err := domain.NewUser("be@x.com", "pw", "E", "E", domain.RoleEmployee)
+	managerID := uuid.New()
+	manager, err := domain.NewUser("bm@x.com", "pw", "M", "M", domain.RoleManager)
 	require.NoError(t, err)
-	emp.ID = empID
-	svc := NewBillingDocumentService(&stubBillingDocRepo{}, &bdTestUserRepo{users: map[uuid.UUID]*domain.User{empID: emp}})
+	manager.ID = managerID
+	svc := NewBillingDocumentService(&stubBillingDocRepo{}, &bdTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
 	doc := &domain.BillingDocument{
 		Kind: domain.BillingDocumentKindIRS, Title: "Q1", Amount: 0,
 	}
-	out, err := svc.Create(context.Background(), doc, empID)
+	out, err := svc.Create(context.Background(), doc, managerID)
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	assert.Equal(t, domain.BillingDocumentKindIRS, out.Kind)
@@ -137,6 +137,20 @@ func TestBillingDocumentService_Create_ClientDenied(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }
 
+func TestBillingDocumentService_Create_EmployeeDenied(t *testing.T) {
+	t.Parallel()
+	employeeID := uuid.New()
+	employee, err := domain.NewUser("be@x.com", "pw", "E", "E", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
+	svc := NewBillingDocumentService(&stubBillingDocRepo{}, &bdTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	_, err = svc.Create(context.Background(), &domain.BillingDocument{
+		Kind: domain.BillingDocumentKindOther, Title: "t", Amount: 1,
+	}, employeeID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+}
+
 func TestBillingDocumentService_Create_InvalidKind(t *testing.T) {
 	t.Parallel()
 	empID := uuid.New()
@@ -151,18 +165,25 @@ func TestBillingDocumentService_Create_InvalidKind(t *testing.T) {
 	assert.Contains(t, err.Error(), "kind")
 }
 
-func TestBillingDocumentService_Get_StaffOK(t *testing.T) {
+func TestBillingDocumentService_Get_AccessByRole(t *testing.T) {
 	t.Parallel()
-	empID := uuid.New()
-	emp, err := domain.NewUser("be3@x.com", "pw", "E", "E", domain.RoleEmployee)
+	managerID, employeeID := uuid.New(), uuid.New()
+	manager, err := domain.NewUser("bm3@x.com", "pw", "M", "M", domain.RoleManager)
 	require.NoError(t, err)
-	emp.ID = empID
+	manager.ID = managerID
+	employee, err := domain.NewUser("be3@x.com", "pw", "E", "E", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
 	id := uuid.New()
 	repo := &stubBillingDocRepo{byID: map[uuid.UUID]*domain.BillingDocument{
 		id: {ID: id, Kind: domain.BillingDocumentKindPayroll, Title: "P", Amount: 0, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}}
-	svc := NewBillingDocumentService(repo, &bdTestUserRepo{users: map[uuid.UUID]*domain.User{empID: emp}})
-	got, err := svc.Get(context.Background(), id, empID)
+	svc := NewBillingDocumentService(repo, &bdTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager, employeeID: employee}})
+	got, err := svc.Get(context.Background(), id, managerID)
 	require.NoError(t, err)
 	assert.Equal(t, "P", got.Title)
+
+	_, err = svc.Get(context.Background(), id, employeeID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }

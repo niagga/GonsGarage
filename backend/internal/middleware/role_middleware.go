@@ -49,3 +49,8 @@ func RequireWorkshopStaff() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireAccountingAccess allows only admin or manager (accounting/staff management).
+func RequireAccountingAccess() gin.HandlerFunc {
+	return RequireStaffManagers()
+}

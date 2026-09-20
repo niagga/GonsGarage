@@ -116,14 +116,14 @@ func sampleRI() *domain.ReceivedInvoice {
 	}
 }
 
-func TestReceivedInvoiceService_Create_StaffOK(t *testing.T) {
+func TestReceivedInvoiceService_Create_ManagerOK(t *testing.T) {
 	t.Parallel()
-	empID := uuid.New()
-	emp, err := domain.NewUser("rie@x.com", "pw", "E", "E", domain.RoleEmployee)
+	managerID := uuid.New()
+	manager, err := domain.NewUser("rim@x.com", "pw", "M", "M", domain.RoleManager)
 	require.NoError(t, err)
-	emp.ID = empID
-	svc := NewReceivedInvoiceService(&stubReceivedInvoiceRepo{}, &riTestUserRepo{users: map[uuid.UUID]*domain.User{empID: emp}})
-	out, err := svc.Create(context.Background(), sampleRI(), empID)
+	manager.ID = managerID
+	svc := NewReceivedInvoiceService(&stubReceivedInvoiceRepo{}, &riTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
+	out, err := svc.Create(context.Background(), sampleRI(), managerID)
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	assert.Equal(t, 10.0, out.Amount)
@@ -141,14 +141,46 @@ func TestReceivedInvoiceService_Create_ClientDenied(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }
 
-func TestReceivedInvoiceService_List_ClientDenied(t *testing.T) {
+func TestReceivedInvoiceService_Create_EmployeeDenied(t *testing.T) {
 	t.Parallel()
-	custID := uuid.New()
-	cust, err := domain.NewUser("ric2@x.com", "pw", "C", "C", domain.RoleClient)
+	employeeID := uuid.New()
+	employee, err := domain.NewUser("rie@x.com", "pw", "E", "E", domain.RoleEmployee)
 	require.NoError(t, err)
-	cust.ID = custID
-	svc := NewReceivedInvoiceService(&stubReceivedInvoiceRepo{}, &riTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
-	_, _, err = svc.List(context.Background(), custID, 10, 0)
+	employee.ID = employeeID
+	svc := NewReceivedInvoiceService(&stubReceivedInvoiceRepo{}, &riTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	_, err = svc.Create(context.Background(), sampleRI(), employeeID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+}
+
+func TestReceivedInvoiceService_List_AccessByRole(t *testing.T) {
+	t.Parallel()
+	managerID, employeeID, clientID := uuid.New(), uuid.New(), uuid.New()
+	manager, err := domain.NewUser("rim2@x.com", "pw", "M", "M", domain.RoleManager)
+	require.NoError(t, err)
+	manager.ID = managerID
+	employee, err := domain.NewUser("rie2-list@x.com", "pw", "E", "E", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
+	client, err := domain.NewUser("ric2@x.com", "pw", "C", "C", domain.RoleClient)
+	require.NoError(t, err)
+	client.ID = clientID
+
+	repo := &stubReceivedInvoiceRepo{byID: map[uuid.UUID]*domain.ReceivedInvoice{
+		uuid.New(): sampleRI(),
+	}}
+	svc := NewReceivedInvoiceService(repo, &riTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager, employeeID: employee, clientID: client}})
+
+	list, total, err := svc.List(context.Background(), managerID, 10, 0)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, list, 1)
+
+	_, _, err = svc.List(context.Background(), employeeID, 10, 0)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+
+	_, _, err = svc.List(context.Background(), clientID, 10, 0)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }

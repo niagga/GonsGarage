@@ -40,13 +40,13 @@ func (s *InvoiceService) GetInvoice(ctx context.Context, invoiceID uuid.UUID, re
 	if u.IsClient() && inv.CustomerID != requestingUserID {
 		return nil, domain.ErrUnauthorizedAccess
 	}
-	if !u.IsClient() && !u.IsEmployee() {
+	if !u.IsClient() && !u.CanManageUsers() {
 		return nil, domain.ErrUnauthorizedAccess
 	}
 	return inv, nil
 }
 
-// UpdateInvoice merges updates. Clients may only update invoices they own and may only change Notes (RU billing).
+// UpdateInvoice merges updates. Clients may only update invoices they own and may only change Notes.
 func (s *InvoiceService) UpdateInvoice(ctx context.Context, invoice *domain.Invoice, requestingUserID uuid.UUID) (*domain.Invoice, error) {
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
@@ -79,7 +79,7 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, invoice *domain.Invo
 		return s.invoiceRepo.GetByID(ctx, merged.ID)
 	}
 
-	if !u.IsEmployee() {
+	if !u.CanManageUsers() {
 		return nil, domain.ErrUnauthorizedAccess
 	}
 
@@ -125,7 +125,7 @@ func clampInvoiceListParams(limit, offset int) (int, int) {
 	return limit, offset
 }
 
-// CreateInvoice persists a customer invoice. Only workshop staff may create.
+// CreateInvoice persists a customer invoice. Only manager/admin may create.
 func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *domain.Invoice, requestingUserID uuid.UUID) (*domain.Invoice, error) {
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
@@ -137,7 +137,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *domain.Invo
 	if u == nil {
 		return nil, domain.ErrUserNotFound
 	}
-	if !u.IsEmployee() {
+	if !u.CanManageUsers() {
 		return nil, domain.ErrUnauthorizedAccess
 	}
 	if invoice.CustomerID == uuid.Nil {
@@ -170,7 +170,7 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *domain.Invo
 	return s.invoiceRepo.GetByID(ctx, toSave.ID)
 }
 
-// ListInvoicesForStaff lists issued customer invoices for staff.
+// ListInvoicesForStaff lists issued customer invoices for manager/admin.
 func (s *InvoiceService) ListInvoicesForStaff(ctx context.Context, requestingUserID uuid.UUID, limit, offset int) ([]*domain.Invoice, int64, error) {
 	u, err := s.userRepo.GetByID(ctx, requestingUserID)
 	if err != nil {
@@ -179,14 +179,14 @@ func (s *InvoiceService) ListInvoicesForStaff(ctx context.Context, requestingUse
 	if u == nil {
 		return nil, 0, domain.ErrUserNotFound
 	}
-	if !u.IsEmployee() {
+	if !u.CanManageUsers() {
 		return nil, 0, domain.ErrUnauthorizedAccess
 	}
 	limit, offset = clampInvoiceListParams(limit, offset)
 	return s.invoiceRepo.ListForStaff(ctx, limit, offset)
 }
 
-// DeleteInvoice removes a customer invoice. Only workshop staff may delete.
+// DeleteInvoice removes a customer invoice. Only manager/admin may delete.
 func (s *InvoiceService) DeleteInvoice(ctx context.Context, invoiceID uuid.UUID, requestingUserID uuid.UUID) error {
 	u, err := s.userRepo.GetByID(ctx, requestingUserID)
 	if err != nil {
@@ -195,7 +195,7 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, invoiceID uuid.UUID,
 	if u == nil {
 		return domain.ErrUserNotFound
 	}
-	if !u.IsEmployee() {
+	if !u.CanManageUsers() {
 		return domain.ErrUnauthorizedAccess
 	}
 	existing, err := s.invoiceRepo.GetByID(ctx, invoiceID)

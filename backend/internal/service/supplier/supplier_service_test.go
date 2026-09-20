@@ -107,15 +107,15 @@ func (s *stubSupplierRepo) List(ctx context.Context, limit, offset int) ([]*doma
 	return out, int64(len(out)), nil
 }
 
-func TestSupplierService_Create_StaffOK(t *testing.T) {
+func TestSupplierService_Create_ManagerOK(t *testing.T) {
 	t.Parallel()
-	empID := uuid.New()
-	emp, err := domain.NewUser("e@x.com", "pw", "E", "E", domain.RoleEmployee)
+	managerID := uuid.New()
+	manager, err := domain.NewUser("m@x.com", "pw", "M", "M", domain.RoleManager)
 	require.NoError(t, err)
-	emp.ID = empID
-	svc := NewSupplierService(&stubSupplierRepo{}, &supTestUserRepo{users: map[uuid.UUID]*domain.User{empID: emp}})
+	manager.ID = managerID
+	svc := NewSupplierService(&stubSupplierRepo{}, &supTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
 	row := &domain.Supplier{Name: "Parts Inc", IsActive: true}
-	out, err := svc.Create(context.Background(), row, empID)
+	out, err := svc.Create(context.Background(), row, managerID)
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	assert.NotEqual(t, uuid.Nil, out.ID)
@@ -134,6 +134,18 @@ func TestSupplierService_Create_ClientDenied(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }
 
+func TestSupplierService_Create_EmployeeDenied(t *testing.T) {
+	t.Parallel()
+	employeeID := uuid.New()
+	employee, err := domain.NewUser("e-denied@x.com", "pw", "E", "D", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
+	svc := NewSupplierService(&stubSupplierRepo{}, &supTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	_, err = svc.Create(context.Background(), &domain.Supplier{Name: "X", IsActive: true}, employeeID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+}
+
 func TestSupplierService_Create_InvalidName(t *testing.T) {
 	t.Parallel()
 	empID := uuid.New()
@@ -146,12 +158,15 @@ func TestSupplierService_Create_InvalidName(t *testing.T) {
 	assert.Contains(t, err.Error(), "name")
 }
 
-func TestSupplierService_List_StaffVsClient(t *testing.T) {
+func TestSupplierService_List_AccessByRole(t *testing.T) {
 	t.Parallel()
-	empID, custID := uuid.New(), uuid.New()
-	emp, err := domain.NewUser("e3@x.com", "pw", "E", "E", domain.RoleEmployee)
+	managerID, employeeID, custID := uuid.New(), uuid.New(), uuid.New()
+	manager, err := domain.NewUser("m3@x.com", "pw", "M", "M", domain.RoleManager)
 	require.NoError(t, err)
-	emp.ID = empID
+	manager.ID = managerID
+	employee, err := domain.NewUser("e3@x.com", "pw", "E", "E", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
 	cust, err := domain.NewUser("c2@x.com", "pw", "C", "C", domain.RoleClient)
 	require.NoError(t, err)
 	cust.ID = custID
@@ -159,11 +174,16 @@ func TestSupplierService_List_StaffVsClient(t *testing.T) {
 	repo := &stubSupplierRepo{byID: map[uuid.UUID]*domain.Supplier{
 		id: {ID: id, Name: "A", IsActive: true, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}}
-	svc := NewSupplierService(repo, &supTestUserRepo{users: map[uuid.UUID]*domain.User{empID: emp, custID: cust}})
-	list, total, err := svc.List(context.Background(), empID, 10, 0)
+	svc := NewSupplierService(repo, &supTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager, employeeID: employee, custID: cust}})
+	list, total, err := svc.List(context.Background(), managerID, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, list, 1)
+
+	_, _, err = svc.List(context.Background(), employeeID, 10, 0)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+
 	_, _, err = svc.List(context.Background(), custID, 10, 0)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)

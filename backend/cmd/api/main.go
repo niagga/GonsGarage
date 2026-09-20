@@ -579,7 +579,7 @@ func setupRoutes(
 		}
 
 		suppliers := protected.Group("/suppliers")
-		suppliers.Use(middleware.RequireWorkshopStaff())
+		suppliers.Use(middleware.RequireAccountingAccess())
 		{
 			suppliers.POST("", supplierHandler.CreateSupplier)
 			suppliers.GET("", supplierHandler.ListSuppliers)
@@ -589,7 +589,7 @@ func setupRoutes(
 		}
 
 		receivedInvoices := protected.Group("/received-invoices")
-		receivedInvoices.Use(middleware.RequireWorkshopStaff())
+		receivedInvoices.Use(middleware.RequireAccountingAccess())
 		{
 			receivedInvoices.POST("", receivedInvoiceHandler.CreateReceivedInvoice)
 			receivedInvoices.GET("", receivedInvoiceHandler.ListReceivedInvoices)
@@ -599,7 +599,7 @@ func setupRoutes(
 		}
 
 		billingDocs := protected.Group("/billing-documents")
-		billingDocs.Use(middleware.RequireWorkshopStaff())
+		billingDocs.Use(middleware.RequireAccountingAccess())
 		{
 			billingDocs.POST("", billingDocumentHandler.CreateBillingDocument)
 			billingDocs.GET("", billingDocumentHandler.ListBillingDocuments)
@@ -612,7 +612,7 @@ func setupRoutes(
 		{
 			invoices.GET("/me", invoiceHandler.ListMyInvoices)
 			staffInvoices := invoices.Group("")
-			staffInvoices.Use(middleware.RequireWorkshopStaff())
+			staffInvoices.Use(middleware.RequireAccountingAccess())
 			{
 				staffInvoices.POST("", invoiceHandler.CreateIssuedInvoice)
 				staffInvoices.GET("", invoiceHandler.ListIssuedInvoicesStaff)
