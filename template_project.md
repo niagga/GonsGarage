@@ -29,12 +29,12 @@
 
 | Componente | Elección |
 |--------------|----------|
-| **Runtime backend** | Go **1.25** (`go.mod` como referencia de versión). |
+| **Runtime backend** | Go **1.27** (`go.mod` como referencia de versión). |
 | **HTTP** | **Gin** (`github.com/gin-gonic/gin`). |
 | **BD** | **PostgreSQL 16**; acceso con **sqlx** (`github.com/jmoiron/sqlx`); driver `lib/pq`. |
 | **Migraciones** | **golang-migrate** (`github.com/golang-migrate/migrate/v4`), SQL en `migrations/`. |
 | **Caché / cola** | **Redis** (`github.com/go-redis/redis/v8`); tests con **miniredis** donde aplique. |
-| **Node** | **22+**; gestor **pnpm**; CI con `--frozen-lockfile`. |
+| **Node** | **24+**; gestor **pnpm 12+**; CI con `--frozen-lockfile`. |
 | **Frontend** | **Next.js 16**, **React 19**, **TypeScript 5.9+**. |
 | **CSS** | **Tailwind CSS v4** (`tailwindcss`, `@tailwindcss/postcss`). |
 | **Logging** | **Zerolog** (`github.com/rs/zerolog`) estructurado. |

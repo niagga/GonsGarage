@@ -27,6 +27,18 @@ export interface ApiError {
   details?: Record<string, unknown>;
 }
 
+export interface ClientLookupUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ClientLookupResponse {
+  items: ClientLookupUser[];
+  total: number;
+}
+
 // ✅ Request configuration interface
 export interface RequestConfig extends Omit<RequestInit, 'body'> {
   body?: unknown;
@@ -414,6 +426,20 @@ export class ApiClient {
     role: 'manager' | 'employee' | 'client';
   }): Promise<ApiResponse<{ user: User }>> {
     return this.post<{ user: User }>('/admin/users', body);
+  }
+
+  /** Staff-only: GET /api/v1/admin/users/clients for car owner association. */
+  async listClientUsers(params?: {
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<ClientLookupResponse>> {
+    const q = new URLSearchParams();
+    if (params?.q) q.set('q', params.q);
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.offset != null) q.set('offset', String(params.offset));
+    const qs = q.toString();
+    return this.get<ClientLookupResponse>(`/admin/users/clients${qs ? `?${qs}` : ''}`);
   }
 
   /** Manager/admin: GET /api/v1/parts (`barcode`, `search`, pagination). */

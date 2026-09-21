@@ -6,3 +6,7 @@ backend/api.exe
 
 # Generado por skill-registry / sdd-init (delegación local)
 .atl/
+
+# Caché local de pnpm (nunca commitear)
+.pnpm-store/
+**/.pnpm-store/

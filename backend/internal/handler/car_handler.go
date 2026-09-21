@@ -31,7 +31,7 @@ type CreateCarRequest struct {
 	VIN          string `json:"vin"`
 	Color        string `json:"color"`
 	Mileage      int    `json:"mileage"`
-	// OwnerID optional: solo personal del taller (admin/manager/employee) asigna el cliente dueño.
+	// OwnerID optional: solo admin/manager asigna el cliente dueño.
 	OwnerID string `json:"ownerID"`
 }
 
@@ -61,7 +61,7 @@ type CarResponse struct {
 	UpdatedAt    string `json:"updatedAt"` // ✅ camelCase
 }
 
-// CreateCar registra un coche (cliente: dueño automático; taller: ownerID opcional).
+// CreateCar registra un coche (cliente: dueño automático; admin/manager: ownerID obligatorio).
 // @Summary     Crear coche
 // @Tags        cars
 // @Security    BearerAuth
@@ -127,6 +127,18 @@ func (h *CarHandler) CreateCar(c *gin.Context) {
 		}
 		if errors.Is(err, domain.ErrCarAlreadyExists) {
 			c.JSON(http.StatusConflict, gin.H{"error": "car with this license plate already exists"})
+			return
+		}
+		if errors.Is(err, domain.ErrCarOwnerRequiredForStaff) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Escolha um cliente existente ou crie um novo cliente antes de guardar o automóvel."})
+			return
+		}
+		if errors.Is(err, domain.ErrCarOwnerNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "O cliente selecionado não existe."})
+			return
+		}
+		if errors.Is(err, domain.ErrCarOwnerMustBeClient) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "O proprietário do automóvel tem de ser um cliente."})
 			return
 		}
 		if errors.Is(err, domain.ErrInvalidCarData) {

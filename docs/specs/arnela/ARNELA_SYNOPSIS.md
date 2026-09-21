@@ -20,15 +20,15 @@ Idioma principal: **español**.
 
 | Capa | Arnela |
 |------|--------|
-| Backend | Go **1.25** (README) / reglas citan 1.24 — **Gin**, Clean Architecture / **monolito modular** |
+| Backend | Go **1.27** (baseline actual en GonsGarage), **Gin**, Clean Architecture / **monolito modular** |
 | Acceso BD | **sqlx** + migraciones **golang-migrate** (15 SQL en `migrations/`) |
 | Frontend | **Next.js 16**, TypeScript, **Zustand**, **Tailwind v4**, **Shadcn/Radix** |
 | BD | PostgreSQL **16** |
-| Cache / cola | **Redis 7** (cache-aside, worker pool async) |
+| Cache / cola | **Redis 8** (cache-aside, worker pool async) |
 | Auth | JWT, roles `admin` / `employee` / `client`, **rate limiting** |
 | Docs API | Swagger/OpenAPI (swaggo) |
 | Infra | **Docker Compose** en raíz, Nginx en prod, **GitHub Actions** CI |
-| Frontend pkg manager | **pnpm** (Node **22+**) |
+| Frontend pkg manager | **pnpm** (Node **24+**) |
 
 ## Estructura backend (reglas)
 
@@ -64,7 +64,7 @@ Idioma principal: **español**.
 | Persistencia | sqlx + migraciones SQL versionadas | GORM + AutoMigrate en `cmd/api` (+ scripts SQL sueltos) |
 | Compose | `docker-compose.yml` en **raíz** (PG + Redis) | **Actualizado:** `docker-compose.yml` raíz (PG+Redis) alineado con defaults del backend |
 | CI | GitHub Actions | **`.github/workflows/ci.yml`** (Go + frontend) y `deploy.yml` (manual) |
-| Frontend | pnpm, Tailwind v4, Shadcn | **pnpm**, Next 15; Tailwind v4 / Shadcn no replicados; estructura `app/` por features (auth, cars, accounting, etc.) |
+| Frontend | pnpm, Tailwind v4, Shadcn | **pnpm**, Next 16; Tailwind v4 / Shadcn no replicados; estructura `app/` por features (auth, cars, accounting, etc.) |
 
 ## Archivos clave a abrir en Arnela
 

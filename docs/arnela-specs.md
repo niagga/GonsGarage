@@ -27,7 +27,7 @@ Para no duplicar mantenimiento, el equipo puede usar:
 | **CI** | GitHub Actions | **`.github/workflows/ci.yml`** (Go vet + test `-race` en Linux; pnpm lint, typecheck, test, build frontend) + `deploy.yml` manual | Mantener verde en PR; ampliar cobertura si aplica | 2026-04-20 |
 | **Estructura docs** | `docs/DOCUMENTATION_INDEX.md` + `arnela-rules/` | `docs/` con índice, guías, roadmap, esta matriz | Issue P2: `docs/DOCUMENTATION_INDEX.md` propio (opcional) | 2026-04-20 |
 | **Auth / API** | JWT; `GET /api/v1/auth/me`; rate limiting; CRUD documentado | JWT; **`GET /api/v1/auth/me`** (`auth_handler.Me`); register/login; cars, appointments, employees, repairs, accounting P1, etc. | Issue P2: rate limiting y políticas finas vs Arnela | 2026-04-20 |
-| **Frontend** | Next 16, pnpm, Tailwind v4, Shadcn, grupos de rutas | **Next 15**, **pnpm**, App Router, sin Tailwind v4/Shadcn replicados | Spike P2: upgrade solo con beneficio claro | 2026-04-20 |
+| **Frontend** | Next 16, pnpm, Tailwind v4, Shadcn, grupos de rutas | **Next 16**, **pnpm**, App Router, sin Tailwind v4/Shadcn replicados | Mantener paridad de major y cerrar brechas de UI por fases | 2026-09-20 |
 | **Observabilidad** | `/health` y readiness (p. ej. `/readiness` en README Arnela) | **`GET /health`** y **`GET /ready`** en API; nginx proxifica ambos en el mismo origen (`:8102`) | Documentar equivalencia nombre; métricas = roadmap Fase 4 | 2026-04-20 |
 
 ## Si la ruta cambia de máquina

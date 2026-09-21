@@ -26,6 +26,7 @@ export interface CreateCarRequest {
   vin?: string;
   color?: string;
   mileage?: number;
+  ownerID?: string;
 }
 
 export interface UpdateCarRequest extends Partial<CreateCarRequest> {

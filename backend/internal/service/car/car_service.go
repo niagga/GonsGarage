@@ -2,6 +2,7 @@ package car
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -64,9 +65,9 @@ func (uc *CarService) CreateCar(ctx context.Context, car *domain.Car, requesting
 	// ✅ For clients, ALWAYS set owner to themselves
 	if requestingUser.Role == domain.RoleClient {
 		car.OwnerID = requestingUserID
-	} else if requestingUser.Role == domain.RoleAdmin || requestingUser.Role == domain.RoleManager || requestingUser.Role == domain.RoleEmployee {
+	} else if requestingUser.Role == domain.RoleAdmin || requestingUser.Role == domain.RoleManager {
 		if car.OwnerID == uuid.Nil {
-			return nil, fmt.Errorf("owner ID is required for staff when creating a car for a client")
+			return nil, domain.ErrCarOwnerRequiredForStaff
 		}
 	} else {
 		return nil, domain.ErrUnauthorizedAccess
@@ -81,16 +82,19 @@ func (uc *CarService) CreateCar(ctx context.Context, car *domain.Car, requesting
 		owner, err = uc.userRepo.GetByID(queryCtx, car.OwnerID)
 		if err != nil {
 			log.Printf("failed to get car owner: owner_id=%s, error=%v", car.OwnerID, err)
-			return nil, fmt.Errorf("car owner not found: %w", err)
+			if errors.Is(err, domain.ErrUserNotFound) {
+				return nil, domain.ErrCarOwnerNotFound
+			}
+			return nil, fmt.Errorf("failed to get car owner: %w", err)
 		}
 		if owner == nil {
-			return nil, fmt.Errorf("car owner not found")
+			return nil, domain.ErrCarOwnerNotFound
 		}
 	}
 
 	// ✅ Validate owner is a client
 	if owner.Role != domain.RoleClient {
-		return nil, fmt.Errorf("car owner must be a client")
+		return nil, domain.ErrCarOwnerMustBeClient
 	}
 
 	// ✅ Check if license plate already exists
@@ -101,7 +105,7 @@ func (uc *CarService) CreateCar(ctx context.Context, car *domain.Car, requesting
 
 	// ✅ Validate car data
 	if err := car.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid car data: %w", err)
+		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidCarData, err)
 	}
 
 	// ✅ Set metadata
@@ -238,7 +242,7 @@ func (uc *CarService) UpdateCar(ctx context.Context, car *domain.Car, requesting
 
 	// Validate car data
 	if err := car.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid car data: %w", err)
+		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidCarData, err)
 	}
 
 	// Preserve some fields

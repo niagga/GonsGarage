@@ -2,7 +2,7 @@
 schema: spec-driven
 
 context: |
-  Monorepo: Go 1.25.3 (Gin, GORM, Postgres, Redis, JWT, swag; sqlite driver para tests locales) + Next.js 16.x / React 19 (pnpm, Zustand).
+  Monorepo: Go 1.27.1 (Gin, GORM, Postgres, Redis, JWT, swag; sqlite driver para tests locales) + Next.js 16.x / React 19 (pnpm 12, Zustand).
   API REST bajo /api/v1; dominio en backend/internal (handlers, services, repository).
   Frontend App Router; estado con Zustand; UI pt_PT por defecto (i18n futuro: docs/i18n-reminder.md).
   CI: .github/workflows/ci.yml — backend go vet + go test -race; frontend pnpm lint/typecheck/test (--passWithNoTests) + build.

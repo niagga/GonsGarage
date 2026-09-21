@@ -3,7 +3,7 @@
 Auto repair shop management system: **Go** API (Gin, GORM, PostgreSQL, Redis) and **Next.js** web app (App Router, React, Zustand).
 
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-blue)](.github/workflows/ci.yml)
-[![Go](https://img.shields.io/badge/Go-1.25-blue)](backend/go.mod)
+[![Go](https://img.shields.io/badge/Go-1.27-blue)](backend/go.mod)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black)](frontend/package.json)
 [![React](https://img.shields.io/badge/React-19-61dafb)](frontend/package.json)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -27,21 +27,21 @@ Versions below are taken from the repo manifests as of the last README refresh. 
 
 | Layer | Technology | Where it is defined |
 |--------|------------|---------------------|
-| Backend runtime | **Go 1.25** (`go 1.25.3` directive) | [`backend/go.mod`](backend/go.mod) |
+| Backend runtime | **Go 1.27** (`go 1.27.1` directive) | [`backend/go.mod`](backend/go.mod) |
 | HTTP | Gin, JWT, GORM, sqlx, Redis client | `backend/go.mod` |
 | Database (local) | **PostgreSQL 16** (`postgres:16-alpine`) | [`docker-compose.yml`](docker-compose.yml) |
-| Cache (local) | **Redis 7** (`redis:7-alpine`) | [`docker-compose.yml`](docker-compose.yml) |
+| Cache (local) | **Redis 8** (`redis:8-alpine`) | [`docker-compose.yml`](docker-compose.yml) |
 | Frontend | **Next.js 16.2.4**, **React 19.1.0**, TypeScript **^5**, Tailwind **4** | [`frontend/package.json`](frontend/package.json) |
-| Package manager | **pnpm 9.15.4** (`packageManager` field) | [`frontend/package.json`](frontend/package.json) |
+| Package manager | **pnpm 12.5.1** (`packageManager` field) | [`frontend/package.json`](frontend/package.json) |
 | Unit / component tests (default) | **Vitest** + Testing Library | `frontend/package.json` → `pnpm test` |
 | Lint / types | ESLint 9, `eslint-config-next` aligned with Next | `frontend/package.json` |
 
-CI runs **Node 22**, **pnpm 9**, `pnpm lint` → `pnpm typecheck` → `pnpm test` → `pnpm build` for the frontend, and **Go from `go.mod`** for `vet` / `test -race` / `build` on the backend (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+CI runs **Node 24**, **pnpm 12.5.1**, `pnpm lint` → `pnpm typecheck` → `pnpm test` → `pnpm build` for the frontend, and **Go from `go.mod`** for `vet` / `test -race` / `build` on the backend (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Prerequisites
 
-- **Node.js** 22+ and **pnpm** 9+ ([`corepack enable`](https://nodejs.org/api/corepack.html) recommended)
-- **Go** 1.25+ (match `backend/go.mod`)
+- **Node.js** 24+ and **pnpm** 12+ ([`corepack enable`](https://nodejs.org/api/corepack.html) recommended)
+- **Go** 1.27+ (match `backend/go.mod`)
 - **Docker** with Compose v2 (`docker compose`) for local PostgreSQL and Redis
 - **Git**
 
@@ -125,6 +125,20 @@ pnpm build
 ```
 
 The default **`pnpm test`** script runs **Vitest**. Jest remains available for legacy scripts (`pnpm test:jest`) but is not the primary runner documented in CI.
+
+### Option B — local tests via Docker (no host toolchain)
+
+If your host doesn't have Go/Node/pnpm installed, run checks in containers from the repository root:
+
+```bash
+# Backend (Go 1.27)
+docker run --rm -v "$PWD/backend":/src -w /src golang:1.27 \
+  sh -lc 'CGO_ENABLED=1 /usr/local/go/bin/go mod download && CGO_ENABLED=1 /usr/local/go/bin/go test ./... -count=1 -race -timeout=2m'
+
+# Frontend (Node 24 + pnpm 12)
+docker run --rm -v "$PWD/frontend":/work -w /work node:24-alpine \
+  sh -lc 'corepack enable && corepack prepare pnpm@12.5.1 --activate && (pnpm install || (pnpm approve-builds --all && pnpm install)) && pnpm lint && pnpm typecheck && pnpm test && pnpm build'
+```
 
 ## Demo users
 

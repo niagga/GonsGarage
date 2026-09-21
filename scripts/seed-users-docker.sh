@@ -56,7 +56,7 @@ docker run --rm \
   -e SEED_CLIENT_EMAIL -e SEED_CLIENT_PASSWORD \
   -v "${ROOT}/backend:/src" \
   -w /src \
-  golang:1.25-alpine \
-  sh -c 'apk add --no-cache git >/dev/null && go mod download && go run ./cmd/seed-mvp-users && go run ./cmd/seed-test-client'
+  golang:1.27-alpine \
+  sh -c 'apk add --no-cache git >/dev/null && /usr/local/go/bin/go mod download && /usr/local/go/bin/go run ./cmd/seed-mvp-users && /usr/local/go/bin/go run ./cmd/seed-test-client'
 
 echo "==> Seeds terminados."

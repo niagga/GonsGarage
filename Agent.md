@@ -5,9 +5,9 @@
 **GonsGarage** is a comprehensive auto repair shop management system built with Clean Architecture principles.
 
 ### Technology Stack
-- **Backend**: Go 1.25+ (see `backend/go.mod`) with Gin framework and middleware
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Zustand
-- **Database**: PostgreSQL 16+ (local Compose image) with Redis 7+ for caching
+- **Backend**: Go 1.27+ (see `backend/go.mod`) with Gin framework and middleware
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Zustand
+- **Database**: PostgreSQL 16+ (local Compose image) with Redis 8+ for caching
 - **API Documentation**: Swagger/OpenAPI 3.0 with automated generation
 - **Development**: Docker-based local environment
 - **Testing**: Test-Driven Development (TDD) — **mandatory for product code** (see [docs/testing-tdd.md](docs/testing-tdd.md) and [CONTRIBUTING.md](CONTRIBUTING.md))

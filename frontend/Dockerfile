@@ -1,12 +1,12 @@
 # GonsGarage frontend — multi-stage (Arnela-style). Requires `output: "standalone"` in next.config.
-FROM node:22-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+FROM node:24-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile || (pnpm approve-builds --all && pnpm install --frozen-lockfile)
 
-FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+FROM node:24-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -19,7 +19,7 @@ ENV DOCKER_BUILD=1
 
 RUN pnpm build
 
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 

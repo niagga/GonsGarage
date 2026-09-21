@@ -29,8 +29,8 @@ Objetivo: comprobar en el navegador **login → coche → cita → reparaciones 
 
 ## Requisitos
 
-- Go 1.25+ (directiva `go` en `backend/go.mod`)
-- Node.js 22+ con **pnpm** 9+ (`corepack enable` recomendado)
+- Go 1.27+ (directiva `go` en `backend/go.mod`)
+- Node.js 24+ con **pnpm** 12+ (`corepack enable` recomendado)
 - PostgreSQL 16+ (o Docker)
 - Redis: el `docker compose` de la raíz levanta Redis en **6379**; el API tolera fallo de conexión en desarrollo, pero conviene tenerlo en marcha para el mismo comportamiento que en servidor de pruebas
 

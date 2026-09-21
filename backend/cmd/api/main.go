@@ -275,7 +275,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
-	adminUserHandler := handler.NewAdminUserHandler(authService)
+	adminUserHandler := handler.NewAdminUserHandler(authService, userRepo)
 	employeeHandler := handler.NewEmployeeHandler(employeeService)
 	carHandler := handler.NewCarHandler(carService)
 
@@ -514,6 +514,7 @@ func setupRoutes(
 		adminUsers.Use(middleware.RequireStaffManagers())
 		{
 			adminUsers.POST("/users", adminUserHandler.ProvisionUser)
+			adminUsers.GET("/users/clients", adminUserHandler.ListClients)
 		}
 
 		// Employee routes (admin / manager only)

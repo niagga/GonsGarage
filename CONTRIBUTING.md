@@ -3,8 +3,8 @@
 ## Herramientas
 
 - **Go**: versión indicada en `backend/go.mod`.
-- **Node.js**: 22+ recomendado.
-- **pnpm**: 9.x (activar con `corepack enable` si usas `packageManager` del `frontend/package.json`).
+- **Node.js**: 24+ recomendado.
+- **pnpm**: 12.x (activar con `corepack enable` si usas `packageManager` del `frontend/package.json`).
 - **Docker**: para Postgres + Redis locales (`docker-compose.yml` en la raíz).
 
 ## Instalación rápida

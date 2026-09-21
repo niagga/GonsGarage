@@ -23,6 +23,7 @@ export interface CreateCarRequest {
   vin?: string;
   color: string;
   mileage?: number;
+  ownerID?: string; // backend create payload expects ownerID
 }
 
 export interface UpdateCarRequest extends Partial<CreateCarRequest> {

@@ -55,7 +55,13 @@ func (s *provisionTestUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*dom
 }
 
 func (s *provisionTestUserRepo) GetByRole(ctx context.Context, role string, limit, offset int) ([]*domain.User, error) {
-	return nil, nil
+	items := make([]*domain.User, 0)
+	for _, u := range s.byEmail {
+		if u.Role == role {
+			items = append(items, u)
+		}
+	}
+	return items, nil
 }
 func (s *provisionTestUserRepo) List(ctx context.Context, limit, offset int) ([]*domain.User, error) {
 	return nil, nil
@@ -74,7 +80,7 @@ func newProvisionTestRouter(t *testing.T, secret string, repo ports.UserReposito
 	gin.SetMode(gin.TestMode)
 	am := middleware.NewAuthMiddleware(secret)
 	authService := authsvc.NewAuthService(repo, secret, 24)
-	h := NewAdminUserHandler(authService)
+	h := NewAdminUserHandler(authService, repo)
 
 	r := gin.New()
 	api := r.Group("/api/v1")
@@ -82,6 +88,7 @@ func newProvisionTestRouter(t *testing.T, secret string, repo ports.UserReposito
 	admin := api.Group("/admin")
 	admin.Use(middleware.RequireStaffManagers())
 	admin.POST("/users", h.ProvisionUser)
+	admin.GET("/users/clients", h.ListClients)
 	return r
 }
 
@@ -355,6 +362,57 @@ func TestProvisionUser_UnknownJWTRole_Forbidden(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(b))
 	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), "superuser"))
 	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestListClients_ManagerGetsClientUsersOnly(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-list-clients"
+	repo := newProvisionTestUserRepo()
+
+	client, err := domain.NewUser("client@example.com", "secret12", "Cli", "Ent", domain.RoleClient)
+	require.NoError(t, err)
+	client.ID = uuid.New()
+	repo.byEmail[client.Email] = client
+
+	employee, err := domain.NewUser("emp@example.com", "secret12", "Emp", "Loyee", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = uuid.New()
+	repo.byEmail[employee.Email] = employee
+
+	r := newProvisionTestRouter(t, secret, repo)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users/clients", nil)
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleManager))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var out struct {
+		Items []struct {
+			ID       string `json:"id"`
+			Email    string `json:"email"`
+			FirstName string `json:"firstName"`
+			LastName  string `json:"lastName"`
+		} `json:"items"`
+		Total int `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
+	require.Len(t, out.Items, 1)
+	assert.Equal(t, "client@example.com", out.Items[0].Email)
+	assert.Equal(t, 1, out.Total)
+}
+
+func TestListClients_EmployeeForbidden(t *testing.T) {
+	t.Parallel()
+	secret := "prov-secret-list-emp"
+	repo := newProvisionTestUserRepo()
+	r := newProvisionTestRouter(t, secret, repo)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/users/clients", nil)
+	req.Header.Set("Authorization", "Bearer "+testJWT(t, secret, uuid.New(), domain.RoleEmployee))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

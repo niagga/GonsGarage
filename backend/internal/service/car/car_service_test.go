@@ -2,7 +2,6 @@ package car
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/domain"
@@ -37,7 +36,7 @@ func (r *carTestUserRepo) GetActiveUsers(ctx context.Context, limit, offset int)
 func (r *carTestUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	u, ok := r.users[id]
 	if !ok {
-		return nil, errors.New("not found")
+		return nil, domain.ErrUserNotFound
 	}
 	return u, nil
 }
@@ -155,6 +154,77 @@ func TestCarService_CreateCar_DuplicatePlate(t *testing.T) {
 	}, clientID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrCarAlreadyExists)
+}
+
+func TestCarService_CreateCar_ManagerRequiresClientOwner(t *testing.T) {
+	t.Parallel()
+	managerID := uuid.New()
+	manager, err := domain.NewUser("m@example.com", "pw", "M", "G", domain.RoleManager)
+	require.NoError(t, err)
+	manager.ID = managerID
+
+	userRepo := &carTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}
+	svc := NewCarService(newCarTestCarRepo(), userRepo, noopCache{})
+
+	_, err = svc.CreateCar(context.Background(), &domain.Car{
+		Make: "Ford", Model: "Focus", Year: 2020, LicensePlate: "MGR-1", Color: "Gray", Mileage: 100,
+	}, managerID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrCarOwnerRequiredForStaff)
+}
+
+func TestCarService_CreateCar_ManagerOwnerMustBeClient(t *testing.T) {
+	t.Parallel()
+	managerID := uuid.New()
+	employeeID := uuid.New()
+
+	manager, err := domain.NewUser("m2@example.com", "pw", "M", "G", domain.RoleManager)
+	require.NoError(t, err)
+	manager.ID = managerID
+
+	employee, err := domain.NewUser("e2@example.com", "pw", "E", "E", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
+
+	userRepo := &carTestUserRepo{users: map[uuid.UUID]*domain.User{
+		managerID:  manager,
+		employeeID: employee,
+	}}
+	svc := NewCarService(newCarTestCarRepo(), userRepo, noopCache{})
+
+	_, err = svc.CreateCar(context.Background(), &domain.Car{
+		OwnerID: employeeID,
+		Make: "Ford", Model: "Focus", Year: 2020, LicensePlate: "MGR-2", Color: "Gray", Mileage: 100,
+	}, managerID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrCarOwnerMustBeClient)
+}
+
+func TestCarService_CreateCar_EmployeeDenied(t *testing.T) {
+	t.Parallel()
+	employeeID := uuid.New()
+	clientID := uuid.New()
+
+	employee, err := domain.NewUser("emp-create@example.com", "pw", "E", "M", domain.RoleEmployee)
+	require.NoError(t, err)
+	employee.ID = employeeID
+
+	client, err := domain.NewUser("owner@example.com", "pw", "C", "L", domain.RoleClient)
+	require.NoError(t, err)
+	client.ID = clientID
+
+	userRepo := &carTestUserRepo{users: map[uuid.UUID]*domain.User{
+		employeeID: employee,
+		clientID:   client,
+	}}
+	svc := NewCarService(newCarTestCarRepo(), userRepo, noopCache{})
+
+	_, err = svc.CreateCar(context.Background(), &domain.Car{
+		OwnerID: clientID,
+		Make: "Seat", Model: "Ibiza", Year: 2022, LicensePlate: "EMP-1", Color: "White", Mileage: 15,
+	}, employeeID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
 }
 
 func TestCarService_GetCar_EmployeeCanViewAnyCar(t *testing.T) {

@@ -10,7 +10,7 @@ Sistema de gestión para **taller mecánico** (una instancia = un taller): usuar
 
 | Capa | Tecnología |
 |------|------------|
-| Backend | Go 1.25.3, Gin, GORM (PostgreSQL), JWT, Redis opcional (cache con fallback si no hay conexión) |
+| Backend | Go 1.27.1, Gin, GORM (PostgreSQL), JWT, Redis opcional (cache con fallback si no hay conexión) |
 | Frontend | Next.js 16.2.x (App Router), React 19.1, TypeScript 5, Zustand, Tailwind CSS 4 |
 | Datos | PostgreSQL; migraciones vía `AutoMigrate` en `backend/cmd/api/main.go` y scripts SQL en `backend/scripts/` |
 | Tests | Backend: `go test`; frontend: **Vitest** (por defecto), Jest legacy para algunos suites |
