@@ -189,6 +189,137 @@ func TestCalculate_DocumentRoundingAdjustmentAndDeclaredMismatch(t *testing.T) {
 	assert.ErrorIs(t, err, ErrDeclaredTotalsMismatch)
 }
 
+func TestCalculate_BoundaryPrecisionOverDiscountAndUnsupportedInputs(t *testing.T) {
+	t.Parallel()
+
+	policy := testApprovedPolicy(t, RoundingScopePerLine)
+	base := CalculationInput{
+		Kind:     DocumentKindFT,
+		Currency: policy.Currency,
+		Customer: CustomerIdentity{
+			LegalName:     "Garage Customer",
+			TaxIdentifier: "PT123456789",
+			CountryCode:   "PT",
+		},
+		Lines: []LineInput{
+			{
+				Position:         1,
+				Description:      "Boundary precision",
+				UnitCode:         "EA",
+				Quantity:         MustParseDecimal("1.000"),
+				UnitPrice:        MustParseDecimal("10.000"),
+				Discount:         DiscountInput{Kind: DiscountKindNone, Value: ZeroDecimal()},
+				TaxTreatmentCode: "VAT23",
+				TaxRate:          MustParseDecimal("23"),
+				SourceType:       "repair",
+				SourceID:         "repair-42",
+			},
+		},
+	}
+
+	ok, err := Calculate(policy, base)
+	require.NoError(t, err)
+	assert.Equal(t, "10", ok.Lines[0].GrossAmount.String())
+	assert.Equal(t, "2.3", ok.Lines[0].TaxAmount.String())
+	assert.Equal(t, "12.3", ok.Lines[0].LineTotal.String())
+	assert.Equal(t, "repair", ok.Lines[0].SourceType)
+	assert.Equal(t, "repair-42", ok.Lines[0].SourceID)
+
+	overDiscount := base
+	overDiscount.Lines = []LineInput{{
+		Position:         1,
+		Description:      "Over discount",
+		UnitCode:         "EA",
+		Quantity:         MustParseDecimal("1"),
+		UnitPrice:        MustParseDecimal("10"),
+		Discount:         DiscountInput{Kind: DiscountKindAmount, Value: MustParseDecimal("10.01")},
+		TaxTreatmentCode: "VAT23",
+		TaxRate:          MustParseDecimal("23"),
+	}}
+	_, err = Calculate(policy, overDiscount)
+	assert.ErrorIs(t, err, ErrCalculationLineInvalid)
+
+	scaleOverflow := base
+	scaleOverflow.Lines = []LineInput{{
+		Position:         1,
+		Description:      "Scale overflow",
+		UnitCode:         "EA",
+		Quantity:         MustParseDecimal("1.0001"),
+		UnitPrice:        MustParseDecimal("10"),
+		Discount:         DiscountInput{Kind: DiscountKindNone, Value: ZeroDecimal()},
+		TaxTreatmentCode: "VAT23",
+		TaxRate:          MustParseDecimal("23"),
+	}}
+	_, err = Calculate(policy, scaleOverflow)
+	assert.ErrorIs(t, err, ErrCalculationLineInvalid)
+
+	badCurrency := base
+	badCurrency.Currency = "USD"
+	_, err = Calculate(policy, badCurrency)
+	assert.ErrorIs(t, err, ErrCurrencyMismatch)
+
+	badTax := base
+	badTax.Lines = []LineInput{{
+		Position:         1,
+		Description:      "Unknown tax",
+		UnitCode:         "EA",
+		Quantity:         MustParseDecimal("1"),
+		UnitPrice:        MustParseDecimal("10"),
+		Discount:         DiscountInput{Kind: DiscountKindNone, Value: ZeroDecimal()},
+		TaxTreatmentCode: "VAT99",
+		TaxRate:          MustParseDecimal("99"),
+	}}
+	_, err = Calculate(policy, badTax)
+	assert.ErrorIs(t, err, ErrTaxTreatmentMissing)
+}
+
+func TestCalculate_SourceReferenceSurvivesAndCanonicalIgnoresExternalMutation(t *testing.T) {
+	t.Parallel()
+
+	policy := testApprovedPolicy(t, RoundingScopePerLine)
+	input := CalculationInput{
+		Kind:     DocumentKindFR,
+		Currency: policy.Currency,
+		Customer: CustomerIdentity{
+			LegalName:   "Garage Customer",
+			CountryCode: "PT",
+		},
+		Lines: []LineInput{
+			{
+				Position:         1,
+				Description:      "Brake pads",
+				UnitCode:         "EA",
+				Quantity:         MustParseDecimal("2"),
+				UnitPrice:        MustParseDecimal("15.5"),
+				Discount:         DiscountInput{Kind: DiscountKindPercent, Value: MustParseDecimal("10")},
+				TaxTreatmentCode: "VAT23",
+				TaxRate:          MustParseDecimal("23"),
+				SourceType:       "part",
+				SourceID:         "part-7",
+			},
+		},
+	}
+
+	first, err := Calculate(policy, input)
+	require.NoError(t, err)
+	require.Equal(t, "part", first.Lines[0].SourceType)
+	require.Equal(t, "part-7", first.Lines[0].SourceID)
+
+	// Source references are captured metadata only; deletion of the operational
+	// part/repair must not erase them from the frozen calculation result.
+	second, err := Calculate(policy, input)
+	require.NoError(t, err)
+	assert.Equal(t, first.CanonicalSHA256, second.CanonicalSHA256)
+	assert.Equal(t, first.CanonicalBytes, second.CanonicalBytes)
+	assert.Equal(t, "part-7", second.Lines[0].SourceID)
+
+	changedCustomer := input
+	changedCustomer.Customer.LegalName = "Different Legal Name"
+	third, err := Calculate(policy, changedCustomer)
+	require.NoError(t, err)
+	assert.NotEqual(t, first.CanonicalSHA256, third.CanonicalSHA256)
+}
+
 func testApprovedPolicy(t *testing.T, scope RoundingScope) ArithmeticPolicy {
 	t.Helper()
 	pv := testApprovedPolicyVersion(t, scope)

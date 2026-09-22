@@ -152,6 +152,42 @@ func TestFiscalDocumentProviderFixation(t *testing.T) {
 	assert.ErrorIs(t, doc.FixProvider("mock", uuid.Nil), ErrFiscalDocumentFrozen)
 }
 
+func TestFiscalDocumentUnknownRetryProhibitionAndFailedVoidReturnsIssued(t *testing.T) {
+	t.Parallel()
+
+	unknown := testFiscalDocumentState(FiscalDocumentStateOutcomeUnknown)
+	assert.False(t, unknown.CanAct(FiscalActorRoleManager, false, FiscalDocumentActionRetry))
+	assert.False(t, unknown.CanAct(FiscalActorRoleAdmin, false, FiscalDocumentActionRetry))
+	assert.True(t, unknown.CanAct(FiscalActorRoleManager, false, FiscalDocumentActionReconcile))
+	assert.ErrorIs(t, unknown.TransitionTo(FiscalDocumentStatePending, time.Unix(10, 0).UTC()), ErrFiscalDocumentTransitionNotAllowed)
+	assert.ErrorIs(t, unknown.TransitionTo(FiscalDocumentStateDispatching, time.Unix(11, 0).UTC()), ErrFiscalDocumentTransitionNotAllowed)
+
+	assert.False(t, unknown.CanAct(FiscalActorRoleEmployee, false, FiscalDocumentActionReconcile))
+	assert.False(t, unknown.CanAct(FiscalActorRoleClient, true, FiscalDocumentActionReconcile))
+	assert.False(t, unknown.CanAct(FiscalActorRoleClient, true, FiscalDocumentActionRetry))
+	assert.False(t, unknown.CanAct(FiscalActorRoleClient, true, FiscalDocumentActionVoid))
+
+	issued := testFiscalDocumentState(FiscalDocumentStateIssued)
+	assert.False(t, issued.CanAct(FiscalActorRoleEmployee, false, FiscalDocumentActionVoid))
+	assert.False(t, issued.CanAct(FiscalActorRoleClient, true, FiscalDocumentActionVoid))
+	issued.VoidOperationKey = "void-failed-1"
+	at := time.Date(2026, 1, 2, 15, 0, 0, 0, time.UTC)
+	require.NoError(t, issued.TransitionTo(FiscalDocumentStateVoidPending, at))
+	require.NoError(t, issued.TransitionTo(FiscalDocumentStateIssued, at.Add(time.Minute)))
+	assert.Equal(t, FiscalDocumentStateIssued, issued.State)
+	assert.True(t, issued.CanAct(FiscalActorRoleManager, false, FiscalDocumentActionVoid))
+}
+
+func TestFiscalDocumentCloudwareProviderKeyIsOpaqueValue(t *testing.T) {
+	t.Parallel()
+
+	doc := testFiscalDocumentDraft()
+	connID := uuid.New()
+	require.NoError(t, doc.FixProvider("cloudware", connID))
+	assert.Equal(t, "cloudware", doc.ProviderKey)
+	assert.True(t, doc.ProviderFixed())
+}
+
 func testFiscalDocumentDraft() FiscalDocument {
 	return FiscalDocument{
 		ID:              uuid.New(),

@@ -53,3 +53,18 @@ func TestDecimal_ExactArithmeticAndRounding(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "-1.01", negativeHalfUp.String())
 }
+
+func TestDecimal_RejectsExponentWhitespaceAndLeadingPlus(t *testing.T) {
+	t.Parallel()
+
+	cases := []string{"1E3", "1.2e-1", " 1.0", "1.0 ", "1..2", "-.", ".", "01e0", "+0"}
+	for _, raw := range cases {
+		_, err := ParseDecimal(raw)
+		assert.Error(t, err, raw)
+	}
+
+	d, err := ParseDecimal("-0")
+	require.NoError(t, err)
+	assert.Equal(t, "0", d.String())
+	assert.Equal(t, int32(0), d.Scale())
+}
