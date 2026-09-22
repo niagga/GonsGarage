@@ -149,4 +149,5 @@ type FiscalRepository interface {
 
 	FinalizeDraft(ctx context.Context, cmd FinalizeDraftCommand) (*FinalizeDraftResult, error)
 	EnqueueAction(ctx context.Context, cmd EnqueueActionCommand) (*domain.FiscalDocument, error)
+	GetNextPending(ctx context.Context) (*domain.FiscalDocument, error)
 }

@@ -165,6 +165,21 @@ SELECT id FROM fiscal_documents WHERE source_invoice_id=$1 AND intent_slot=$2 AN
 	return r.GetAggregate(ctx, id)
 }
 
+func (r *FiscalRepository) GetNextPending(ctx context.Context) (*domain.FiscalDocument, error) {
+	row := r.db.QueryRowContext(ctx, `
+SELECT id,source_invoice_id,intent_slot,kind,state,version,supersedes_document_id,superseded_at,provider_key,connection_id,
+ intent_key,issue_operation_key,void_operation_key,provider_reference,provider_number,provider_confirmed_at,issued_at,voided_at,
+ frozen_at,last_error_class,last_error_code,last_error_message,created_by,finalized_by,created_at,updated_at
+ FROM fiscal_documents 
+ WHERE state IN ('pending', 'retryable_failure', 'void_pending')
+ ORDER BY updated_at ASC LIMIT 1`)
+	doc, err := scanDocument(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ports.ErrFiscalDocumentNotFound
+	}
+	return doc, err
+}
+
 func (r *FiscalRepository) DeleteDraft(ctx context.Context, documentID uuid.UUID, expectedVersion int64) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
