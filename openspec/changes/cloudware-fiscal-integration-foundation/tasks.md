@@ -65,10 +65,10 @@ Each unit is intended to map to a reviewable manual commit or, if the delivery s
 
 ## Phase 4 — Provider-neutral gateway and deterministic mock (WU4)
 
-- [ ] 4.1 RED — Add `backend/internal/integration/fiscal/mock/mock_provider_test.go` and repository integration tests for successful FT/FR issuance, stable repeated/concurrent calls, validation rejection, expired connection, definite transient/rate-limit errors, ambiguous-then-reconcile, permitted/refused voids, process reload, and deterministic PDF bytes. <!-- sdd-owner: implementation -->
-- [ ] 4.2 GREEN — Implement the normalized gateway/result/error contracts in `backend/internal/core/ports/fiscal_provider.go` and the persisted mock in `backend/internal/integration/fiscal/mock/*`, selecting scenarios only through an injected registry keyed by operation key and never through fiscal identity fields. <!-- sdd-owner: implementation -->
-- [ ] 4.3 TRIANGULATE — Verify mock references and PDF checksums remain stable for identical operation key plus canonical input, change for different input, survive repository reload, and expose every scenario required by `specs/fiscal-provider-foundation/spec.md`. <!-- sdd-owner: implementation -->
-- [ ] 4.4 REFACTOR — Add runtime guards in the mock package and `backend/cmd/api/main.go` composition so `APP_ENV=production` rejects mock provider selection, mock repository access, or `legal` artifact classification; keep all mock PDFs visibly labeled `SEM VALIDADE FISCAL — MOCK`. <!-- sdd-owner: implementation -->
+- [x] 4.1 RED — Add `backend/internal/integration/fiscal/mock/mock_provider_test.go` and repository integration tests for successful FT/FR issuance, stable repeated/concurrent calls, validation rejection, expired connection, definite transient/rate-limit errors, ambiguous-then-reconcile, permitted/refused voids, process reload, and deterministic PDF bytes. <!-- sdd-owner: implementation -->
+- [x] 4.2 GREEN — Implement the normalized gateway/result/error contracts in `backend/internal/core/ports/fiscal_provider.go` and the persisted mock in `backend/internal/integration/fiscal/mock/*`, selecting scenarios only through an injected registry keyed by operation key and never through fiscal identity fields. <!-- sdd-owner: implementation -->
+- [x] 4.3 TRIANGULATE — Verify mock references and PDF checksums remain stable for identical operation key plus canonical input, change for different input, survive repository reload, and expose every scenario required by `specs/fiscal-provider-foundation/spec.md`. <!-- sdd-owner: implementation -->
+- [x] 4.4 REFACTOR — Add runtime guards in the mock package and `backend/cmd/api/main.go` composition so `APP_ENV=production` rejects mock provider selection, mock repository access, or `legal` artifact classification; keep all mock PDFs visibly labeled `SEM VALIDADE FISCAL — MOCK`. <!-- sdd-owner: implementation -->
 
 ## Phase 5 — Transactional outbox, worker, and reconciliation (WU5)
 

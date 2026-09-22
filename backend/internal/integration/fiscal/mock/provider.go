@@ -2,9 +2,7 @@ package mock
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,308 +11,380 @@ import (
 	"github.com/google/uuid"
 )
 
-type Provider struct{}
+// Options configures the deterministic non-production mock provider.
+type Options struct {
+	AppEnv   string
+	Registry ScenarioRegistry
+	Store    OperationStore
+}
+
+// Provider is the deterministic mock FiscalProvider.
+type Provider struct {
+	registry ScenarioRegistry
+	store    OperationStore
+	appEnv   string
+}
 
 var _ ports.FiscalProvider = (*Provider)(nil)
 
-func NewProvider() *Provider {
-	return &Provider{}
+var deterministicObservedAt = time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+
+// NewProvider constructs a mock provider or fails closed in production.
+func NewProvider(opts Options) (*Provider, error) {
+	if err := AssertMockAllowed(opts.AppEnv); err != nil {
+		return nil, err
+	}
+	if err := AssertMockStoreAllowed(opts.AppEnv); err != nil {
+		return nil, err
+	}
+	if opts.Registry == nil {
+		opts.Registry = NewScenarioRegistry(nil)
+	}
+	if opts.Store == nil {
+		opts.Store = NewMemoryOperationStore()
+	}
+	return &Provider{registry: opts.Registry, store: opts.Store, appEnv: opts.AppEnv}, nil
 }
 
-type scenarioKind string
+// MustNewProvider panics when mock construction is forbidden.
+func MustNewProvider(opts Options) *Provider {
+	provider, err := NewProvider(opts)
+	if err != nil {
+		panic(err)
+	}
+	return provider
+}
 
-const (
-	scenarioSuccess   scenarioKind = "success"
-	scenarioTransient scenarioKind = "transient"
-	scenarioPermanent scenarioKind = "permanent"
-	scenarioAmbiguous scenarioKind = "ambiguous"
-)
-
-var deterministicBaseTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+func (p *Provider) scenarioFor(operationKey string) Scenario {
+	if scenario, ok := p.registry.Lookup(operationKey); ok {
+		return scenario
+	}
+	return ScenarioSuccess
+}
 
 func (p *Provider) VerifyConnection(ctx context.Context, req ports.FiscalVerifyConnectionRequest) (ports.FiscalVerifyConnectionResult, error) {
 	_ = ctx
-	scenario := resolveScenario(req.FiscalOperationRequest, "verify")
-	seed := stableSeed("verify", req.ConnectionID.String(), req.ProviderKey, req.OperationKey, scenarioString(scenario))
-	observedAt := stableTime(seed)
-	metadata := baseMetadata(req.FiscalOperationRequest, scenario, seed)
-
+	scenario := p.scenarioFor(req.OperationKey)
+	observedAt := deterministicObservedAt
+	base := ports.FiscalOperationResponse{
+		ProviderKey:       req.ProviderKey,
+		OperationKey:      req.OperationKey,
+		ProviderReference: mockProviderReference(req.OperationKey, "verify"),
+		CorrelationKey:    req.CorrelationKey,
+		ObservedAt:        observedAt,
+		Metadata:          map[string]string{"scenario": string(scenario), "provider": "mock"},
+	}
 	switch scenario {
-	case scenarioTransient:
-		return ports.FiscalVerifyConnectionResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassTransient, "verify_transient", "mock provider transient verification failure", nil)
-	case scenarioPermanent:
-		return ports.FiscalVerifyConnectionResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassPermanent, "verify_permanent", "mock provider permanent verification failure", nil)
-	case scenarioAmbiguous:
-		connectedAt := observedAt.Add(-15 * time.Minute)
-		actionRequired := ports.FiscalVerifyConnectionResult{
-			FiscalOperationResponse: ports.FiscalOperationResponse{
-				ProviderKey:       req.ProviderKey,
-				OperationKey:      req.OperationKey,
-				ProviderReference: stableReference("verify", seed),
-				CorrelationKey:    req.CorrelationKey,
-				ObservedAt:        observedAt,
-				Metadata:          metadata,
-			},
-			State:           ports.FiscalConnectionStateActionNeeded,
-			GrantedScopes:   defaultScopes(),
-			ConnectedAt:     &connectedAt,
-			OrganizationRef: stableReference("verify-org", seed),
-		}
-		return actionRequired, ports.NewFiscalProviderError(ports.FiscalErrorClassConflict, "verify_ambiguous", "mock provider returned an ambiguous verification result", nil)
+	case ScenarioExpiredConnection:
+		return ports.FiscalVerifyConnectionResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassUnauthorized, "connection_expired", "mock fiscal connection is expired", nil,
+		)
+	case ScenarioTransient:
+		return ports.FiscalVerifyConnectionResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassTransient, "verify_transient", "mock provider transient verification failure", nil,
+		)
+	case ScenarioRateLimit:
+		return ports.FiscalVerifyConnectionResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassRateLimit, "verify_rate_limit", "mock provider rate limited verification", nil,
+		)
 	default:
 		expiresAt := observedAt.Add(30 * 24 * time.Hour)
 		connectedAt := observedAt
 		return ports.FiscalVerifyConnectionResult{
-			FiscalOperationResponse: ports.FiscalOperationResponse{
-				ProviderKey:       req.ProviderKey,
-				OperationKey:      req.OperationKey,
-				ProviderReference: stableReference("verify", seed),
-				CorrelationKey:    req.CorrelationKey,
-				ObservedAt:        observedAt,
-				Metadata:          metadata,
-			},
-			State:           ports.FiscalConnectionStateConnected,
-			GrantedScopes:   defaultScopes(),
-			AccessExpiresAt: &expiresAt,
-			ConnectedAt:     &connectedAt,
-			OrganizationRef: stableReference("organization", seed),
+			FiscalOperationResponse: base,
+			State:                   ports.FiscalConnectionStateConnected,
+			GrantedScopes:           []string{"issue", "reconcile", "void", "fetch", "verify"},
+			AccessExpiresAt:         &expiresAt,
+			ConnectedAt:             &connectedAt,
+			OrganizationRef:         "MOCK-ORG",
 		}, nil
 	}
 }
 
 func (p *Provider) Issue(ctx context.Context, req ports.FiscalIssueRequest) (ports.FiscalIssueResult, error) {
-	_ = ctx
-	scenario := resolveScenario(req.FiscalOperationRequest, "issue")
-	seed := stableSeed("issue", req.ConnectionID.String(), req.ProviderKey, req.OperationKey, req.DocumentID.String(), scenarioString(scenario))
-	observedAt := stableTime(seed)
-	metadata := baseMetadata(req.FiscalOperationRequest, scenario, seed)
-	artifactID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("artifact:"+hex.EncodeToString(seed[:])+":"+req.DocumentID.String()))
-	providerNumber := stableReference("number", seed)
+	scenario := p.scenarioFor(req.OperationKey)
+	canonical := canonicalSHA256(req.Payload)
+	documentKind := documentKindFrom(req)
 
-	result := ports.FiscalIssueResult{
-		FiscalOperationResponse: ports.FiscalOperationResponse{
-			ProviderKey:       req.ProviderKey,
-			OperationKey:      req.OperationKey,
-			ProviderReference: stableReference("issue", seed),
-			CorrelationKey:    req.CorrelationKey,
-			ObservedAt:        observedAt,
-			Metadata:          metadata,
-		},
+	switch scenario {
+	case ScenarioValidation:
+		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassValidation, "issue_validation", "mock provider rejected invalid fiscal input", nil,
+		)
+	case ScenarioExpiredConnection:
+		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassUnauthorized, "connection_expired", "mock fiscal connection is expired", nil,
+		)
+	case ScenarioTransient:
+		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassTransient, "issue_transient", "mock provider transient issue failure", nil,
+		)
+	case ScenarioRateLimit:
+		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassRateLimit, "issue_rate_limit", "mock provider rate limited issuance", nil,
+		)
+	}
+
+	existing, err := p.store.Get(ctx, req.OperationKey)
+	if err != nil {
+		return ports.FiscalIssueResult{}, err
+	}
+	if existing != nil {
+		if existing.CanonicalSHA256 != canonical {
+			return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+				ports.FiscalErrorClassConflict, "canonical_conflict", ErrCanonicalConflict.Error(), ErrCanonicalConflict,
+			)
+		}
+		return issueResultFromRecord(existing, req)
+	}
+
+	ref := mockProviderReference(req.OperationKey, canonical)
+	artifactID := mockArtifactID(req.OperationKey, canonical, req.DocumentID)
+	number := mockProviderNumber(ref)
+	pdfBytes, pdfSHA := RenderMockPDF(req.OperationKey, canonical, documentKind)
+	observedAt := deterministicObservedAt
+	payload := IssueResultPayload{
 		DocumentID:     req.DocumentID,
 		ArtifactID:     artifactID,
-		ProviderNumber: providerNumber,
+		ProviderNumber: number,
+		DocumentKind:   documentKind,
+		Ambiguous:      scenario == ScenarioAmbiguous,
+		ObservedAtUnix: observedAt.Unix(),
+		CorrelationKey: req.CorrelationKey,
+		ProviderKey:    req.ProviderKey,
+		ConnectionID:   req.ConnectionID,
 	}
-	if scenario == scenarioTransient {
-		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassTransient, "issue_transient", "mock provider transient issue failure", nil)
+	if scenario != ScenarioAmbiguous {
+		payload.IssuedAtUnix = observedAt.Unix()
 	}
-	if scenario == scenarioPermanent {
-		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassPermanent, "issue_permanent", "mock provider permanent issue failure", nil)
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return ports.FiscalIssueResult{}, err
 	}
-	issuedAt := observedAt
-	result.IssuedAt = &issuedAt
-	if scenario == scenarioAmbiguous {
-		return result, ports.NewFiscalProviderError(ports.FiscalErrorClassConflict, "issue_ambiguous", "mock provider returned an ambiguous issue result", nil)
+	record := &OperationRecord{
+		OperationKey:      req.OperationKey,
+		Scenario:          string(scenario),
+		CanonicalSHA256:   canonical,
+		ProviderReference: ref,
+		Result:            raw,
+		PDFSHA256:         pdfSHA,
+		PDFBytes:          pdfBytes,
+	}
+	stored, err := p.store.PutIfAbsent(ctx, record)
+	if err != nil {
+		return ports.FiscalIssueResult{}, err
+	}
+	if stored.CanonicalSHA256 != canonical {
+		return ports.FiscalIssueResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassConflict, "canonical_conflict", ErrCanonicalConflict.Error(), ErrCanonicalConflict,
+		)
+	}
+	result, err := issueResultFromRecord(stored, req)
+	if err != nil {
+		return ports.FiscalIssueResult{}, err
+	}
+	if scenario == ScenarioAmbiguous {
+		ambErr := ports.NewFiscalProviderError(
+			ports.FiscalErrorClassAmbiguous, "issue_ambiguous", "mock provider returned an ambiguous issue result", nil,
+		)
+		ambErr.DefinitiveNonAcceptance = false
+		ambErr.Retryable = false
+		return result, ambErr
 	}
 	return result, nil
 }
 
 func (p *Provider) Reconcile(ctx context.Context, req ports.FiscalReconcileRequest) (ports.FiscalReconcileResult, error) {
-	_ = ctx
-	scenario := resolveScenario(req.FiscalOperationRequest, "reconcile")
-	seed := stableSeed("reconcile", req.ConnectionID.String(), req.ProviderKey, req.OperationKey, req.DocumentID.String(), req.ProviderReference, scenarioString(scenario))
-	observedAt := stableTime(seed)
-	metadata := baseMetadata(req.FiscalOperationRequest, scenario, seed)
-	result := ports.FiscalReconcileResult{
-		FiscalOperationResponse: ports.FiscalOperationResponse{
-			ProviderKey:       req.ProviderKey,
-			OperationKey:      req.OperationKey,
-			ProviderReference: req.ProviderReference,
-			CorrelationKey:    req.CorrelationKey,
-			ObservedAt:        observedAt,
-			Metadata:          metadata,
-		},
-		DocumentID: req.DocumentID,
-		Matched:    true,
+	scenario := p.scenarioFor(req.OperationKey)
+	if scenario == ScenarioTransient {
+		return ports.FiscalReconcileResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassTransient, "reconcile_transient", "mock provider transient reconcile failure", nil,
+		)
 	}
+	record, err := p.store.Get(ctx, req.OperationKey)
+	if err != nil {
+		return ports.FiscalReconcileResult{}, err
+	}
+	if record == nil && req.ProviderReference != "" {
+		record, err = p.store.GetByProviderReference(ctx, req.ProviderReference)
+		if err != nil {
+			return ports.FiscalReconcileResult{}, err
+		}
+	}
+	observedAt := deterministicObservedAt
+	base := ports.FiscalOperationResponse{
+		ProviderKey:    req.ProviderKey,
+		OperationKey:   req.OperationKey,
+		CorrelationKey: req.CorrelationKey,
+		ObservedAt:     observedAt,
+		Metadata:       map[string]string{"scenario": string(scenario), "provider": "mock"},
+	}
+	if record == nil {
+		base.ProviderReference = req.ProviderReference
+		return ports.FiscalReconcileResult{FiscalOperationResponse: base, DocumentID: req.DocumentID, Matched: false}, nil
+	}
+	base.ProviderReference = record.ProviderReference
 	resolvedAt := observedAt
-	result.ResolvedAt = &resolvedAt
-	if scenario == scenarioTransient {
-		return ports.FiscalReconcileResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassTransient, "reconcile_transient", "mock provider transient reconcile failure", nil)
-	}
-	if scenario == scenarioPermanent {
-		return ports.FiscalReconcileResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassPermanent, "reconcile_permanent", "mock provider permanent reconcile failure", nil)
-	}
-	if scenario == scenarioAmbiguous {
-		result.Matched = false
-		return result, ports.NewFiscalProviderError(ports.FiscalErrorClassConflict, "reconcile_ambiguous", "mock provider returned an ambiguous reconciliation result", nil)
-	}
-	return result, nil
+	return ports.FiscalReconcileResult{
+		FiscalOperationResponse: base,
+		DocumentID:              req.DocumentID,
+		Matched:                 true,
+		ResolvedAt:              &resolvedAt,
+	}, nil
 }
 
 func (p *Provider) Void(ctx context.Context, req ports.FiscalVoidRequest) (ports.FiscalVoidResult, error) {
-	_ = ctx
-	scenario := resolveScenario(req.FiscalOperationRequest, "void")
-	seed := stableSeed("void", req.ConnectionID.String(), req.ProviderKey, req.OperationKey, req.DocumentID.String(), req.ProviderReference, req.Reason, scenarioString(scenario))
-	observedAt := stableTime(seed)
-	metadata := baseMetadata(req.FiscalOperationRequest, scenario, seed)
-	result := ports.FiscalVoidResult{
+	scenario := p.scenarioFor(req.OperationKey)
+	switch scenario {
+	case ScenarioVoidRefused, ScenarioValidation:
+		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassPermanent, "void_refused", "mock provider refused void", nil,
+		)
+	case ScenarioTransient:
+		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassTransient, "void_transient", "mock provider transient void failure", nil,
+		)
+	case ScenarioRateLimit:
+		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassRateLimit, "void_rate_limit", "mock provider rate limited void", nil,
+		)
+	}
+
+	record, err := p.store.GetByProviderReference(ctx, req.ProviderReference)
+	if err != nil {
+		return ports.FiscalVoidResult{}, err
+	}
+	if record == nil {
+		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassNotFound, "void_not_found", "mock issued document not found for void", nil,
+		)
+	}
+	if scenario == ScenarioVoidPermitted || scenario == ScenarioSuccess {
+		if err := p.store.MarkVoided(ctx, record.OperationKey); err != nil {
+			return ports.FiscalVoidResult{}, err
+		}
+	} else {
+		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassPermanent, "void_refused", "mock provider refused void", nil,
+		)
+	}
+	voidedAt := deterministicObservedAt
+	return ports.FiscalVoidResult{
 		FiscalOperationResponse: ports.FiscalOperationResponse{
 			ProviderKey:       req.ProviderKey,
 			OperationKey:      req.OperationKey,
-			ProviderReference: req.ProviderReference,
+			ProviderReference: record.ProviderReference,
 			CorrelationKey:    req.CorrelationKey,
-			ObservedAt:        observedAt,
-			Metadata:          metadata,
+			ObservedAt:        voidedAt,
+			Metadata:          map[string]string{"scenario": string(scenario), "provider": "mock"},
 		},
 		DocumentID: req.DocumentID,
-	}
-	voidedAt := observedAt
-	result.VoidedAt = &voidedAt
-	if scenario == scenarioTransient {
-		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassTransient, "void_transient", "mock provider transient void failure", nil)
-	}
-	if scenario == scenarioPermanent {
-		return ports.FiscalVoidResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassPermanent, "void_permanent", "mock provider permanent void failure", nil)
-	}
-	if scenario == scenarioAmbiguous {
-		return result, ports.NewFiscalProviderError(ports.FiscalErrorClassConflict, "void_ambiguous", "mock provider returned an ambiguous void result", nil)
-	}
-	return result, nil
+		VoidedAt:   &voidedAt,
+	}, nil
 }
 
 func (p *Provider) FetchArtifact(ctx context.Context, req ports.FiscalFetchArtifactRequest) (ports.FiscalFetchArtifactResult, error) {
-	_ = ctx
-	scenario := resolveScenario(req.FiscalOperationRequest, "fetch")
-	seed := stableSeed("fetch", req.ConnectionID.String(), req.ProviderKey, req.OperationKey, req.ArtifactID.String(), scenarioString(scenario))
-	observedAt := stableTime(seed)
-	metadata := baseMetadata(req.FiscalOperationRequest, scenario, seed)
-	content := []byte(fmt.Sprintf("mock-fiscal-artifact:%s:%s:%s", req.ArtifactID.String(), req.OperationKey, hex.EncodeToString(seed[:8])))
-	sum := sha256.Sum256(content)
-	result := ports.FiscalFetchArtifactResult{
+	record, err := p.store.Get(ctx, req.OperationKey)
+	if err != nil {
+		return ports.FiscalFetchArtifactResult{}, err
+	}
+	if record == nil {
+		return ports.FiscalFetchArtifactResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassNotFound, "artifact_not_found", "mock artifact operation not found", nil,
+		)
+	}
+	var payload IssueResultPayload
+	if err := json.Unmarshal(record.Result, &payload); err != nil {
+		return ports.FiscalFetchArtifactResult{}, err
+	}
+	if payload.ArtifactID != req.ArtifactID && req.ArtifactID != uuid.Nil {
+		return ports.FiscalFetchArtifactResult{}, ports.NewFiscalProviderError(
+			ports.FiscalErrorClassNotFound, "artifact_mismatch", "mock artifact id does not match stored issue", nil,
+		)
+	}
+	content := record.PDFBytes
+	sha := record.PDFSHA256
+	if len(content) == 0 {
+		content, sha = RenderMockPDF(record.OperationKey, record.CanonicalSHA256, payload.DocumentKind)
+	}
+	if record.PDFSHA256 != "" && sha != record.PDFSHA256 {
+		return ports.FiscalFetchArtifactResult{}, fmt.Errorf("mock pdf checksum mismatch")
+	}
+	fetchedAt := deterministicObservedAt
+	return ports.FiscalFetchArtifactResult{
 		FiscalOperationResponse: ports.FiscalOperationResponse{
 			ProviderKey:       req.ProviderKey,
 			OperationKey:      req.OperationKey,
-			ProviderReference: stableReference("fetch", seed),
+			ProviderReference: record.ProviderReference,
 			CorrelationKey:    req.CorrelationKey,
-			ObservedAt:        observedAt,
-			Metadata:          metadata,
+			ObservedAt:        fetchedAt,
+			Metadata:          map[string]string{"classification": "mock", "label": MockPDFLabel},
 		},
-		ArtifactID: req.ArtifactID,
+		ArtifactID: payload.ArtifactID,
 		Content:    append([]byte(nil), content...),
-		MediaType:  "application/octet-stream",
-		Sha256:     hex.EncodeToString(sum[:]),
+		MediaType:  "application/pdf",
+		Sha256:     sha,
+		FetchedAt:  &fetchedAt,
+	}, nil
+}
+
+func documentKindFrom(req ports.FiscalIssueRequest) string {
+	if kind := strings.TrimSpace(req.Metadata["documentKind"]); kind != "" {
+		return strings.ToUpper(kind)
 	}
-	fetchedAt := observedAt
-	result.FetchedAt = &fetchedAt
-	if scenario == scenarioTransient {
-		return ports.FiscalFetchArtifactResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassTransient, "fetch_transient", "mock provider transient fetch failure", nil)
+	var body struct {
+		Kind string `json:"kind"`
 	}
-	if scenario == scenarioPermanent {
-		return ports.FiscalFetchArtifactResult{}, ports.NewFiscalProviderError(ports.FiscalErrorClassPermanent, "fetch_permanent", "mock provider permanent fetch failure", nil)
+	_ = json.Unmarshal(req.Payload, &body)
+	if kind := strings.TrimSpace(body.Kind); kind != "" {
+		return strings.ToUpper(kind)
 	}
-	if scenario == scenarioAmbiguous {
-		return result, ports.NewFiscalProviderError(ports.FiscalErrorClassConflict, "fetch_ambiguous", "mock provider returned an ambiguous fetch result", nil)
+	return "FT"
+}
+
+func issueResultFromRecord(record *OperationRecord, req ports.FiscalIssueRequest) (ports.FiscalIssueResult, error) {
+	var payload IssueResultPayload
+	if err := json.Unmarshal(record.Result, &payload); err != nil {
+		return ports.FiscalIssueResult{}, err
+	}
+	observedAt := time.Unix(payload.ObservedAtUnix, 0).UTC()
+	if payload.ObservedAtUnix == 0 {
+		observedAt = deterministicObservedAt
+	}
+	meta := map[string]string{
+		"scenario":       record.Scenario,
+		"provider":       "mock",
+		"documentKind":   payload.DocumentKind,
+		"classification": "mock",
+	}
+	if payload.DocumentKind == "FR" {
+		meta["associatedReceiptCapability"] = "true"
+	}
+	result := ports.FiscalIssueResult{
+		FiscalOperationResponse: ports.FiscalOperationResponse{
+			ProviderKey:       firstNonEmpty(payload.ProviderKey, req.ProviderKey),
+			OperationKey:      record.OperationKey,
+			ProviderReference: record.ProviderReference,
+			CorrelationKey:    firstNonEmpty(payload.CorrelationKey, req.CorrelationKey),
+			ObservedAt:        observedAt,
+			Metadata:          meta,
+		},
+		DocumentID:     payload.DocumentID,
+		ArtifactID:     payload.ArtifactID,
+		ProviderNumber: payload.ProviderNumber,
+	}
+	if payload.IssuedAtUnix > 0 && !payload.Ambiguous {
+		issuedAt := time.Unix(payload.IssuedAtUnix, 0).UTC()
+		result.IssuedAt = &issuedAt
 	}
 	return result, nil
 }
 
-func resolveScenario(req ports.FiscalOperationRequest, operation string) scenarioKind {
-	candidates := []string{
-		strings.TrimSpace(req.Metadata["scenario."+strings.ToLower(operation)]),
-		strings.TrimSpace(req.Metadata["scenario"]),
-		strings.TrimSpace(req.Metadata["outcome"]),
-		strings.TrimSpace(req.Metadata["mode"]),
-		strings.TrimSpace(req.Metadata["result"]),
-		req.OperationKey,
-	}
-	for _, candidate := range candidates {
-		if scenario := parseScenario(candidate); scenario != "" {
-			return scenario
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
 		}
 	}
-	return scenarioSuccess
-}
-
-func parseScenario(raw string) scenarioKind {
-	raw = strings.ToLower(strings.TrimSpace(raw))
-	if raw == "" {
-		return ""
-	}
-	if strings.Contains(raw, ":") {
-		parts := strings.Split(raw, ":")
-		raw = strings.TrimSpace(parts[len(parts)-1])
-	}
-	switch raw {
-	case "success", "ok", "pass", "normalized":
-		return scenarioSuccess
-	case "transient", "retryable", "temporary", "timeout":
-		return scenarioTransient
-	case "permanent", "fatal", "rejected", "failure":
-		return scenarioPermanent
-	case "ambiguous", "conflict", "partial", "indeterminate":
-		return scenarioAmbiguous
-	default:
-		if strings.Contains(raw, "transient") {
-			return scenarioTransient
-		}
-		if strings.Contains(raw, "permanent") || strings.Contains(raw, "fatal") {
-			return scenarioPermanent
-		}
-		if strings.Contains(raw, "ambiguous") || strings.Contains(raw, "conflict") || strings.Contains(raw, "partial") {
-			return scenarioAmbiguous
-		}
-		if strings.Contains(raw, "success") || strings.Contains(raw, "ok") || strings.Contains(raw, "pass") {
-			return scenarioSuccess
-		}
-		return ""
-	}
-}
-
-func scenarioString(s scenarioKind) string {
-	if s == "" {
-		return string(scenarioSuccess)
-	}
-	return string(s)
-}
-
-func stableSeed(parts ...string) []byte {
-	hash := sha256.Sum256([]byte(strings.Join(parts, "|")))
-	return hash[:]
-}
-
-func stableTime(seed []byte) time.Time {
-	if len(seed) < 8 {
-		return deterministicBaseTime
-	}
-	seconds := binary.BigEndian.Uint64(seed[:8]) % 86400
-	return deterministicBaseTime.Add(time.Duration(seconds) * time.Second)
-}
-
-func stableReference(prefix string, seed []byte) string {
-	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(seed[:6]))
-}
-
-func baseMetadata(req ports.FiscalOperationRequest, scenario scenarioKind, seed []byte) map[string]string {
-	metadata := cloneMetadata(req.Metadata)
-	metadata["scenario"] = scenarioString(scenario)
-	metadata["operation"] = req.OperationKey
-	metadata["connectionId"] = req.ConnectionID.String()
-	metadata["providerKey"] = req.ProviderKey
-	metadata["seed"] = hex.EncodeToString(seed[:8])
-	return metadata
-}
-
-func cloneMetadata(values map[string]string) map[string]string {
-	if values == nil {
-		return map[string]string{}
-	}
-	out := make(map[string]string, len(values))
-	for key, value := range values {
-		out[key] = value
-	}
-	return out
-}
-
-func defaultScopes() []string {
-	return []string{"issue", "reconcile", "void", "fetch", "verify"}
+	return ""
 }

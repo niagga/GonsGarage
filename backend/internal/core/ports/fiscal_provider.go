@@ -21,13 +21,16 @@ type FiscalProvider interface {
 type FiscalErrorClass string
 
 const (
-	FiscalErrorClassValidation   FiscalErrorClass = "validation"
-	FiscalErrorClassConflict     FiscalErrorClass = "conflict"
-	FiscalErrorClassUnauthorized FiscalErrorClass = "unauthorized"
-	FiscalErrorClassNotFound     FiscalErrorClass = "not_found"
-	FiscalErrorClassTransient    FiscalErrorClass = "transient"
-	FiscalErrorClassPermanent    FiscalErrorClass = "permanent"
-	FiscalErrorClassUnsupported  FiscalErrorClass = "unsupported"
+	FiscalErrorClassValidation    FiscalErrorClass = "validation"
+	FiscalErrorClassConflict      FiscalErrorClass = "conflict"
+	FiscalErrorClassUnauthorized  FiscalErrorClass = "unauthorized"
+	FiscalErrorClassAuthorization FiscalErrorClass = "authorization"
+	FiscalErrorClassNotFound      FiscalErrorClass = "not_found"
+	FiscalErrorClassTransient     FiscalErrorClass = "transient"
+	FiscalErrorClassRateLimit     FiscalErrorClass = "rate_limit"
+	FiscalErrorClassPermanent     FiscalErrorClass = "permanent"
+	FiscalErrorClassAmbiguous     FiscalErrorClass = "ambiguous"
+	FiscalErrorClassUnsupported   FiscalErrorClass = "unsupported"
 )
 
 // IsValid reports whether the class is recognized.
@@ -36,9 +39,12 @@ func (c FiscalErrorClass) IsValid() bool {
 	case FiscalErrorClassValidation,
 		FiscalErrorClassConflict,
 		FiscalErrorClassUnauthorized,
+		FiscalErrorClassAuthorization,
 		FiscalErrorClassNotFound,
 		FiscalErrorClassTransient,
+		FiscalErrorClassRateLimit,
 		FiscalErrorClassPermanent,
+		FiscalErrorClassAmbiguous,
 		FiscalErrorClassUnsupported:
 		return true
 	default:
@@ -48,11 +54,12 @@ func (c FiscalErrorClass) IsValid() bool {
 
 // FiscalProviderError is the normalized error wrapper used by providers.
 type FiscalProviderError struct {
-	Class     FiscalErrorClass
-	Code      string
-	Message   string
-	Retryable bool
-	Cause     error
+	Class                   FiscalErrorClass
+	Code                    string
+	Message                 string
+	Retryable               bool
+	DefinitiveNonAcceptance bool
+	Cause                   error
 }
 
 // Error implements error.
@@ -83,7 +90,7 @@ func (e *FiscalProviderError) Unwrap() error {
 
 // IsRetryable reports whether the failure may be retried safely.
 func (e FiscalProviderError) IsRetryable() bool {
-	return e.Retryable || e.Class == FiscalErrorClassTransient
+	return e.Retryable || e.Class == FiscalErrorClassTransient || e.Class == FiscalErrorClassRateLimit
 }
 
 // IsValid reports whether the class is set correctly.
@@ -93,12 +100,20 @@ func (e FiscalProviderError) IsValid() bool {
 
 // NewFiscalProviderError builds a normalized provider error.
 func NewFiscalProviderError(class FiscalErrorClass, code, message string, cause error) *FiscalProviderError {
+	retryable := class == FiscalErrorClassTransient || class == FiscalErrorClassRateLimit
+	definitive := class == FiscalErrorClassValidation ||
+		class == FiscalErrorClassPermanent ||
+		class == FiscalErrorClassUnauthorized ||
+		class == FiscalErrorClassAuthorization ||
+		class == FiscalErrorClassRateLimit ||
+		class == FiscalErrorClassTransient
 	return &FiscalProviderError{
-		Class:     class,
-		Code:      strings.TrimSpace(code),
-		Message:   strings.TrimSpace(message),
-		Retryable: class == FiscalErrorClassTransient,
-		Cause:     cause,
+		Class:                   class,
+		Code:                    strings.TrimSpace(code),
+		Message:                 strings.TrimSpace(message),
+		Retryable:               retryable,
+		DefinitiveNonAcceptance: definitive,
+		Cause:                   cause,
 	}
 }
 

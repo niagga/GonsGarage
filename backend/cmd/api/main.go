@@ -262,9 +262,28 @@ func main() {
 		} else if cipher, cipherErr := fiscalcrypto.NewFiscalCredentialCipher(credentialKeyVersion, credentialKey); cipherErr != nil {
 			log.Printf("Warning: fiscal integration disabled: %v", cipherErr)
 		} else {
-			fiscalService := fiscalsvc.NewConnectionService(fiscalConnectionRepo, userRepo, fiscalmock.NewProvider(), cipher, credentialKeyVersion)
-			fiscalIntegrationHandler = handler.NewFiscalIntegrationHandler(fiscalService)
-			log.Printf("Fiscal integration foundation wired with deterministic mock provider")
+			appEnv := strings.TrimSpace(os.Getenv("APP_ENV"))
+			if appEnv == "" {
+				appEnv = "development"
+			}
+			if guardErr := fiscalmock.AssertMockAllowed(appEnv); guardErr != nil {
+				log.Printf("Warning: fiscal mock provider not wired: %v", guardErr)
+			} else if classErr := fiscalmock.RejectLegalMockClassification(appEnv, "mock"); classErr != nil {
+				log.Printf("Warning: fiscal mock provider not wired: %v", classErr)
+			} else {
+				mockProvider, providerErr := fiscalmock.NewProvider(fiscalmock.Options{
+					AppEnv:   appEnv,
+					Registry: fiscalmock.NewScenarioRegistry(nil),
+					Store:    fiscalmock.NewPostgresOperationStore(sqlDB),
+				})
+				if providerErr != nil {
+					log.Printf("Warning: fiscal integration disabled: %v", providerErr)
+				} else {
+					fiscalService := fiscalsvc.NewConnectionService(fiscalConnectionRepo, userRepo, mockProvider, cipher, credentialKeyVersion)
+					fiscalIntegrationHandler = handler.NewFiscalIntegrationHandler(fiscalService)
+					log.Printf("Fiscal integration foundation wired with deterministic mock provider (env=%s, classification=mock)", appEnv)
+				}
+			}
 		}
 	}
 
