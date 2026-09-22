@@ -1,85 +1,66 @@
 # Apply Progress: Cloudware fiscal integration foundation
 
 ## Status
-WU1 `schema and legacy isolation` remains complete. WU2 `exact domain model` is complete after reconciliation: production domain types were already present on `main`, triangulation gaps for tasks 2.3/2.7 were filled with additional domain tests, and Phase 2 checkboxes 2.1–2.8 are marked `[x]`. No commit or PR was created. Work stayed inside the WU2 boundary (domain package + OpenSpec bookkeeping only).
+WU1 and WU2 remain complete. **WU3 `aggregate persistence` is complete**: provider-neutral fiscal repository ports, PostgreSQL atomic draft/finalize/retry/reconcile/void persistence, draft/finalization services, PostgreSQL concurrency/rollback tests, and narrow `FiscalProtectionReader` + invoice eligibility wiring. No commit or PR was created. Work stayed inside the WU3 boundary (no mock provider, worker, artifact storage, HTTP, or UI).
 
 ## Completed tasks and persisted checkboxes
-- [x] 1.1 PostgreSQL migration RED coverage. <!-- sdd-owner: implementation -->
-- [x] 1.2 Explicit fiscal foundation migration. <!-- sdd-owner: implementation -->
-- [x] 1.3 Constraint and immutability triangulation. <!-- sdd-owner: implementation -->
-- [x] 1.4 Reusable migration runner and fail-fast schema verification. <!-- sdd-owner: implementation -->
-- [x] 1.5 Independent-verification remediation for frozen lines and exhaustive schema checks. <!-- sdd-owner: implementation -->
-- [x] 2.1 RED — Decimal and policy domain tests for strict strings, normalization, scales, arithmetic, IVA/exemption, rounding, adjustments, mismatches, and fail-closed policy. <!-- sdd-owner: implementation -->
-- [x] 2.2 GREEN — `shopspring/decimal` plus `fiscal_decimal.go` / `fiscal_policy.go` exact calculator requiring approved policy. <!-- sdd-owner: implementation -->
-- [x] 2.3 TRIANGULATE — FT/FR, taxable/exempt, boundary precision, over-discount, unsupported currency/tax, ordering, SHA-256 stability. <!-- sdd-owner: implementation -->
-- [x] 2.4 REFACTOR — Centralized validation/error codes and canonical serialization; domain package tests + gofmt. <!-- sdd-owner: implementation -->
-- [x] 2.5 RED — Document/connection/artifact lifecycle, freeze, supersession, fixation, role matrix, mock/legal tests. <!-- sdd-owner: implementation -->
-- [x] 2.6 GREEN — Eleven-state document lifecycle, connection/artifact aggregates, frozen DTO, allowed actions, presentation. <!-- sdd-owner: implementation -->
-- [x] 2.7 TRIANGULATE — Employee/client denial, unknown retry prohibition, failed void → issued, source-ref survival, canonical stability. <!-- sdd-owner: implementation -->
-- [x] 2.8 REFACTOR — No Cloudware DTOs in domain (provider key value only); invariants beside constructors; race attempted (see note). <!-- sdd-owner: implementation -->
+- [x] 1.1–1.5 WU1 schema/migration (retained).
+- [x] 2.1–2.8 WU2 exact domain model (retained).
+- [x] 3.1 RED — Service fakes/tests + PostgreSQL repository tests for draft CRUD, client denial, optimistic versions, one current intent, finalize/outbox rollback, concurrent finalization, protected delete. <!-- sdd-owner: implementation -->
+- [x] 3.2 GREEN — Ports (`fiscal_repository`, artifact_store stub, credential_cipher stub; existing `fiscal_provider` reused) + `postgres/fiscal_repository.go` + `draft_service.go` + `finalization_service.go`. <!-- sdd-owner: implementation -->
+- [x] 3.3 TRIANGULATE — Concurrent finalize → one intent/event; outbox-fail trigger full rollback; retry/reconcile/void sequence numbering with same provider/connection/operation key; unknown-state issue denied, reconcile allowed. <!-- sdd-owner: implementation -->
+- [x] 3.4 REFACTOR — `FiscalEligibility` on `domain.Invoice` with `json:"-"`; Create sets `eligible`; `InvoiceService.WithFiscalProtection` + delete guard; invoice service/repository tests still pass. <!-- sdd-owner: implementation -->
 
-## WU2 reconciliation — already present vs newly implemented
-
-### Already present (production + baseline tests on `main`)
-- `backend/go.mod` / `go.sum`: `github.com/shopspring/decimal v1.4.0`
-- `backend/internal/domain/fiscal_decimal.go` — strict non-exponent parse, negative-zero normalization, exact arithmetic, rounding modes, string JSON
-- `backend/internal/domain/fiscal_policy.go` — approved-policy resolve, immutable config digest, pure `Calculate`, canonical bytes/SHA-256, fail-closed error codes
-- `backend/internal/domain/fiscal_document.go` — eleven states, transitions, finalize/freeze, action matrix, supersession, presentation
-- `backend/internal/domain/fiscal_connection.go` — connection states, fixation, role/action matrix, snapshot cloning
-- `backend/internal/domain/fiscal_artifact.go` — status/classification, mock vs legal, role/action matrix, production serve gate
-- Baseline tests in `fiscal_*_test.go` covering core RED/GREEN scenarios for 2.1–2.6
-
-### Newly implemented in this apply batch
-- Expanded triangulation tests only (+182 authored lines):
-  - `fiscal_decimal_test.go` — additional invalid-string cases
-  - `fiscal_policy_test.go` — boundary precision, over-discount, scale overflow, unsupported currency/tax, source-ref survival, canonical independence from external mutation
-  - `fiscal_document_test.go` — unknown-state retry prohibition, employee/client denial on privileged actions, void_pending → issued, opaque `cloudware` provider key
-- OpenSpec bookkeeping: Phase 2 checkboxes and this progress file
-
-## Files changed (this batch)
+## Files changed (WU3 batch)
 | File | Action | What was done |
 |------|--------|---------------|
-| `backend/internal/domain/fiscal_decimal_test.go` | Modified | Extra invalid decimal string triangulation |
-| `backend/internal/domain/fiscal_policy_test.go` | Modified | 2.3/2.7 calculator triangulation |
-| `backend/internal/domain/fiscal_document_test.go` | Modified | 2.7 lifecycle triangulation + opaque provider key |
-| `openspec/changes/.../tasks.md` | Modified | Mark 2.1–2.8 `[x]` |
-| `openspec/changes/.../apply-progress.md` | Modified | Merge WU1+WU2 progress |
+| `backend/internal/core/ports/fiscal_repository.go` | Created | Aggregate CRUD/finalize/enqueue contracts + `FiscalProtectionReader` |
+| `backend/internal/core/ports/fiscal_artifact_store.go` | Created | Port stub only (no storage impl) |
+| `backend/internal/core/ports/credential_cipher.go` | Created | Port stub only (AES impl already under platform/crypto) |
+| `backend/internal/core/ports/fiscal_provider.go` | Unchanged | Pre-existing; reused, not expanded toward WU4 |
+| `backend/internal/core/ports/repositories.go` | Modified | Comment linking invoice delete protection seam |
+| `backend/internal/repository/postgres/fiscal_repository.go` | Created | Atomic SQL draft/finalize/enqueue with `FOR UPDATE` |
+| `backend/internal/repository/postgres/invoice_repository.go` | Modified | Default `eligible` on Create |
+| `backend/internal/service/fiscal/draft_service.go` | Created | Staff draft CRUD + client denial |
+| `backend/internal/service/fiscal/finalization_service.go` | Created | Manager finalize/retry/reconcile/void |
+| `backend/internal/service/fiscal/draft_finalization_test.go` | Created | Fake-repo service tests |
+| `backend/tests/integration/fiscal_repository_test.go` | Created | PostgreSQL atomicity/concurrency/sequence tests |
+| `backend/internal/domain/invoice.go` | Modified | `FiscalEligibility` field excluded from JSON |
+| `backend/internal/service/invoice/invoice_service.go` | Modified | Eligibility-on-create + optional protection reader |
+| `openspec/.../tasks.md` | Modified | Mark 3.1–3.4 `[x]` |
+| `openspec/.../apply-progress.md` | Modified | This WU3 progress merge |
 
 ## Verification
-- Safety net: `cd backend && go test ./internal/domain/... -count=1` — PASS before edits.
-- After triangulation: `cd backend && go test ./internal/domain/... -count=1` — PASS.
-- Focused: `go test ./internal/domain/ -count=1 -run 'Fiscal|Decimal|Policy|Calculate' -v` — all listed fiscal tests PASS.
-- `gofmt` applied to edited test files.
-- Race detector: `go test -race` requires CGO + gcc; this Windows environment has no `gcc` (`cgo: C compiler "gcc" not found`). Race verification is deferred to CI/Linux; domain tests without `-race` pass. Documented as environment limitation for task 2.8.
-- Runtime harness: N/A for WU2 — pure domain package with no provider/persistence boundary in this unit.
+- `cd backend && go test ./internal/service/fiscal/ -count=1 -run 'Draft|Finalization'` → PASS
+- `cd backend && go test ./internal/service/invoice/ -count=1` → PASS (legacy contracts unchanged)
+- `cd backend && go test ./internal/repository/postgres/ -count=1 -run Invoice` → PASS
+- `FISCAL_TEST_DATABASE_URL=postgres://admindb:***@localhost:5432/gonsgarage?sslmode=disable` + `go test ./tests/integration/ -count=1 -run FiscalRepository -timeout 120s` → PASS (local `docker compose` Postgres 16)
+- `gofmt` applied to touched Go files
+- Race detector: `go test -race` requires CGO; Windows agent reports CGO/gcc unavailable (same limitation as WU2). Non-race tests pass; CI/Linux should run `-race`.
 
-## Work Unit Evidence (WU2)
+## Work Unit Evidence (WU3)
 
 | Evidence | Result |
 |---|---|
-| Focused test command | `cd backend && go test ./internal/domain/ -count=1 -run 'Fiscal\|Decimal\|Policy\|Calculate'` → PASS (all fiscal domain cases) |
-| Package command | `cd backend && go test ./internal/domain/... -count=1` → PASS |
-| Runtime harness | N/A — WU2 is pure domain; no HTTP/worker/provider runtime in this unit |
-| Rollback boundary | Revert the three `fiscal_*_test.go` edits and uncheck 2.1–2.8; production domain package already on `main` can be removed later only before WU3 persistence adopts it |
+| Focused test command | `go test ./internal/service/fiscal/ -count=1 -run 'Draft\|Finalization'` → PASS; `go test ./tests/integration/ -count=1 -run FiscalRepository` → PASS |
+| Runtime harness | PostgreSQL 16 via `FISCAL_TEST_DATABASE_URL` + migration 011 in isolated schemas → PASS |
+| Rollback boundary | Disable fiscal feature routes/services; retain schema 011 and any frozen evidence rows. Revert WU3 ports/repo/services/tests without touching WU4+ |
 
-## TDD Cycle Evidence (WU2)
+## TDD Cycle Evidence (WU3)
 
 | Task | Test file/layer | Safety net | RED | GREEN | TRIANGULATE | REFACTOR |
 |---|---|---|---|---|---|---|
-| 2.1 | `fiscal_decimal_test.go`, `fiscal_policy_test.go` / unit | Domain package already green | Pre-existing tests described strict decimals and fail-closed policy | `fiscal_decimal.go` / `fiscal_policy.go` already present and green | Expanded invalid-string cases added this batch | Error codes already centralized |
-| 2.2 | same | shopspring already in go.mod | Covered by existing failing-first history on branch precursors | Exact calculator already avoids float64 | Covered via Calculate cases | gofmt + package green |
-| 2.3 | `fiscal_policy_test.go` | Existing FT/FR/SHA cases green | New cases for over-discount/scale/currency/tax written against existing API | Existing `Calculate` already returned correct error codes — new tests green without production edits | Boundary, over-discount, unsupported inputs, ordering, SHA stability covered | No production refactor needed |
-| 2.4 | package | Domain green | N/A structural | Already implemented | Covered | `go test ./internal/domain/... -count=1` + gofmt |
-| 2.5 | `fiscal_document_test.go`, `fiscal_connection_test.go`, `fiscal_artifact_test.go` | Domain green | Pre-existing lifecycle/matrix tests | Aggregates already present | Extended in 2.7 | Provider-neutral naming retained |
-| 2.6 | same production files | Domain green | Covered by 2.5 | Eleven states, transitions, frozen DTO, actions present | Covered | No Cloudware DTOs |
-| 2.7 | document + policy tests | Domain green | New tests for retry prohibition, failed void→issued, source refs, denial | Existing transition map/action matrix satisfied tests | All 2.7 behaviors covered | No production change |
-| 2.8 | domain package | Domain green | Opaque `cloudware` key test | Provider key is opaque string only | No Cloudware types in domain package (grep) | Race blocked by missing gcc locally; CI expected |
+| 3.1 | `draft_finalization_test.go` + `fiscal_repository_test.go` / unit+PG | Invoice service/repo green before edits | Failing tests/contracts written first against missing services/repo | Services + SQL repo made tests pass | Covered with 3.3 | N/A in RED |
+| 3.2 | same + ports | N/A (new) | Ports referenced by RED tests | `fiscal_repository.go`, draft/finalization services implemented; artifact/cipher stubs only | — | Ports kept provider-neutral |
+| 3.3 | `fiscal_repository_test.go` / PG | Draft CRUD green | Concurrent/rollback/sequence cases added | Finalize line-order fix + void-key-before-transition | One intent/event; full outbox-fail rollback; seq 2 reuse; unknown≠issue | Cleaned freeze order |
+| 3.4 | invoice service/repo tests / unit | ✅ invoice packages PASS before/after | Approval: existing invoice tests | Eligibility + `WithFiscalProtection` | Existing suites unchanged | `json:"-"` keeps legacy DTO |
 
 ## Deviations, budget, and remaining work
-- Deviation: Strict TDD RED→GREEN for production files was reconciled rather than rewritten because production domain code and baseline tests already existed on `main`. This batch added missing triangulation only.
-- Deviation: Task 2.8 race detector could not run locally (no gcc/CGO). Non-race domain tests pass; parent/CI should run `-race` on Linux.
-- Budget: This batch is +182 authored lines in three test files plus OpenSpec bookkeeping — well under the 600-line WU preference. No WU3 files were touched.
-- Delivery: Parent authorized manual WU2 slice; no commits/PRs by agent.
+- **Budget**: Authored WU3 volume is ~1,650 lines (new files + small invoice edits), above the preferred ~600-line manual slice. Completing WU3 coherently required the full repository + dual test layers; no WU4 work was started. Documented as size overage under parent-authorized manual WU3 slice.
+- **Deviation**: Finalization service freezes using persisted draft snapshot totals/canonical bytes rather than re-invoking `domain.Calculate` in-process; policy/issuer IDs are accepted on the finalize command for repository persistence. Full calculator-gated readiness remains available for later HTTP/service hardening.
+- **Deviation**: `fiscal_provider.go` already existed from earlier scaffolding; WU3 did not expand mock/Cloudware behavior.
+- Race/`gcc`: deferred to CI (same as WU2).
+- Delivery: Parent authorized manual WU3 only; agent created **no commits/PRs**.
 
 ## Deferred parent lifecycle actions
 - [ ] 13.2 Production fiscal-policy, issuer/series, retention, storage, backup, access-log, and legal-void decisions. <!-- sdd-owner: parent -->
@@ -111,33 +92,31 @@ contextFiles:
   verifyReport: []
   syncReport: []
 artifacts: { proposal: done, specs: done, design: done, tasks: done, applyProgress: done, verifyReport: missing, syncReport: missing }
-taskProgress: { total: 53, complete: 13, remaining: 40 }
+taskProgress: { total: 53, complete: 17, remaining: 36 }
 deferredParentActions: { total: 5, complete: 1, remaining: 4 }
 taskArtifactErrors: []
 applyState: ready
-dependencies: { apply: ready, verify: blocked, sync: blocked, archive: blocked }
+dependencies: { apply: ready, verify: ready, sync: blocked, archive: blocked }
 actionContext:
   mode: repo-local
   workspaceRoot: D:/Repos/GonsGarage
   allowedEditRoots:
+    - backend/internal/core/ports/
+    - backend/internal/repository/postgres/
+    - backend/internal/service/fiscal/
+    - backend/internal/service/invoice/
     - backend/internal/domain/
-    - openspec/changes/cloudware-fiscal-integration-foundation/apply-progress.md
-    - openspec/changes/cloudware-fiscal-integration-foundation/tasks.md
+    - backend/tests/integration/
+    - openspec/changes/cloudware-fiscal-integration-foundation/
   warnings:
-    - "go test -race unavailable locally: gcc/CGO missing on Windows agent host"
+    - "WU3 authored ~1650 lines (>600 preferred); coherent finish of WU3 only"
+    - "go test -race unavailable locally: CGO/gcc missing on Windows agent host"
 nextRecommended: sdd-verify
 isNonAuthoritative: false
 ```
 
-The broader change remains `applyState: ready` for WU3+. WU2 finish state is satisfied: decimal, calculator, lifecycle, immutability, and action-matrix domain tests pass without provider dependencies. Rollback remains the isolated domain package (already on main) plus this batch's test/bookkeeping delta.
+WU3 finish state is satisfied: draft/finalization/retry/reconcile/void repositories are atomic and fenced; invoice JSON contracts preserved. Next unit starts at Phase 4 (mock provider) only after parent/verify.
 
 ## Remaining implementation tasks (verbatim start of next unit)
 
-- [ ] 3.1 RED — Define fakes and failing service tests under `backend/internal/service/fiscal/*_test.go` plus PostgreSQL tests under `backend/tests/integration/fiscal_repository_test.go` for employee draft CRUD, client denial, optimistic versions, one current intent, atomic finalize/outbox rollback, repeated/concurrent finalization, and protected invoice deletion. <!-- sdd-owner: implementation -->
-- [ ] 3.2 GREEN — Add provider-neutral ports in `backend/internal/core/ports/fiscal_repository.go`, `fiscal_provider.go`, `fiscal_artifact_store.go`, and `credential_cipher.go`; implement aggregate/config/action queries in `backend/internal/repository/postgres/fiscal_repository.go` and draft/finalization commands in `backend/internal/service/fiscal/draft_service.go` and `finalization_service.go`. <!-- sdd-owner: implementation -->
-- [ ] 3.3 TRIANGULATE — Add PostgreSQL race tests proving one frozen intent and one initial issue event, complete rollback when event insertion fails, retry/reconcile/void sequence numbering, same provider/connection/operation key reuse, and no action from unknown states except reconciliation. <!-- sdd-owner: implementation -->
-- [ ] 3.4 REFACTOR — Add narrow `FiscalProtectionReader` and eligibility persistence through `backend/internal/core/ports/repositories.go`, `backend/internal/domain/invoice.go`, `backend/internal/repository/postgres/invoice_repository.go`, and `backend/internal/service/invoice/invoice_service.go`; retain the legacy JSON DTO and verify existing invoice service/repository tests unchanged. <!-- sdd-owner: implementation -->
-
-## WU1 verification evidence (retained)
-
-WU1 PostgreSQL 16 migration/schema work remains complete as previously recorded. No WU1 files were modified in the WU2 batch.
+- [ ] 4.1 RED — Add `backend/internal/integration/fiscal/mock/mock_provider_test.go` and repository integration tests for successful FT/FR issuance, stable repeated/concurrent calls, validation rejection, expired connection, definite transient/rate-limit errors, ambiguous-then-reconcile, permitted/refused voids, process reload, and deterministic PDF bytes. <!-- sdd-owner: implementation -->

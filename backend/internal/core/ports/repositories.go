@@ -133,6 +133,8 @@ type ServiceJobRepository interface {
 }
 
 // InvoiceRepository persists invoices (customer-scoped access enforced in InvoiceService).
+// Delete protection for frozen fiscal history is provided by FiscalProtectionReader
+// (see fiscal_repository.go) and wired through InvoiceService.WithFiscalProtection.
 type InvoiceRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Invoice, error)
 	Create(ctx context.Context, invoice *domain.Invoice) error

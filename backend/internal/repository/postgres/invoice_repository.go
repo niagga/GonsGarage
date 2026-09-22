@@ -25,6 +25,9 @@ func (r *postgresInvoiceRepository) Create(ctx context.Context, invoice *domain.
 	if invoice == nil {
 		return fmt.Errorf("invoice is nil")
 	}
+	if invoice.FiscalEligibility == "" {
+		invoice.FiscalEligibility = domain.FiscalEligibilityEligible
+	}
 	if err := r.db.WithContext(ctx).Create(invoice).Error; err != nil {
 		return fmt.Errorf("failed to create invoice: %w", err)
 	}

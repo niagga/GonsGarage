@@ -10,14 +10,21 @@ import (
 )
 
 type InvoiceService struct {
-	invoiceRepo ports.InvoiceRepository
-	userRepo    ports.UserRepository
+	invoiceRepo      ports.InvoiceRepository
+	userRepo         ports.UserRepository
+	fiscalProtection ports.FiscalProtectionReader
 }
 
 var _ ports.InvoiceService = (*InvoiceService)(nil)
 
 func NewInvoiceService(invoiceRepo ports.InvoiceRepository, userRepo ports.UserRepository) *InvoiceService {
 	return &InvoiceService{invoiceRepo: invoiceRepo, userRepo: userRepo}
+}
+
+// WithFiscalProtection attaches the narrow fiscal delete guard without changing legacy constructors.
+func (s *InvoiceService) WithFiscalProtection(reader ports.FiscalProtectionReader) *InvoiceService {
+	s.fiscalProtection = reader
+	return s
 }
 
 func (s *InvoiceService) GetInvoice(ctx context.Context, invoiceID uuid.UUID, requestingUserID uuid.UUID) (*domain.Invoice, error) {
@@ -164,6 +171,9 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *domain.Invo
 	if toSave.Status == "" {
 		toSave.Status = "open"
 	}
+	if toSave.FiscalEligibility == "" {
+		toSave.FiscalEligibility = domain.FiscalEligibilityEligible
+	}
 	if err := s.invoiceRepo.Create(ctx, &toSave); err != nil {
 		return nil, err
 	}
@@ -204,6 +214,15 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, invoiceID uuid.UUID,
 	}
 	if existing == nil {
 		return domain.ErrInvoiceNotFound
+	}
+	if s.fiscalProtection != nil {
+		protected, err := s.fiscalProtection.HasProtectedFiscalHistory(ctx, invoiceID)
+		if err != nil {
+			return err
+		}
+		if protected {
+			return ports.ErrFiscalHistoryProtected
+		}
 	}
 	return s.invoiceRepo.Delete(ctx, invoiceID)
 }
