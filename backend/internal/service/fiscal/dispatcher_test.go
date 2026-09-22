@@ -3,7 +3,6 @@ package fiscal
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/core/ports"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/domain"

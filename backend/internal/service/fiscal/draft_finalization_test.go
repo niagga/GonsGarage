@@ -259,6 +259,31 @@ func (r *fakeFiscalRepo) EnqueueAction(_ context.Context, cmd ports.EnqueueActio
 	return &cp, nil
 }
 
+func (r *fakeFiscalRepo) GetNextPending(_ context.Context) (*domain.FiscalDocument, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var next *domain.FiscalDocument
+	for _, agg := range r.aggs {
+		switch agg.Document.State {
+		case domain.FiscalDocumentStatePending,
+			domain.FiscalDocumentStateRetryableFailure,
+			domain.FiscalDocumentStateVoidPending:
+		default:
+			continue
+		}
+		if next == nil || agg.Document.UpdatedAt.Before(next.UpdatedAt) {
+			doc := agg.Document
+			next = &doc
+		}
+	}
+	if next == nil {
+		return nil, ports.ErrFiscalDocumentNotFound
+	}
+	return next, nil
+}
+
+var _ ports.FiscalRepository = (*fakeFiscalRepo)(nil)
+
 func seedActors(t *testing.T) (employee, manager, client uuid.UUID, users *fakeUserRepo, invoices *fakeInvoiceRepo, invoiceID uuid.UUID) {
 	t.Helper()
 	employee, manager, client = uuid.New(), uuid.New(), uuid.New()

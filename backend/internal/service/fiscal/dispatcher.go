@@ -65,7 +65,7 @@ func (d *Dispatcher) issueDocument(ctx context.Context, agg *ports.FiscalDocumen
 	}
 
 	// 2. Call Provider
-	res, err := d.provider.Issue(ctx, req)
+	_, err := d.provider.Issue(ctx, req)
 	if err != nil {
 		// Aquí deberíamos manejar el error y quizás encolar una transición a RetryableFailure
 		return fmt.Errorf("provider issue failed: %w", err)
