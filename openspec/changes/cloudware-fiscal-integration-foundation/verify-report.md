@@ -2,10 +2,11 @@
 schema: gentle-ai.verify-result/v1
 evidence_revision: sha256:6b5dbb9332520789cb53fc09993d24d60f7b9501a42ef442989feb70b3e9e9fa
 verdict: fail
-blockers: 2
-critical_findings: 5
+blockers: 1
+critical_findings: 2
 requirements: 7/29
-scenarios: 25/58
+scenarios: 28/58
+remediation_note: "2026-09-23 remediated 3 in-scope covering tests; archive still blocked by incomplete tasks"
 test_command: cd backend && go test ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... -count=1 ; FISCAL_TEST_DATABASE_URL=postgres://admindb:***@localhost:5432/gonsgarage?sslmode=disable go test ./tests/integration/ -count=1 -run Fiscal(Migration|Repository|Mock) -timeout 120s
 test_exit_code: 0
 test_output_hash: sha256:4ff8b21727e25077cf0a36b53e00fe59f5670ce1d9a7438673937863f8ae813c
@@ -77,9 +78,9 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Fiscal drafts distinct | Employee prepares an FT draft | `draft_finalization_test.go` > `TestDraftServiceEmployeeCRUDAndClientDenial` | ✅ COMPLIANT |
 | Fiscal drafts distinct | Client attempts draft preparation | same | ✅ COMPLIANT |
 | Fiscal drafts distinct | Optional source record later changes | `fiscal_policy_test.go` > `TestCalculate_SourceReferenceSurvivesAndCanonicalIgnoresExternalMutation` | ✅ COMPLIANT |
-| Fiscal drafts distinct | Unsupported document kind | impl `DocumentKind.IsValid` + `draft_service` guard; **no covering test** | ❌ UNTESTED |
+| Fiscal drafts distinct | Unsupported document kind | `TestDraftServiceRejectsUnsupportedDocumentKind` (2026-09-23 remediation) | ✅ COMPLIANT |
 | Complete fiscal data | Required fiscal identity is incomplete | `fiscal_policy_test.go` > `TestPolicyVersionResolve_ApprovalGateAndImmutability` + finalization readiness paths | ✅ COMPLIANT |
-| Complete fiscal data | Legacy floating-point amount is supplied | no dedicated test that draft ignores `Invoice.Amount float64` | ❌ UNTESTED |
+| Complete fiscal data | Legacy floating-point amount is supplied | `TestDraftServiceStoresCanonicalDecimalsIndependentOfLegacyFloatAmount` (2026-09-23 remediation) | ✅ COMPLIANT |
 | Deterministic arithmetic | Arithmetic policy is unavailable | `TestPolicyVersionResolve_ApprovalGateAndImmutability` | ✅ COMPLIANT |
 | Deterministic arithmetic | Totals reconcile | `TestCalculate_*` | ✅ COMPLIANT |
 | Deterministic arithmetic | Submitted totals do not reconcile | `TestCalculate_DocumentRoundingAdjustmentAndDeclaredMismatch` | ✅ COMPLIANT |
@@ -112,7 +113,7 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Failures classified | Rate limit response is definite | `TestMockProvider_ScenariosCoverValidationExpiredTransientRateLimitAmbiguousReconcileAndVoids` | ✅ COMPLIANT |
 | Failures classified | Timeout may have followed issuance | mock `ambiguous` class; **lease/crash protocol is WU5** | ⚠️ PARTIAL |
 | Ambiguous reconciliation | Reconciliation finds an issued document | mock ambiguous→Reconcile matched | ✅ COMPLIANT |
-| Ambiguous reconciliation | Reconciliation cannot establish a result | no inconclusive/not-matched mock assertion | ❌ UNTESTED |
+| Ambiguous reconciliation | Reconciliation cannot establish a result | `TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry` (2026-09-23 remediation) | ✅ COMPLIANT |
 | Attempts redacted | Provider returns a secret-bearing error | — | ❌ UNTESTED (deferred WU5/WU10) |
 | Outages isolate core | Provider is offline | `TestConnectionServiceProviderFailureFailsClosed` (partial surface) | ⚠️ PARTIAL |
 | Deterministic mock | Same mock issuance is repeated | `TestMockProvider_FTAndFRIssuanceAreStableAndLabeled` + concurrent + reload | ✅ COMPLIANT |
@@ -148,7 +149,7 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Normalized errors | Refresh token fails | — | ❌ UNTESTED (deferred WU10) |
 | Normalized errors | Active GC license is absent | — | ❌ UNTESTED (deferred WU10) |
 
-**Compliance summary**: **25/58** scenarios ✅ COMPLIANT; **6** ⚠️ PARTIAL; **27** ❌ UNTESTED (of which **3** are in-scope for completed WUs and **24** are expected deferred). Fully green requirements: **7/29**.
+**Compliance summary**: **28/58** scenarios ✅ COMPLIANT; **6** ⚠️ PARTIAL; **24** ❌ UNTESTED (all expected deferred to later WUs). Fully green requirements: **7/29** (+3 in-scope covering tests remediated 2026-09-23). Mid-change archive gate remains **FAIL** (22/58 tasks).
 
 ### Correctness (Static Evidence — WU1–WU4)
 
@@ -180,9 +181,9 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 
 **CRITICAL**:
 1. Change-level incompleteness: **36/58 tasks pending** — archive gate must remain blocked.
-2. In-scope UNTESTED: **Unsupported document kind** — validation exists in code, no passing covering test.
-3. In-scope UNTESTED: **Legacy floating-point amount is supplied** — no dedicated test proving draft ignores `Invoice.Amount`.
-4. In-scope UNTESTED: **Reconciliation cannot establish a result** — mock covers matched reconcile only.
+2. ~~In-scope UNTESTED: Unsupported document kind~~ — remediated 2026-09-23 (`TestDraftServiceRejectsUnsupportedDocumentKind`).
+3. ~~In-scope UNTESTED: Legacy floating-point amount~~ — remediated 2026-09-23 (`TestDraftServiceStoresCanonicalDecimalsIndependentOfLegacyFloatAmount`).
+4. ~~In-scope UNTESTED: Reconciliation cannot establish a result~~ — remediated 2026-09-23 (`TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry`).
 5. `gentle-ai sdd-verify-validate` unavailable on installed 3.5.0 — cannot machine-admit report bytes (parent still required OpenSpec+Engram persistence).
 
 **WARNING**:

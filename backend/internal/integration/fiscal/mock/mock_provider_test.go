@@ -215,6 +215,40 @@ func TestMockProvider_SurvivesStoreReload(t *testing.T) {
 	assert.Equal(t, pdf1.Content, pdf2.Content)
 }
 
+func TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry(t *testing.T) {
+	t.Parallel()
+	registry := NewScenarioRegistry(map[string]Scenario{
+		"op-inconclusive": ScenarioAmbiguous,
+	})
+	provider, err := NewProvider(Options{AppEnv: "test", Registry: registry, Store: NewMemoryOperationStore()})
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// No prior Issue record — lookup cannot establish a legal result.
+	req := ports.FiscalReconcileRequest{
+		FiscalOperationRequest: ports.FiscalOperationRequest{
+			ConnectionID:   uuid.MustParse("22222222-2222-2222-2222-222222222222"),
+			ProviderKey:    "mock",
+			OperationKey:   "op-inconclusive",
+			CorrelationKey: "corr-inconclusive",
+		},
+		DocumentID:        uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+		ProviderReference: "MOCK-missing-ref",
+	}
+	first, err := provider.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.False(t, first.Matched, "inconclusive lookup must not claim a match")
+	assert.Nil(t, first.ResolvedAt)
+	assert.Equal(t, "MOCK-missing-ref", first.ProviderReference)
+
+	// Blind retry of the same lookup must stay unmatched (no auto-resubmit / no invented match).
+	second, err := provider.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.False(t, second.Matched)
+	assert.Nil(t, second.ResolvedAt)
+	assert.Equal(t, first.ProviderReference, second.ProviderReference)
+}
+
 func TestMockProvider_ProductionRejectsSelectionAndLegalClassification(t *testing.T) {
 	t.Parallel()
 	_, err := NewProvider(Options{AppEnv: "production", Registry: NewScenarioRegistry(nil), Store: NewMemoryOperationStore()})

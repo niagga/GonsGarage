@@ -414,6 +414,54 @@ func TestFinalizationServiceOutboxFailureRollsBack(t *testing.T) {
 	assert.Equal(t, 0, repo.outboxCount[created.Document.ID])
 }
 
+func TestDraftServiceRejectsUnsupportedDocumentKind(t *testing.T) {
+	employee, _, _, users, invoices, invoiceID := seedActors(t)
+	repo := newFakeFiscalRepo()
+	svc := fiscalsvc.NewDraftService(repo, invoices, users)
+
+	_, err := svc.CreateDraft(context.Background(), employee, fiscalsvc.CreateDraftRequest{
+		SourceInvoiceID: invoiceID,
+		Kind:            domain.DocumentKind("NC"),
+		Snapshot:        emptySnapshot(),
+	})
+	require.ErrorIs(t, err, ports.ErrFiscalActionNotAllowed)
+	assert.Contains(t, err.Error(), "unsupported kind")
+	assert.Empty(t, repo.aggs, "unsupported kind must not create a fiscal intent")
+	assert.Empty(t, repo.byInvoice)
+}
+
+func TestDraftServiceStoresCanonicalDecimalsIndependentOfLegacyFloatAmount(t *testing.T) {
+	employee, _, _, users, invoices, invoiceID := seedActors(t)
+	repo := newFakeFiscalRepo()
+	svc := fiscalsvc.NewDraftService(repo, invoices, users)
+
+	// Legacy invoice float differs from canonical draft totals on purpose.
+	invoices.byID[invoiceID].Amount = 999.99
+
+	snap := emptySnapshot()
+	snap.PayableTotal = "12.30"
+	snap.GrossTotal = "10.00"
+	snap.NetTotal = "10.00"
+	snap.TaxTotal = "2.30"
+
+	created, err := svc.CreateDraft(context.Background(), employee, fiscalsvc.CreateDraftRequest{
+		SourceInvoiceID: invoiceID,
+		Kind:            domain.DocumentKindFT,
+		Snapshot:        snap,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "12.30", created.Snapshot.PayableTotal)
+	assert.Equal(t, "10.00", created.Snapshot.GrossTotal)
+	assert.NotEqual(t, "999.99", created.Snapshot.PayableTotal)
+
+	// Mutating the legacy float after draft creation must not rewrite frozen snapshot totals.
+	invoices.byID[invoiceID].Amount = 1.0
+	reloaded, err := repo.GetAggregate(context.Background(), created.Document.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "12.30", reloaded.Snapshot.PayableTotal)
+	assert.Equal(t, 1.0, invoices.byID[invoiceID].Amount)
+}
+
 func TestFinalizationServiceUnknownStateOnlyReconcile(t *testing.T) {
 	_, manager, _, users, invoices, invoiceID := seedActors(t)
 	repo := newFakeFiscalRepo()
