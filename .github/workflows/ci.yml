@@ -15,6 +15,21 @@ jobs:
         working-directory: backend
     env:
       CGO_ENABLED: "1"
+      FISCAL_TEST_DATABASE_URL: postgres://gonsgarage:gonsgarage@localhost:5432/gonsgarage_test?sslmode=disable
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gonsgarage
+          POSTGRES_PASSWORD: gonsgarage
+          POSTGRES_DB: gonsgarage_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gonsgarage -d gonsgarage_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -29,11 +44,46 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Test
-        run: go test ./... -count=1 -race -timeout=2m
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply fiscal migration 011 (smoke)
+        run: |
+          set -euo pipefail
+          PGPASSWORD=gonsgarage psql -h localhost -U gonsgarage -d gonsgarage_test -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY);
+          CREATE TABLE IF NOT EXISTS invoices (
+            id uuid PRIMARY KEY,
+            customer_id uuid NOT NULL REFERENCES users(id),
+            amount double precision NOT NULL,
+            status varchar(40) NOT NULL DEFAULT 'open',
+            notes text,
+            created_at timestamptz DEFAULT now(),
+            updated_at timestamptz DEFAULT now()
+          );
+          SQL
+          mkdir -p /tmp/fiscal-mig-smoke
+          cp migrations/011_fiscal_integration_foundation.up.sql /tmp/fiscal-mig-smoke/
+          go run ./cmd/migrate
+        env:
+          DATABASE_URL: postgres://gonsgarage:gonsgarage@localhost:5432/gonsgarage_test?sslmode=disable
+          MIGRATIONS_DIR: /tmp/fiscal-mig-smoke
+          PGPASSWORD: gonsgarage
+
+      - name: Test (unit + fiscal integration/concurrency)
+        run: go test ./... -count=1 -race -timeout=5m
+
+      - name: Fiscal readiness config matrix
+        run: go test ./internal/service/fiscal/ ./cmd/api/ ./cmd/fiscal-worker/ -count=1 -run "TestRuntimeConfig_|TestCoreAPIReady_|TestWorker|TestReadyHandler_|TestFiscalDependency|TestValidate|TestResolveProvider|TestArtifactRecovery|TestFiscalLogEvent_|TestFiscalMetricsSnapshot_"
 
       - name: Build API
         run: go build -o /tmp/gonsgarage-api ./cmd/api
+
+      - name: Build fiscal worker
+        run: go build -o /tmp/gonsgarage-fiscal-worker ./cmd/fiscal-worker
+
+      - name: Build migrate
+        run: go build -o /tmp/gonsgarage-migrate ./cmd/migrate
 
   frontend:
     name: Frontend (Next.js + pnpm)

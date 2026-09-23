@@ -1,0 +1,5 @@
+# WU11 verify build evidence
+VET_EXIT:0
+BUILD_API:0
+BUILD_WORKER:0
+BUILD_MIGRATE:0

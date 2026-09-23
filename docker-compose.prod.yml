@@ -4,6 +4,10 @@
 # Si DATABASE_URL usa host arnela-postgres: compose DEBE incluir ese segundo -f (o COMPOSE_OVERRIDE en scripts/update-server-gonsgarage.sh).
 # Uso: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 #
+# Fiscal dark launch: leave FISCAL_* switches false (defaults). Schema:
+#   docker compose -f docker-compose.prod.yml --profile fiscal --env-file .env.prod run --rm gonsgarage-migrate
+# See docs/fiscal-integration-runbook.md. Never enable finalization/worker until parent gates 13.2–13.4.
+#
 # Puerto público del stack: 8102 → nginx → front + /api/* al API.
 
 services:
@@ -13,6 +17,21 @@ services:
     restart: unless-stopped
     networks:
       - gonsgarage-network
+
+  gonsgarage-migrate:
+    profiles: ["fiscal"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.migrate
+    container_name: gonsgarage-migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.prod}
+      MIGRATIONS_DIR: /migrations
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - gonsgarage-network
+    restart: "no"
 
   gonsgarage-api:
     build:
@@ -29,6 +48,15 @@ services:
       GIN_MODE: ${GIN_MODE:-release}
       SERVER_PORT: "8080"
       CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env.prod}
+      APP_ENV: ${APP_ENV:-production}
+      FISCAL_FEATURE_ENABLED: ${FISCAL_FEATURE_ENABLED:-false}
+      FISCAL_FINALIZATION_ENABLED: ${FISCAL_FINALIZATION_ENABLED:-false}
+      FISCAL_WORKER_ENABLED: ${FISCAL_WORKER_ENABLED:-false}
+      FISCAL_PROVIDER: ${FISCAL_PROVIDER:-}
+      FISCAL_CLOUDWARE_MUTATIONS: ${FISCAL_CLOUDWARE_MUTATIONS:-false}
+      FISCAL_ARTIFACT_BACKEND: ${FISCAL_ARTIFACT_BACKEND:-object}
+      FISCAL_CREDENTIAL_KEY_VERSION: ${FISCAL_CREDENTIAL_KEY_VERSION:-}
+      FISCAL_CREDENTIAL_KEY_B64: ${FISCAL_CREDENTIAL_KEY_B64:-}
     depends_on:
       - redis
     healthcheck:
@@ -37,6 +65,35 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    networks:
+      - gonsgarage-network
+
+  gonsgarage-fiscal-worker:
+    profiles: ["fiscal"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.fiscal-worker
+    container_name: gonsgarage-fiscal-worker
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.prod}
+      APP_ENV: ${APP_ENV:-production}
+      FISCAL_WORKER_ENABLED: ${FISCAL_WORKER_ENABLED:-false}
+      FISCAL_FINALIZATION_ENABLED: ${FISCAL_FINALIZATION_ENABLED:-false}
+      FISCAL_FEATURE_ENABLED: ${FISCAL_FEATURE_ENABLED:-false}
+      FISCAL_PROVIDER: ${FISCAL_PROVIDER:-}
+      FISCAL_ARTIFACT_BACKEND: ${FISCAL_ARTIFACT_BACKEND:-object}
+      FISCAL_ARTIFACT_PRIVATE_ACL: ${FISCAL_ARTIFACT_PRIVATE_ACL:-false}
+      FISCAL_ARTIFACT_ENCRYPTION: ${FISCAL_ARTIFACT_ENCRYPTION:-false}
+      FISCAL_ARTIFACT_RETENTION: ${FISCAL_ARTIFACT_RETENTION:-false}
+      FISCAL_ARTIFACT_BACKUP_RESTORE: ${FISCAL_ARTIFACT_BACKUP_RESTORE:-false}
+      FISCAL_ARTIFACT_ACCESS_LOG: ${FISCAL_ARTIFACT_ACCESS_LOG:-false}
+      FISCAL_ARTIFACT_OBJECT_ENDPOINT: ${FISCAL_ARTIFACT_OBJECT_ENDPOINT:-}
+      FISCAL_ARTIFACT_OBJECT_BUCKET: ${FISCAL_ARTIFACT_OBJECT_BUCKET:-}
+    depends_on:
+      - redis
     networks:
       - gonsgarage-network
 

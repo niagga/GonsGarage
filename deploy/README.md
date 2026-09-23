@@ -46,7 +46,25 @@ Archivos en la **raíz del repo**:
 | [`frontend/Dockerfile`](../frontend/Dockerfile) | Activa `DOCKER_BUILD=1` para `output: "standalone"` (solo en build Linux/Docker; `pnpm build` local en Windows sigue sin standalone). |
 | [`docker-compose.prod.arnela-network.yml`](../docker-compose.prod.arnela-network.yml) | **Opción B (recomendada con Arnela):** une el API a la red Docker de Arnela y usá `arnela-postgres` como host en `DATABASE_URL`. |
 
+## Fiscal integration (dark launch)
+
+Fiscal schema, worker, and Cloudware mutations stay **off by default**. Operational runbook:
+
+- [`docs/fiscal-integration-runbook.md`](../docs/fiscal-integration-runbook.md) — rollout stages, switches, monitoring, credential rotation, backup/restore, rollback
+- [`docs/fiscal-integration-traceability.md`](../docs/fiscal-integration-traceability.md) — scenario → spec links
+
+Schema apply (one-shot, does not enable finalization):
+
+```bash
+docker compose -f docker-compose.prod.yml --profile fiscal --env-file .env.prod run --rm gonsgarage-migrate
+```
+
+Do **not** set `FISCAL_FINALIZATION_ENABLED=true` or `FISCAL_WORKER_ENABLED=true` until parent tasks 13.2–13.4 record approved policy, storage, credentials, and gate evidence. Production rejects mock provider and local artifact backends.
+
+Core `/ready` remains PostgreSQL-only; fiscal provider health is exposed at `/fiscal/dependency-status` and must not take the API out of rotation during a provider outage.
+
 ## Postgres compartido con Arnela (mismo `homeos`)
+
 
 Si `docker ps` muestra `arnela-postgres` con **`5432/tcp` sin** `0.0.0.0:5432->…`, el Postgres **no está publicado en el host**: por eso fallan `host.docker.internal`, `172.17.0.1` y la IP LAN.
 

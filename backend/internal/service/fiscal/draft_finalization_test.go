@@ -359,7 +359,7 @@ func TestFinalizationServiceAtomicityAndAuth(t *testing.T) {
 	employee, manager, _, users, invoices, invoiceID := seedActors(t)
 	repo := newFakeFiscalRepo()
 	draft := fiscalsvc.NewDraftService(repo, invoices, users)
-	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users)
+	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users).WithEnabled(true)
 
 	created, err := draft.CreateDraft(context.Background(), employee, fiscalsvc.CreateDraftRequest{
 		SourceInvoiceID: invoiceID,
@@ -396,7 +396,7 @@ func TestFinalizationServiceOutboxFailureRollsBack(t *testing.T) {
 	repo := newFakeFiscalRepo()
 	repo.failOutbox = true
 	draft := fiscalsvc.NewDraftService(repo, invoices, users)
-	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users)
+	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users).WithEnabled(true)
 	created, err := draft.CreateDraft(context.Background(), employee, fiscalsvc.CreateDraftRequest{
 		SourceInvoiceID: invoiceID, Kind: domain.DocumentKindFT, Snapshot: emptySnapshot(),
 	})
@@ -478,7 +478,7 @@ func TestFinalizationServiceUnknownStateOnlyReconcile(t *testing.T) {
 		},
 	}
 	repo.byInvoice[invoiceID] = docID
-	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users)
+	finalizer := fiscalsvc.NewFinalizationService(repo, invoices, users).WithEnabled(true)
 
 	_, err := finalizer.Retry(context.Background(), manager, fiscalsvc.ActionRequest{DocumentID: docID, ExpectedVersion: 3})
 	require.ErrorIs(t, err, ports.ErrFiscalActionNotAllowed)

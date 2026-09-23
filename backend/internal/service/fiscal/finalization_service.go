@@ -17,11 +17,33 @@ type FinalizationService struct {
 	repo     ports.FiscalRepository
 	invoices ports.InvoiceRepository
 	users    ports.UserRepository
+	enabled  bool
 }
 
 // NewFinalizationService builds the manager/admin finalization service.
+// Legal mutations stay disabled until WithEnabled(true) or an equivalent composition switch.
 func NewFinalizationService(repo ports.FiscalRepository, invoices ports.InvoiceRepository, users ports.UserRepository) *FinalizationService {
-	return &FinalizationService{repo: repo, invoices: invoices, users: users}
+	return &FinalizationService{repo: repo, invoices: invoices, users: users, enabled: false}
+}
+
+// WithEnabled toggles legal finalization/retry/void enqueue. Default is false (dark launch).
+func (s *FinalizationService) WithEnabled(enabled bool) *FinalizationService {
+	if s != nil {
+		s.enabled = enabled
+	}
+	return s
+}
+
+// IsEnabled reports whether legal finalization mutations are allowed.
+func (s *FinalizationService) IsEnabled() bool {
+	return s != nil && s.enabled
+}
+
+func (s *FinalizationService) requireEnabled() error {
+	if !s.IsEnabled() {
+		return ports.ErrFiscalIssuanceDisabled
+	}
+	return nil
 }
 
 // FinalizeRequest freezes a draft and enqueues issue sequence 1.
@@ -42,6 +64,9 @@ type ActionRequest struct {
 
 // Finalize freezes one intent atomically; repeats of an already-pending document are idempotent.
 func (s *FinalizationService) Finalize(ctx context.Context, actorID uuid.UUID, req FinalizeRequest) (*ports.FinalizeDraftResult, error) {
+	if err := s.requireEnabled(); err != nil {
+		return nil, err
+	}
 	if _, err := s.requireManager(ctx, actorID); err != nil {
 		return nil, err
 	}
@@ -90,6 +115,9 @@ func (s *FinalizationService) Finalize(ctx context.Context, actorID uuid.UUID, r
 
 // Retry enqueues the same issue operation key from recoverable states.
 func (s *FinalizationService) Retry(ctx context.Context, actorID uuid.UUID, req ActionRequest) (*domain.FiscalDocument, error) {
+	if err := s.requireEnabled(); err != nil {
+		return nil, err
+	}
 	if _, err := s.requireManager(ctx, actorID); err != nil {
 		return nil, err
 	}
@@ -112,6 +140,7 @@ func (s *FinalizationService) Retry(ctx context.Context, actorID uuid.UUID, req 
 
 // Reconcile enqueues reconciliation for unknown outcomes only.
 func (s *FinalizationService) Reconcile(ctx context.Context, actorID uuid.UUID, req ActionRequest) (*domain.FiscalDocument, error) {
+	// Reconciliation remains available while finalization is off so unknown outcomes can close.
 	if _, err := s.requireManager(ctx, actorID); err != nil {
 		return nil, err
 	}
@@ -138,6 +167,9 @@ func (s *FinalizationService) Reconcile(ctx context.Context, actorID uuid.UUID, 
 
 // Void enqueues a void for an issued document, fixing one void operation key.
 func (s *FinalizationService) Void(ctx context.Context, actorID uuid.UUID, req ActionRequest) (*domain.FiscalDocument, error) {
+	if err := s.requireEnabled(); err != nil {
+		return nil, err
+	}
 	if _, err := s.requireManager(ctx, actorID); err != nil {
 		return nil, err
 	}

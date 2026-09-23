@@ -116,7 +116,8 @@ func main() {
 	}
 	// Fiscal tables are explicit migrations, never AutoMigrate. Legacy startup is
 	// unchanged while the additive capability is disabled.
-	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
+	fiscalFeatureEarly := fiscalsvc.ParseRuntimeConfig(os.Getenv).FeatureEnabled
+	if fiscalFeatureEarly {
 		schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer schemaCancel()
 		if err := postgresRepo.VerifyFiscalSchema(schemaCtx, sqlDB); err != nil {
@@ -240,12 +241,24 @@ func main() {
 	partService := part.NewPartService(partItemRepo, userRepo)
 
 	var fiscalIntegrationHandler *handler.FiscalIntegrationHandler
-	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
-		fiscalConnectionRepo := postgresRepo.NewPostgresFiscalConnectionRepository(db)
-		credentialKeyVersion := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY_VERSION"))
-		if credentialKeyVersion == "" {
-			credentialKeyVersion = "v1"
+	var fiscalDeps func() fiscalsvc.FiscalDependencyStatus
+	fiscalRuntime := fiscalsvc.ParseRuntimeConfig(os.Getenv)
+	fiscalRuntime.JWTSecretIsDefault = jwtSecret == "" || jwtSecret == "your-super-secret-jwt-key" || strings.HasPrefix(jwtSecret, "CHANGE_ME")
+	if fiscalRuntime.FeatureEnabled {
+		schemaCtx, schemaCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		fiscalRuntime.SchemaPresent = postgresRepo.VerifyFiscalSchema(schemaCtx, sqlDB) == nil
+		schemaCancel()
+		if err := validateAPIFiscalComposition(fiscalRuntime); err != nil {
+			log.Fatalf("fiscal production composition rejected: %v", err)
 		}
+		providerKey, providerErr := fiscalsvc.ResolveProviderKey(fiscalRuntime)
+		if providerErr != nil {
+			log.Fatalf("fiscal provider configuration rejected: %v", providerErr)
+		}
+		fiscalRuntime.ProviderKey = providerKey
+
+		fiscalConnectionRepo := postgresRepo.NewPostgresFiscalConnectionRepository(db)
+		credentialKeyVersion := fiscalRuntime.CredentialKeyVersion
 		var credentialKey []byte
 		if encoded := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY_B64")); encoded != "" {
 			decoded, decodeErr := base64.StdEncoding.DecodeString(encoded)
@@ -257,35 +270,48 @@ func main() {
 		} else if rawKey := strings.TrimSpace(os.Getenv("FISCAL_CREDENTIAL_KEY")); rawKey != "" {
 			credentialKey = []byte(rawKey)
 		}
+		providerHealthy := false
 		if len(credentialKey) == 0 {
 			log.Printf("Warning: fiscal integration disabled: missing FISCAL_CREDENTIAL_KEY or FISCAL_CREDENTIAL_KEY_B64")
 		} else if cipher, cipherErr := fiscalcrypto.NewFiscalCredentialCipher(credentialKeyVersion, credentialKey); cipherErr != nil {
 			log.Printf("Warning: fiscal integration disabled: %v", cipherErr)
-		} else if keyringErr := fiscalcrypto.ValidateProductionKeyring(strings.TrimSpace(os.Getenv("APP_ENV")), credentialKeyVersion, credentialKey); keyringErr != nil {
+		} else if keyringErr := fiscalcrypto.ValidateProductionKeyring(fiscalRuntime.AppEnv, credentialKeyVersion, credentialKey); keyringErr != nil {
 			log.Printf("Warning: fiscal integration disabled: %v", keyringErr)
-		} else {
-			appEnv := strings.TrimSpace(os.Getenv("APP_ENV"))
-			if appEnv == "" {
-				appEnv = "development"
-			}
-			if guardErr := fiscalmock.AssertMockAllowed(appEnv); guardErr != nil {
+		} else if providerKey == "mock" {
+			if guardErr := fiscalmock.AssertMockAllowed(fiscalRuntime.AppEnv); guardErr != nil {
 				log.Printf("Warning: fiscal mock provider not wired: %v", guardErr)
-			} else if classErr := fiscalmock.RejectLegalMockClassification(appEnv, "mock"); classErr != nil {
+			} else if classErr := fiscalmock.RejectLegalMockClassification(fiscalRuntime.AppEnv, "mock"); classErr != nil {
 				log.Printf("Warning: fiscal mock provider not wired: %v", classErr)
+			} else if mockProvider, providerErr := fiscalmock.NewProvider(fiscalmock.Options{
+				AppEnv:   fiscalRuntime.AppEnv,
+				Registry: fiscalmock.NewScenarioRegistry(nil),
+				Store:    fiscalmock.NewPostgresOperationStore(sqlDB),
+			}); providerErr != nil {
+				log.Printf("Warning: fiscal integration disabled: %v", providerErr)
 			} else {
-				mockProvider, providerErr := fiscalmock.NewProvider(fiscalmock.Options{
-					AppEnv:   appEnv,
-					Registry: fiscalmock.NewScenarioRegistry(nil),
-					Store:    fiscalmock.NewPostgresOperationStore(sqlDB),
-				})
-				if providerErr != nil {
-					log.Printf("Warning: fiscal integration disabled: %v", providerErr)
-				} else {
-					fiscalService := fiscalsvc.NewConnectionService(fiscalConnectionRepo, userRepo, mockProvider, cipher, credentialKeyVersion)
-					fiscalIntegrationHandler = handler.NewFiscalIntegrationHandler(fiscalService)
-					log.Printf("Fiscal integration foundation wired with deterministic mock provider (env=%s, classification=mock)", appEnv)
-				}
+				fiscalService := fiscalsvc.NewConnectionService(fiscalConnectionRepo, userRepo, mockProvider, cipher, credentialKeyVersion)
+				fiscalIntegrationHandler = handler.NewFiscalIntegrationHandler(fiscalService)
+				providerHealthy = true
+				log.Printf("Fiscal integration foundation wired with deterministic mock provider (env=%s, classification=mock)", fiscalRuntime.AppEnv)
 			}
+		} else {
+			log.Printf("Fiscal provider %q selected; connection routes require Cloudware composition (mutations default off)", providerKey)
+		}
+		fiscalDeps = func() fiscalsvc.FiscalDependencyStatus {
+			return fiscalsvc.BuildFiscalDependencyStatus(fiscalsvc.DependencyStatusInput{
+				FeatureEnabled:      fiscalRuntime.FeatureEnabled,
+				FinalizationEnabled: fiscalRuntime.FinalizationEnabled,
+				WorkerEnabled:       fiscalRuntime.WorkerEnabled,
+				ProviderKey:         fiscalRuntime.ProviderKey,
+				ProviderHealthy:     providerHealthy,
+				SchemaPresent:       fiscalRuntime.SchemaPresent,
+			})
+		}
+	} else {
+		fiscalDeps = func() fiscalsvc.FiscalDependencyStatus {
+			return fiscalsvc.BuildFiscalDependencyStatus(fiscalsvc.DependencyStatusInput{
+				FeatureEnabled: false, SchemaPresent: false, ProviderHealthy: true,
+			})
 		}
 	}
 
@@ -311,16 +337,23 @@ func main() {
 	partHandler := handler.NewPartHandler(partService)
 
 	var fiscalHandler *handler.FiscalHandler
-	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
+	if fiscalRuntime.FeatureEnabled {
 		fiscalRepo := postgresRepo.NewFiscalRepository(sqlDB)
 		invoiceService = invoiceService.WithFiscalProtection(fiscalRepo)
 		invoiceHandler = handler.NewInvoiceHandler(invoiceService)
 		draftSvc := fiscalsvc.NewDraftService(fiscalRepo, invoiceRepo, userRepo)
-		finalSvc := fiscalsvc.NewFinalizationService(fiscalRepo, invoiceRepo, userRepo)
+		finalSvc := fiscalsvc.NewFinalizationService(fiscalRepo, invoiceRepo, userRepo).WithEnabled(fiscalRuntime.FinalizationEnabled)
 		artifactRepo := postgresRepo.NewFiscalArtifactRepository(sqlDB)
-		docSvc := fiscalsvc.NewDocumentService(draftSvc, finalSvc, nil, fiscalRepo, invoiceRepo, userRepo, artifactRepo)
+		var artifactSvc *fiscalsvc.ArtifactService
+		if art, artErr := fiscalsvc.ComposeArtifactService(fiscalRuntime.AppEnv, sqlDB, os.Getenv, fiscalRuntime.FinalizationEnabled); artErr != nil {
+			log.Printf("Warning: fiscal artifact service not wired: %v", artErr)
+		} else if art != nil {
+			artifactSvc = art.Service
+			log.Printf("Fiscal artifact service wired backend=%s env=%s", art.Backend, art.Environment)
+		}
+		docSvc := fiscalsvc.NewDocumentService(draftSvc, finalSvc, artifactSvc, fiscalRepo, invoiceRepo, userRepo, artifactRepo)
 		fiscalHandler = handler.NewFiscalHandler(docSvc)
-		log.Printf("Fiscal document HTTP APIs wired")
+		log.Printf("Fiscal document HTTP APIs wired (finalization_enabled=%v)", fiscalRuntime.FinalizationEnabled)
 	}
 
 	log.Printf("Handlers initialized")
@@ -338,7 +371,7 @@ func main() {
 	// Setup routes
 	setupRoutes(router, authHandler, adminUserHandler, employeeHandler, carHandler, appointmentHandler, repairHandler, serviceJobHandler,
 		supplierHandler, receivedInvoiceHandler, billingDocumentHandler, invoiceHandler, partHandler, fiscalIntegrationHandler, fiscalHandler,
-		authMiddleware, sqlxDB)
+		authMiddleware, sqlxDB, fiscalDeps)
 
 	log.Printf("Routes set up")
 
@@ -506,6 +539,7 @@ func setupRoutes(
 	fiscalHandler *handler.FiscalHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	sqlxDB *sqlx.DB,
+	fiscalDeps func() fiscalsvc.FiscalDependencyStatus,
 ) {
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -515,18 +549,31 @@ func setupRoutes(
 		})
 	})
 
-	// Readiness: PostgreSQL via sqlx (shared pool with GORM)
+	// Readiness: PostgreSQL via sqlx (shared pool with GORM). Provider health is isolated.
 	router.GET("/ready", func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 		defer cancel()
-		if err := sqlxDB.PingContext(ctx); err != nil {
+		dbOK := sqlxDB.PingContext(ctx) == nil
+		providerHealthy := true
+		if fiscalDeps != nil {
+			providerHealthy = fiscalDeps().ProviderHealthy
+		}
+		if !fiscalsvc.CoreAPIReady(dbOK, providerHealthy) {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"status": "not_ready",
-				"db":     err.Error(),
 			})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	})
+
+	// Fiscal dependency status is separate from /ready so provider outages do not take the API out of rotation.
+	router.GET("/fiscal/dependency-status", func(c *gin.Context) {
+		if fiscalDeps == nil {
+			c.JSON(http.StatusOK, fiscalsvc.FiscalDependencyStatus{ProviderHealthy: true})
+			return
+		}
+		c.JSON(http.StatusOK, fiscalDeps())
 	})
 
 	// API v1 routes

@@ -1,8 +1,12 @@
 # Local development: PostgreSQL + Redis (defaults match backend/cmd/api/main.go when DATABASE_URL / REDIS_URL are unset).
 # From repository root:
 #   docker compose up -d
+#   docker compose --profile fiscal up -d migrate fiscal-worker
 #   docker compose logs -f
 #   docker compose down
+#
+# Fiscal dark launch: keep FISCAL_FEATURE_ENABLED / FISCAL_FINALIZATION_ENABLED / FISCAL_WORKER_ENABLED unset or false.
+# Apply schema with the migrate profile before enabling feature reads.
 
 services:
   postgres:
@@ -37,6 +41,45 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    profiles: ["fiscal"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.migrate
+    container_name: gonsgarage-migrate
+    environment:
+      DATABASE_URL: postgres://admindb:gonsgarage123@postgres:5432/gonsgarage?sslmode=disable
+      MIGRATIONS_DIR: /migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  fiscal-worker:
+    profiles: ["fiscal"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.fiscal-worker
+    container_name: gonsgarage-fiscal-worker
+    environment:
+      DATABASE_URL: postgres://admindb:gonsgarage123@postgres:5432/gonsgarage?sslmode=disable
+      APP_ENV: development
+      FISCAL_WORKER_ENABLED: ${FISCAL_WORKER_ENABLED:-false}
+      FISCAL_FINALIZATION_ENABLED: ${FISCAL_FINALIZATION_ENABLED:-false}
+      FISCAL_FEATURE_ENABLED: ${FISCAL_FEATURE_ENABLED:-false}
+      FISCAL_PROVIDER: ${FISCAL_PROVIDER:-mock}
+      FISCAL_ARTIFACT_BACKEND: ${FISCAL_ARTIFACT_BACKEND:-local}
+      FISCAL_ARTIFACT_LOCAL_ROOT: /var/lib/gonsgarage/fiscal-artifacts
+    volumes:
+      - gonsgarage_fiscal_artifacts:/var/lib/gonsgarage/fiscal-artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   gonsgarage_pgdata:
   gonsgarage_redisdata:
+  gonsgarage_fiscal_artifacts:

@@ -285,6 +285,7 @@ func (s *DocumentService) toProjection(ctx context.Context, role domain.FiscalAc
 	if s.artifactRepo != nil {
 		if art, err := s.artifactRepo.GetByDocumentID(ctx, doc.ID); err == nil && art != nil {
 			proj.ArtifactStatus = string(art.Status)
+			proj.ArtifactID = art.ID.String()
 		}
 	}
 	if role == domain.FiscalActorRoleClient {
@@ -300,6 +301,7 @@ func (s *DocumentService) toProjection(ctx context.Context, role domain.FiscalAc
 			proj.Currency = ""
 			proj.AllowedActions = []string{}
 			proj.ArtifactStatus = ""
+			proj.ArtifactID = ""
 			proj.LastErrorCode = ""
 			proj.LastErrorSafe = ""
 			return proj

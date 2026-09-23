@@ -1,7 +1,7 @@
 # Apply Progress: Cloudware fiscal integration foundation
 
 ## Status
-WU1–WU9 remain complete. **WU10 `Cloudware security shell` is complete**: AES-256-GCM credential AAD + keyring rotation, hashed one-time OAuth state with actor/redirect/expiry binding, Cloudware adapter FT/FR mapping with fail-closed `CloudwareEnablementEvaluator`, bounded fake-HTTP client, readiness/connect/callback routes, and secret-free responses. Fake HTTP and test credentials only — no live Cloudware mutations. No commit or PR was created. Stopped before WU11.
+WU1–WU10 remain complete. **WU11 `operations and rollout` is complete**: independent fiscal switches (feature/finalization/worker/provider) default off; production rejects mock/local/default secrets/missing schema; `/ready` isolates provider health; worker readiness gates; shared artifact composition wired into API (closes prior PDF ArtifactService nil PARTIAL for composition); CI PostgreSQL 16 + migration smoke + race tests + api/worker/migrate builds; runbook + traceability docs. Finalization and Cloudware mutations remain off. No live Cloudware. No commit or PR. Stopped before WU12.
 
 ## Completed tasks and persisted checkboxes
 - [x] 1.1–1.5 WU1 schema/migration (retained).
@@ -13,67 +13,84 @@ WU1–WU9 remain complete. **WU10 `Cloudware security shell` is complete**: AES-
 - [x] 7.1–7.4 WU7 additive HTTP API (retained).
 - [x] 8.1–8.4 WU8 staff fiscal UI (retained).
 - [x] 9.1–9.4 WU9 client/admin UI (retained).
-- [x] 10.1 RED — Cloudware/crypto/connection tests for OAuth state, AES-GCM AAD, gates blocking before HTTP. <!-- sdd-owner: implementation -->
-- [x] 10.2 GREEN — `fiscal_credentials.go`, connection repo/service/handler, `integration/fiscal/cloudware/*` OAuth/DTOs/mapping/errors/`CloudwareEnablementEvaluator`. <!-- sdd-owner: implementation -->
-- [x] 10.3 TRIANGULATE — finalize/void/PDF fixtures, FR associated-receipt, active-license, unknown→ambiguous, no FS/receipt/correction, gate `not_applicable` rationale. <!-- sdd-owner: implementation -->
-- [x] 10.4 REFACTOR — bounded TLS client, allowlist, response limits, no mutation retries, secret-free logs/API, production keyring validation, import isolation tests. <!-- sdd-owner: implementation -->
+- [x] 10.1–10.4 WU10 Cloudware security shell (retained).
+- [x] 11.1 RED — configuration/readiness tests (cmd/api, cmd/fiscal-worker, service/fiscal). <!-- sdd-owner: implementation -->
+- [x] 11.2 GREEN — API/worker/migrate/compose/env wiring; allowlisted logs/metrics; dependency status; graceful worker shutdown. <!-- sdd-owner: implementation -->
+- [x] 11.3 TRIANGULATE — CI PostgreSQL 16, migration smoke, fiscal matrix tests, builds. <!-- sdd-owner: implementation -->
+- [x] 11.4 REFACTOR — runbook + traceability docs linked to all four specs. <!-- sdd-owner: implementation -->
 - [x] 13.1 Parent delivery decision (retained).
 
-## Files changed (WU10 batch)
+## Files changed (WU11 batch)
 | File | Action | What was done |
 |------|--------|---------------|
-| `backend/internal/platform/crypto/fiscal_credentials.go` | Modified | AAD binding, keyring rotation, production keyring validation |
-| `backend/internal/platform/crypto/fiscal_credentials_aad_test.go` | Created | AAD/rotation/production keyring RED→GREEN |
-| `backend/internal/core/ports/fiscal_oauth.go` | Created | OAuth state/token/readiness ports |
-| `backend/internal/core/ports/fiscal_connection_service.go` | Modified | OAuth + readiness service methods |
-| `backend/internal/service/fiscal/connection_service.go` | Modified | OAuth start/callback/refresh, AAD encrypt, readiness |
-| `backend/internal/service/fiscal/connection_oauth_test.go` | Created | Hashed state, invalid/reused callback, refresh fail-closed |
-| `backend/internal/integration/fiscal/cloudware/*` | Created | Mapping, enablement, errors, HTTP client, adapter, isolation |
-| `backend/internal/repository/postgres/fiscal_connection_repository.go` | Modified | OAuth authorization save/consume |
-| `backend/internal/handler/fiscal_integration_handler.go` | Modified | readiness/connect/callback/status/verify/disconnect |
-| `backend/cmd/api/main.go` | Modified | Cloudware integration routes + production keyring gate |
-| `openspec/.../tasks.md` | Modified | Mark 10.1–10.4 `[x]` |
-| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU10 progress |
+| `backend/internal/service/fiscal/runtime_config.go` | Created | Independent switches, production validation, core/worker readiness, dependency status |
+| `backend/internal/service/fiscal/runtime_config_test.go` | Created | RED/GREEN readiness and production fail-closed tests |
+| `backend/internal/service/fiscal/runtime_config_matrix_test.go` | Created | Feature-off, Cloudware fail-closed, outage isolation, artifact-recovery matrix |
+| `backend/internal/service/fiscal/observability.go` | Created | Allowlisted fiscal log fields + metrics snapshot |
+| `backend/internal/service/fiscal/observability_test.go` | Created | PII/secret exclusion assertions |
+| `backend/internal/service/fiscal/compose_artifacts.go` | Created | Shared API/worker artifact composition + provider key resolve |
+| `backend/internal/service/fiscal/finalization_service.go` | Modified | Default-off `WithEnabled` gate for finalize/retry/void |
+| `backend/internal/service/fiscal/document_service.go` | Modified | Projection `artifactId`; clear on client draft hide |
+| `backend/internal/core/ports/fiscalization_service.go` | Modified | `ArtifactID` on projection |
+| `backend/cmd/api/fiscal_runtime.go` | Created | `/ready` isolation helpers + production composition gate |
+| `backend/cmd/api/fiscal_runtime_test.go` | Created | Provider-outage `/ready` + dependency-status tests |
+| `backend/cmd/api/main.go` | Modified | RuntimeConfig wiring, ArtifactService composition, dependency route |
+| `backend/cmd/fiscal-worker/main.go` | Modified | Startup gates, shared compose, allowlisted start log |
+| `backend/cmd/fiscal-worker/readiness.go` | Created | Worker startup validation |
+| `backend/cmd/fiscal-worker/readiness_test.go` | Created | Worker enable/schema/DB/mock production tests |
+| `backend/Dockerfile.migrate` | Created | One-shot migrate image |
+| `backend/Dockerfile.fiscal-worker` | Created | Worker image |
+| `docker-compose.yml` | Modified | Fiscal profile: migrate + worker |
+| `docker-compose.prod.yml` | Modified | Fiscal env + migrate/worker profiles; defaults off |
+| `.env.prod.example` | Modified | Fiscal dark-launch env documentation |
+| `.github/workflows/ci.yml` | Modified | Postgres 16, migration smoke, race, builds |
+| `deploy/README.md` | Modified | Link fiscal dark-launch section |
+| `docs/fiscal-integration-runbook.md` | Created | Ops runbook |
+| `docs/fiscal-integration-traceability.md` | Created | Four-spec scenario matrix |
+| `openspec/.../tasks.md` | Modified | Mark 11.1–11.4 `[x]` |
+| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU11 progress |
 
 ## Verification
-- Focused: `go test ./internal/platform/crypto/ ./internal/service/fiscal/ ./internal/integration/fiscal/cloudware/ ./internal/handler/ -count=1` → **PASS**
-- `go build ./cmd/api` → **PASS**
-- `go test -race` → **N/A** on this Windows agent (requires cgo/`CGO_ENABLED=1` + gcc); documented, not silently skipped as green
+- Focused: `go test ./internal/service/fiscal/ ./cmd/api/ ./cmd/fiscal-worker/ ./internal/handler/ ./internal/core/ports/ -count=1` → **PASS**
+- Config matrix filter → **PASS**
+- `go build ./cmd/api ./cmd/fiscal-worker ./cmd/migrate` → **PASS**
+- `go test -race` → **N/A** on this Windows agent (requires cgo/`CGO_ENABLED=1` + gcc); CI ubuntu job runs `-race`
 
-## Work Unit Evidence (WU10)
+## Work Unit Evidence (WU11)
 
 | Evidence | Result |
 |---|---|
-| Focused test command | `go test ./internal/platform/crypto/ ./internal/service/fiscal/ ./internal/integration/fiscal/cloudware/ ./internal/handler/ -count=1` → **PASS** (crypto, fiscal service, cloudware, handler) |
-| Runtime harness | N/A — WU10 uses `httptest` fake HTTP + in-memory OAuth/token stubs; live Cloudware mutations remain blocked (WU12 / parent 13.2–13.4) |
-| Rollback boundary | Revert WU10 crypto AAD/keyring, cloudware package, OAuth connection methods/repo, Cloudware handler routes/wiring; mock provider path and WU1–WU9 remain |
+| Focused test command | `go test ./internal/service/fiscal/ ./cmd/api/ ./cmd/fiscal-worker/ -count=1 -run "TestRuntimeConfig_|TestCoreAPIReady_|TestWorker|TestReadyHandler_|TestFiscalDependency|TestValidate|TestResolveProvider|TestArtifactRecovery|TestFiscalLogEvent_|TestFiscalMetricsSnapshot_|TestFinalizationDisabled"` → **PASS** |
+| Runtime harness | Compose/CI config + `/ready` httptest isolation; live Cloudware mutations remain blocked (WU12 / parent 13.2–13.4); PostgreSQL integration suite runs in CI via `FISCAL_TEST_DATABASE_URL` |
+| Rollback boundary | Revert WU11 runtime/observability/compose/CI/docs and disable fiscal env switches; WU1–WU10 domain/provider/UI remain; turn off finalization/worker without deleting evidence |
 
-## TDD Cycle Evidence (WU10)
+## TDD Cycle Evidence (WU11)
 
 | Task | Test file/layer | Safety net | RED | GREEN | TRIANGULATE | REFACTOR |
 |---|---|---|---|---|---|---|
-| 10.1 | `fiscal_credentials_aad_test.go`, `connection_oauth_test.go`, `cloudware/cloudware_test.go` / Unit | ✅ crypto+fiscal PASS pre-change | ✅ Written (undefined types/methods) | — | Covered with 10.3 | N/A in RED |
-| 10.2 | same + production modules | N/A (new cloudware pkg) | From 10.1 | ✅ packages PASS | — | Bounded client later |
-| 10.3 | finalize/void/PDF/FR/license/ambiguous/FS/N/A rationale | unit green | Contract fixtures + error cases | Behaviors PASS | ✅ All listed scenarios | Helpers extracted |
-| 10.4 | HTTP allowlist/no-retry, isolation import walk, production keyring | ✅ focused green | Approval via existing round-trip | PASS + `go build ./cmd/api` | — | Isolation test; keyring validation in API wiring |
+| 11.1 | `runtime_config_test.go`, `observability_test.go`, `cmd/api/fiscal_runtime_test.go`, `cmd/fiscal-worker/readiness_test.go` / Unit+HTTP | N/A (new config surface) | ✅ Written (undefined types) | — | Covered in 11.3 | N/A in RED |
+| 11.2 | same + production modules | Prior fiscal package green | From 11.1 | ✅ packages PASS + builds | — | Composition helpers extracted |
+| 11.3 | `runtime_config_matrix_test.go` + CI | ✅ focused green | Matrix cases | Behaviors PASS | ✅ feature-off/mock/Cloudware/outage/artifact | CI yaml |
+| 11.4 | Docs (runbook/traceability) | Approval via existing green tests | Docs only | N/A code | Spec links | ✅ Ops clarity |
 
 ## Prior work unit evidence (retained)
 
-### WU9
+### WU10
 | Evidence | Result |
 |---|---|
-| Focused tests | 45 passed frontend WU9 |
-| Full frontend | 175 tests |
-| Rollback | my-invoices + admin fiscal + AppShell |
+| Focused tests | crypto + fiscal service + cloudware + handler PASS |
+| Runtime harness | N/A — fake HTTP only |
+| Rollback | WU10 crypto/OAuth/cloudware; mock path remains |
 
-### WU8–WU1
-Retained: staff UI; additive HTTP API; artifact archive; outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
+### WU9–WU1
+Retained: client/admin UI; staff UI; additive HTTP; artifacts; worker; mock; repos; domain; migration 011.
 
 ## Deviations, budget, and remaining work
-- **Budget / size:exception**: Authored WU10 volume exceeds the preferred ~600-line budget (crypto+OAuth+cloudware adapter+handler routes+tests). Completing WU10 coherently required the full security shell (same pattern as WU3–WU9). Documented as **size:exception** under parent-authorized manual WU10 slice.
-- **Live Cloudware**: Explicitly out of scope. Adapter `mutationsEnabled` defaults false; gates remain pending from migration seed.
+- **Budget / size:exception**: Authored WU11 volume exceeds the preferred ~600-line budget (runtime config + observability + cmd wiring + compose/CI/Dockerfiles + docs + tests). Completing WU11 coherently required the full ops slice (same pattern as WU3–WU10). Documented as **size:exception** under parent-authorized manual WU11 slice.
+- **API ArtifactService**: Composed for non-production local backend when feature enabled; production object bytes remain readiness-only until WU12/cloud SDK — projection now includes `artifactId` when metadata exists.
+- **Live Cloudware**: Explicitly out of scope. Mutations stay disabled; WU12 blocked on parent 13.2–13.4.
 - **Race detector**: N/A without gcc/cgo on this agent host; CI with cgo remains authoritative.
-- Delivery: Parent authorized manual WU10 only; agent created **no commits/PRs**. Stopped before WU11.
+- Delivery: Parent authorized manual WU11 only; agent created **no commits/PRs**. Stopped before WU12.
 
 ## Deferred parent lifecycle actions
 - [ ] 13.2 Production fiscal-policy, issuer/series, retention, storage, backup, access-log, and legal-void decisions. <!-- sdd-owner: parent -->
@@ -105,7 +122,7 @@ contextFiles:
   verifyReport: [openspec/changes/cloudware-fiscal-integration-foundation/verify-report.md]
   syncReport: []
 artifacts: { proposal: done, specs: done, design: done, tasks: done, applyProgress: done, verifyReport: present, syncReport: missing }
-taskProgress: { total: 58, complete: 46, remaining: 12 }
+taskProgress: { total: 58, complete: 50, remaining: 8 }
 deferredParentActions: { total: 5, complete: 1, remaining: 4 }
 taskArtifactErrors: []
 applyState: ready
@@ -116,15 +133,15 @@ actionContext:
   allowedEditRoots:
     - D:/Repos/GonsGarage
   warnings:
-    - "WU10 authored above ~600 preferred lines; size:exception like WU3–WU9"
+    - "WU11 authored above ~600 preferred lines; size:exception like WU3–WU10"
     - "Live Cloudware mutations remain fail-closed until WU12 / parent 13.2–13.4"
-    - "go test -race N/A without gcc/cgo on this agent host"
+    - "go test -race N/A without gcc/cgo on this agent host; CI runs -race"
 nextRecommended: sdd-verify
 isNonAuthoritative: false
 ```
 
-WU10 finish state is satisfied: encrypted credentials with AAD/keyring, OAuth hashed state, Cloudware FT/FR mapping, fail-closed gates before HTTP, readiness endpoint for admin UI, no live mutations. Next: `sdd-verify`, then WU11 only after parent/verify.
+WU11 finish state is satisfied: dark-launch switches, production fail-closed composition, `/ready` isolation, worker readiness, CI Postgres 16, runbooks. Next: `sdd-verify`. WU12 remains **BLOCKED** pending parent 13.2–13.4.
 
 ## Remaining implementation tasks (verbatim start of next unit)
 
-- [ ] 11.1 RED — Add deployment/CI/config tests for feature/finalization/worker flags, mock isolation, Cloudware fail-closed production defaults, and migration/schema guards. <!-- sdd-owner: implementation -->
+- [ ] 12.1 … (WU12 BLOCKED — do not start without parent 13.2–13.4)

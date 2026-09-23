@@ -34,6 +34,7 @@ type FiscalizationProjection struct {
 	TaxTotal       string   `json:"taxTotal,omitempty"`
 	AllowedActions []string `json:"allowedActions"`
 	ArtifactStatus string   `json:"artifactStatus,omitempty"`
+	ArtifactID     string   `json:"artifactId,omitempty"`
 	LastErrorCode  string   `json:"lastErrorCode,omitempty"`
 	LastErrorSafe  string   `json:"lastErrorMessage,omitempty"`
 	Readiness      []string `json:"readinessIssues,omitempty"`
