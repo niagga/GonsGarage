@@ -13,7 +13,8 @@ SSH as `ggarcia@192.168.1.100` with WSL key `~/.ssh/pi_gonsgarage` (not `root`).
 
 ```bash
 cd /DATA/AppData/gonsgarage
-export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
+# Do NOT set COMPOSE_OVERRIDE to arnela-network — GonsGarage has its own Postgres.
+unset COMPOSE_OVERRIDE
 bash scripts/deploy-prod.sh deploy
 ```
 
@@ -25,7 +26,20 @@ bash scripts/deploy-prod.sh rollback
 bash scripts/deploy-prod.sh status
 ```
 
-Docs: `deploy/README.md`. Script: `scripts/deploy-prod.sh`. Legacy alias: `scripts/update-server-gonsgarage.sh` → `deploy`.
+Docs: `deploy/README.md`, server `RUNBOOK.md`. Script: `scripts/deploy-prod.sh`. Legacy alias: `scripts/update-server-gonsgarage.sh` → `deploy`.
+
+## Database topology (post P0-T1 cutover)
+
+On `192.168.1.100` the stacks are **already isolated**:
+
+| Stack | Postgres container | App DB host in env |
+|-------|--------------------|--------------------|
+| GonsGarage PROD | `gonsgarage-postgres` | `postgres` (compose service) |
+| GonsGarage STG | `gonsgarage-stg-postgres` | own stg service |
+| Arnela PROD | `arnela-postgres` | Arnela only |
+| Arnela STG | `arnela-stg-postgres` | Arnela only |
+
+`.env.prod` must use `@postgres:.../gonsgarage`, **never** `arnela-postgres`. Do not attach `docker-compose.prod.arnela-network.yml` on routine deploys (that was legacy coupling; RUNBOOK forbids it).
 
 ## Prerequisites
 
@@ -38,6 +52,8 @@ Docs: `deploy/README.md`. Script: `scripts/deploy-prod.sh`. Legacy alias: `scrip
 - Do not `scp -r` the whole `frontend/` (includes `node_modules`; multi‑minute stalls; never reaches compose).
 - Do not deploy as `root@192.168.1.100` with the default agent SSH (publickey denied); use `ggarcia` + `pi_gonsgarage`.
 - Do not mix `docker-compose.yml` (dev) with prod compose.
+- Do not re-couple via `COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml` when DATABASE_URL already points at GonsGarage's own `postgres`.
+- Do not run `docker compose ... --remove-orphans` unless `postgres` is declared in `docker-compose.prod.yml` (a missing service declaration previously deleted the live DB container).
 - Do not enable fiscal finalization/Cloudware mutations as part of a routine deploy.
 
 ## Timing baseline

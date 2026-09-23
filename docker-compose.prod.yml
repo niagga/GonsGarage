@@ -1,7 +1,8 @@
-# GonsGarage — producción / LAN (plantilla inspirada en Arnela).
-# Postgres: ver deploy/README.md — si Arnela ya tiene `arnela-postgres` sin puerto en el host,
-# añadí también `-f docker-compose.prod.arnela-network.yml` y `DATABASE_URL=@arnela-postgres:5432/...`.
-# Si DATABASE_URL usa host arnela-postgres: compose DEBE incluir ese segundo -f (o COMPOSE_OVERRIDE en scripts/update-server-gonsgarage.sh).
+# GonsGarage — producción / LAN.
+# Dedicated Postgres (P0-T1 cutover): service name `postgres` matches DATABASE_URL host.
+# Do NOT attach docker-compose.prod.arnela-network.yml for routine prod (isolation from Arnela).
+# Do NOT use `docker compose ... --remove-orphans` unless postgres is declared here — otherwise
+# a server-only postgres container can be deleted.
 # Uso: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 #
 # Fiscal dark launch: leave FISCAL_* switches false (defaults). Schema:
@@ -11,6 +12,25 @@
 # Puerto público del stack: 8102 → nginx → front + /api/* al API.
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gonsgarage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gonsgarage_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod (same as DATABASE_URL password)}
+      POSTGRES_DB: ${POSTGRES_DB:-gonsgarage}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - gonsgarage-network
+
   redis:
     image: redis:8-alpine
     container_name: gonsgarage-redis
@@ -58,7 +78,10 @@ services:
       FISCAL_CREDENTIAL_KEY_VERSION: ${FISCAL_CREDENTIAL_KEY_VERSION:-}
       FISCAL_CREDENTIAL_KEY_B64: ${FISCAL_CREDENTIAL_KEY_B64:-}
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 15s
@@ -93,7 +116,10 @@ services:
       FISCAL_ARTIFACT_OBJECT_ENDPOINT: ${FISCAL_ARTIFACT_OBJECT_ENDPOINT:-}
       FISCAL_ARTIFACT_OBJECT_BUCKET: ${FISCAL_ARTIFACT_OBJECT_BUCKET:-}
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - gonsgarage-network
 
