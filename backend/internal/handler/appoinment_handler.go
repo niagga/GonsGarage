@@ -128,18 +128,20 @@ func (h *AppointmentHandler) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	customerID := userID
-	roleVal, _ := c.Get("userRole")
-	roleStr, _ := roleVal.(string)
-	if roleStr != "" && roleStr != domain.RoleClient {
-		if strings.TrimSpace(req.CustomerID) != "" {
+		// Clients: customer = self. Staff: leave Nil unless explicitly set so the
+		// service can derive the car owner (avoids 403 when FE omits customerID).
+		customerID := uuid.Nil
+		roleVal, _ := c.Get("userRole")
+		roleStr, _ := roleVal.(string)
+		if roleStr == "" || roleStr == domain.RoleClient {
+			customerID = userID
+		} else if strings.TrimSpace(req.CustomerID) != "" {
 			customerID, err = uuid.Parse(strings.TrimSpace(req.CustomerID))
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid customerID"})
 				return
 			}
 		}
-	}
 
 	appointment := &domain.Appointment{
 		CustomerID:  customerID,

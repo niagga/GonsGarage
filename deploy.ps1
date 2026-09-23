@@ -8,9 +8,9 @@ $SERVER = "192.168.1.100"
 $USER = "root"
 $REMOTE_DIR = "/DATA/AppData/gonsgarage"
 # Segundo `-f` opcional (misma idea que `COMPOSE_OVERRIDE` en `scripts/update-server-gonsgarage.sh`).
-# Si `.env.prod` usa `arnela-postgres`, el API debe unirse a la red de Arnela; p. ej.:
-#   $COMPOSE_OVERRIDE = "docker-compose.prod.arnela-network.yml"
-$COMPOSE_OVERRIDE = ""
+# Si `.env.prod` usa `arnela-postgres`, el API debe unirse a la red de Arnela.
+# Prod LAN (192.168.1.100 / Opción B): override activo. Vaciar si Postgres no es Arnela.
+$COMPOSE_OVERRIDE = "docker-compose.prod.arnela-network.yml"
 
 $ErrorActionPreference = "Stop"
 
@@ -42,7 +42,15 @@ foreach ($item in $items) {
 }
 
 Write-Host "[3/4] .env.prod en el servidor (si no existe)..." -ForegroundColor Yellow
-ssh "${USER}@${SERVER}" "cd ${REMOTE_DIR} && if [ ! -f .env.prod ]; then cp .env.prod.example .env.prod && echo '.env.prod creado desde example — editar JWT_SECRET y DATABASE_URL antes del up'; else echo '.env.prod ya existe'; fi"
+ssh "${USER}@${SERVER}" @"
+cd ${REMOTE_DIR}
+if [ ! -f .env.prod ]; then
+  cp .env.prod.example .env.prod
+  echo '.env.prod creado desde example - editar JWT_SECRET y DATABASE_URL antes del up'
+else
+  echo '.env.prod ya existe'
+fi
+"@
 
 Write-Host "[4/4] build + up (Docker)..." -ForegroundColor Yellow
 $composeArgs = "-f docker-compose.prod.yml"

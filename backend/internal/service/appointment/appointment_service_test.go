@@ -376,6 +376,62 @@ func TestAppointmentService_ListAppointments_ClientAlwaysOwnCustomerID(t *testin
 	assert.Equal(t, clientID, *apptRepo.lastList.CustomerID, "client list must be scoped to the authenticated user")
 }
 
+func TestAppointmentService_CreateAppointment_StaffDerivesCustomerFromCarOwner(t *testing.T) {
+	t.Parallel()
+	staffID := uuid.New()
+	ownerID := uuid.New()
+	carID := uuid.New()
+
+	staff, err := domain.NewUser("staff@example.com", "pw", "S", "Taff", domain.RoleEmployee)
+	require.NoError(t, err)
+	staff.ID = staffID
+
+	apptRepo := &stubApptRepo{}
+	cars := &stubCarRepo{byID: map[uuid.UUID]*domain.Car{
+		carID: {ID: carID, OwnerID: ownerID},
+	}}
+	svc := NewAppointmentService(
+		apptRepo,
+		&apptTestUserRepo{users: map[uuid.UUID]*domain.User{staffID: staff}},
+		cars,
+	)
+
+	// Staff omits customerID (uuid.Nil) — common when FE schedules from a car detail page.
+	in := sampleAppointment(uuid.Nil, carID)
+	in.ID = uuid.Nil
+
+	out, err := svc.CreateAppointment(context.Background(), in, staffID)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	assert.Equal(t, ownerID, out.CustomerID)
+	require.Len(t, apptRepo.created, 1)
+	assert.Equal(t, ownerID, apptRepo.created[0].CustomerID)
+}
+
+func TestAppointmentService_CreateAppointment_StaffWrongCustomerForbidden(t *testing.T) {
+	t.Parallel()
+	staffID := uuid.New()
+	ownerID := uuid.New()
+	otherID := uuid.New()
+	carID := uuid.New()
+
+	staff, err := domain.NewUser("staff2@example.com", "pw", "S", "Taff", domain.RoleEmployee)
+	require.NoError(t, err)
+	staff.ID = staffID
+
+	svc := NewAppointmentService(
+		&stubApptRepo{},
+		&apptTestUserRepo{users: map[uuid.UUID]*domain.User{staffID: staff}},
+		&stubCarRepo{byID: map[uuid.UUID]*domain.Car{
+			carID: {ID: carID, OwnerID: ownerID},
+		}},
+	)
+
+	out, err := svc.CreateAppointment(context.Background(), sampleAppointment(otherID, carID), staffID)
+	require.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+	assert.Nil(t, out)
+}
+
 func sampleAppointment(customerID, carID uuid.UUID) *domain.Appointment {
 	return &domain.Appointment{
 		CustomerID:  customerID,

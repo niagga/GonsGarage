@@ -1,15 +1,81 @@
 # Despliegue LAN / Docker (plantilla Arnela)
 
-## Orden recomendado (desde tu PC con `deploy.ps1`)
+## Camino recomendado: en el servidor (git pull + compose)
 
-1. **`git pull`** en el clon local (`D:\Repos\GonsGarage` o el que uses), para que lo que subís sea la última versión.
-2. **`.\deploy.ps1`** en **PowerShell** desde la raíz del repo (no copia el `.git`; solo `backend/`, `frontend/`, `nginx/`, compose y example de env).
+**No copies el árbol desde tu PC** para un deploy normal. En el servidor bajás lo que ya está en Git, reconstruís contenedores y verificás health/ready.
 
-Si trabajás **solo en el servidor** con una carpeta que rellenás a mano o con `git clone` allí, entonces el equivalente es **`git pull`** en `/DATA/AppData/gonsgarage` (si usás git en el servidor) y después `docker compose … up -d --build` — no hace falta `deploy.ps1` en ese flujo.
+Script canónico: [`scripts/deploy-prod.sh`](../scripts/deploy-prod.sh).
 
-## Script del servidor (`git pull` + compose)
+### Deploy
 
-El repo incluye [`scripts/update-server-gonsgarage.sh`](../scripts/update-server-gonsgarage.sh) para el clon en el servidor: `git fetch`, `git pull` y `docker compose … up -d --build` con `--env-file .env.prod`.
+```bash
+cd /DATA/AppData/gonsgarage
+export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml   # si DATABASE_URL usa arnela-postgres
+bash scripts/deploy-prod.sh deploy
+```
+
+Qué hace:
+
+1. Guarda el SHA actual (pre-deploy).
+2. `git fetch` + `checkout` de `main` (override con `GIT_REF`) + `pull --ff-only`.
+3. `docker compose -f docker-compose.prod.yml [-f override] --env-file .env.prod up -d --build`
+4. Reintenta `GET /health` y `GET /ready` en `http://127.0.0.1:8102` hasta OK (API + Postgres vía `/ready`).
+5. Si ambos dan **200**, escribe `.deploy-last-good` con ese SHA (rollback seguro).
+
+Equivalente a mano (sin script):
+
+```bash
+cd /DATA/AppData/gonsgarage
+git fetch --all --prune && git checkout main && git pull --ff-only origin main
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.arnela-network.yml --env-file .env.prod up -d --build
+curl -sS http://127.0.0.1:8102/health
+curl -sS http://127.0.0.1:8102/ready
+```
+
+### Rollback (último commit estable)
+
+Tras un deploy **exitoso**, el script marca el SHA en `.deploy-last-good` (archivo local del servidor; no va a git).
+
+```bash
+cd /DATA/AppData/gonsgarage
+export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
+bash scripts/deploy-prod.sh rollback
+```
+
+Hace `checkout --detach` de ese SHA, `up -d --build` y vuelve a exigir health/ready 200. Si el deploy nuevo falla health, **no** actualiza last-good: el rollback vuelve al último verde.
+
+### Status
+
+```bash
+bash scripts/deploy-prod.sh status
+```
+
+### Compatibilidad
+
+[`scripts/update-server-gonsgarage.sh`](../scripts/update-server-gonsgarage.sh) delega en `deploy-prod.sh deploy`.
+
+### Por qué este camino (y no SCP desde el PC)
+
+- Evita subir `node_modules` / `.next` por la red (minutos de SCP innecesarios).
+- El artefacto desplegado es exactamente un commit de Git (auditable).
+- Rollback = re-build del SHA ya marcado estable, no “adivinar” `HEAD~1`.
+
+**Requisito:** el commit que querés en prod tiene que estar en el remoto (`git push` desde tu máquina de desarrollo antes del deploy en el servidor).
+
+---
+
+## Alternativa desde tu PC (`deploy.ps1` / SCP)
+
+Solo si necesitás empujar el working tree local sin pasar por Git (emergencia). Es más lento y no deja un SHA limpio.
+
+1. **`git pull`** en el clon local.
+2. **`.\deploy.ps1`** en PowerShell desde la raíz del repo (copia `backend/`, `frontend/`, `nginx/`, compose; no copia `.git`).
+
+Si `DATABASE_URL` usa `arnela-postgres`, en `deploy.ps1` dejá `$COMPOSE_OVERRIDE = "docker-compose.prod.arnela-network.yml"`.
+
+---
+
+## Script del servidor y Arnela
 
 Si **`DATABASE_URL`** usa el hostname **`arnela-postgres`**, el API tiene que estar en la **misma red Docker** que ese contenedor (ver [Opción B](#opción-b-recomendada-misma-red-docker-que-arnela)). **Antes** de ejecutar el script:
 
@@ -19,7 +85,7 @@ export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
 
 Sin el segundo `-f` (override vacío), el API suele entrar en **bucle de reinicio** y nginx devuelve **502** en `/health` (*no such host* al resolver `arnela-postgres`).
 
-En **PowerShell** desde tu PC, [`deploy.ps1`](../deploy.ps1) admite la variable **`$COMPOSE_OVERRIDE`** (segundo `-f` en el `docker compose` remoto). Dejala vacía por defecto; si usás Postgres Arnela por hostname, asignala antes de ejecutar el script (mismo fichero que en bash).
+En **PowerShell** desde tu PC, [`deploy.ps1`](../deploy.ps1) admite la variable **`$COMPOSE_OVERRIDE`** (segundo `-f` en el `docker compose` remoto).
 
 ## Paridad Arnela (checklist)
 
@@ -37,14 +103,17 @@ Archivos en la **raíz del repo**:
 
 | Archivo | Uso |
 |---------|-----|
+| [`scripts/deploy-prod.sh`](../scripts/deploy-prod.sh) | **Canónico en servidor:** `deploy` / `rollback` / `status`. |
+| [`scripts/update-server-gonsgarage.sh`](../scripts/update-server-gonsgarage.sh) | Alias → `deploy-prod.sh deploy`. |
 | [`docker-compose.prod.yml`](../docker-compose.prod.yml) | Redis + API + Next (standalone) + nginx en **8102**. |
 | [`.env.prod.example`](../.env.prod.example) | Plantilla; copiar a **`.env.prod`** en el servidor (no git). |
-| [`deploy.ps1`](../deploy.ps1) | `scp` + `docker compose` remoto. Por defecto `$REMOTE_DIR` = `/DATA/AppData/gonsgarage` (cambiar en el script si hace falta). |
+| [`deploy.ps1`](../deploy.ps1) | Alternativa SCP desde PC (no preferida). |
 | [`docker-setup.prod.ps1`](../docker-setup.prod.ps1) | Mismo compose en local para probar antes de subir. |
 | [`nginx/default.conf`](../nginx/default.conf) | `/` → front, `/api/` y `/swagger/` → API. |
 | [`backend/Dockerfile`](../backend/Dockerfile) | Binario `gonsgarage-api`. |
 | [`frontend/Dockerfile`](../frontend/Dockerfile) | Activa `DOCKER_BUILD=1` para `output: "standalone"` (solo en build Linux/Docker; `pnpm build` local en Windows sigue sin standalone). |
 | [`docker-compose.prod.arnela-network.yml`](../docker-compose.prod.arnela-network.yml) | **Opción B (recomendada con Arnela):** une el API a la red Docker de Arnela y usá `arnela-postgres` como host en `DATABASE_URL`. |
+
 
 ## Fiscal integration (dark launch)
 

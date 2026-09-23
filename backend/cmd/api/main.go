@@ -164,12 +164,10 @@ func main() {
 		log.Printf("Successfully migrated %T", model)
 	}
 
-	// Bases creadas antes de domain.Repair.technician_id: AutoMigrate puede haber fallado y el repo sqlx asume la columna.
-	if err := ensureRepairsTechnicianIDColumn(db); err != nil {
-		log.Fatalf("repairs.technician_id schema fix: %v", err)
-	}
-	if err := ensureRepairsServiceJobIDColumn(db); err != nil {
-		log.Fatalf("repairs.service_job_id schema: %v", err)
+	// Legacy repairs tables (start_date/end_date, employee_id) drift from sqlx SELECT;
+	// AutoMigrate often fails silently (continue above). Ensure* adds/backfills required columns.
+	if err := postgresRepo.EnsureRepairsSchema(db); err != nil {
+		log.Fatalf("repairs schema fix: %v", err)
 	}
 
 	// Create indexes manually if they don't exist
@@ -407,29 +405,6 @@ func dropAllTables(db *gorm.DB) error {
 		} else {
 			log.Printf("Dropped table: %s", table)
 		}
-	}
-	return nil
-}
-
-// ensureRepairsTechnicianIDColumn alinea esquemas antiguos con el modelo actual (sqlx SELECT incluye technician_id).
-func ensureRepairsTechnicianIDColumn(db *gorm.DB) error {
-	const qAdd = `ALTER TABLE repairs ADD COLUMN IF NOT EXISTS technician_id uuid`
-	const qFill = `UPDATE repairs SET technician_id = '00000000-0000-0000-0000-000000000000'::uuid WHERE technician_id IS NULL`
-	const qDefault = `ALTER TABLE repairs ALTER COLUMN technician_id SET DEFAULT '00000000-0000-0000-0000-000000000000'::uuid`
-	const qNotNull = `ALTER TABLE repairs ALTER COLUMN technician_id SET NOT NULL`
-	for _, q := range []string{qAdd, qFill, qDefault, qNotNull} {
-		if err := db.Exec(q).Error; err != nil {
-			return fmt.Errorf("%s: %w", q, err)
-		}
-	}
-	return nil
-}
-
-// ensureRepairsServiceJobIDColumn adds optional link from repairs to service_jobs (visits).
-func ensureRepairsServiceJobIDColumn(db *gorm.DB) error {
-	const q = `ALTER TABLE repairs ADD COLUMN IF NOT EXISTS service_job_id uuid`
-	if err := db.Exec(q).Error; err != nil {
-		return fmt.Errorf("%s: %w", q, err)
 	}
 	return nil
 }

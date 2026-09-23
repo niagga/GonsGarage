@@ -1,6 +1,10 @@
 # Secrets de despliegue (plantilla: .env.prod.example)
 .env.prod
 
+# Estado local del deploy en el servidor (SHA last-good / pre-deploy)
+.deploy-last-good
+.deploy-pre-deploy
+
 # Binario local Go (Windows)
 backend/api.exe
 

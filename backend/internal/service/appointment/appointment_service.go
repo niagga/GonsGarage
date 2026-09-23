@@ -61,15 +61,6 @@ func (s *AppointmentService) CreateAppointment(
 		return nil, domain.ErrUserNotFound
 	}
 
-	customerID := appointment.CustomerID
-	if requestingUser.IsClient() {
-		customerID = requestingUserID
-	} else if !requestingUser.IsEmployee() {
-		return nil, domain.ErrUnauthorizedAccess
-	} else if customerID == uuid.Nil {
-		return nil, domain.ErrInvalidAppointmentData
-	}
-
 	car, err := s.carRepo.GetByID(queryCtx, appointment.CarID)
 	if err != nil {
 		if errors.Is(err, domain.ErrCarNotFound) {
@@ -80,7 +71,22 @@ func (s *AppointmentService) CreateAppointment(
 	if car == nil {
 		return nil, domain.ErrInvalidAppointmentData
 	}
-	if car.OwnerID != customerID {
+
+	// Resolve customer: clients always book as themselves; staff may omit customerID
+	// and we derive it from the car owner (FE schedule-from-car often skips it).
+	customerID := appointment.CustomerID
+	if requestingUser.IsClient() {
+		customerID = requestingUserID
+		if car.OwnerID != customerID {
+			return nil, domain.ErrUnauthorizedAccess
+		}
+	} else if requestingUser.IsEmployee() {
+		if customerID == uuid.Nil {
+			customerID = car.OwnerID
+		} else if car.OwnerID != customerID {
+			return nil, domain.ErrUnauthorizedAccess
+		}
+	} else {
 		return nil, domain.ErrUnauthorizedAccess
 	}
 
