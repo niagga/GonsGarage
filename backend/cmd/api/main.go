@@ -308,6 +308,19 @@ func main() {
 	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 	partHandler := handler.NewPartHandler(partService)
 
+	var fiscalHandler *handler.FiscalHandler
+	if os.Getenv("FISCAL_FEATURE_ENABLED") == "true" {
+		fiscalRepo := postgresRepo.NewFiscalRepository(sqlDB)
+		invoiceService = invoiceService.WithFiscalProtection(fiscalRepo)
+		invoiceHandler = handler.NewInvoiceHandler(invoiceService)
+		draftSvc := fiscalsvc.NewDraftService(fiscalRepo, invoiceRepo, userRepo)
+		finalSvc := fiscalsvc.NewFinalizationService(fiscalRepo, invoiceRepo, userRepo)
+		artifactRepo := postgresRepo.NewFiscalArtifactRepository(sqlDB)
+		docSvc := fiscalsvc.NewDocumentService(draftSvc, finalSvc, nil, fiscalRepo, invoiceRepo, userRepo, artifactRepo)
+		fiscalHandler = handler.NewFiscalHandler(docSvc)
+		log.Printf("Fiscal document HTTP APIs wired")
+	}
+
 	log.Printf("Handlers initialized")
 
 	// Setup router
@@ -322,7 +335,7 @@ func main() {
 
 	// Setup routes
 	setupRoutes(router, authHandler, adminUserHandler, employeeHandler, carHandler, appointmentHandler, repairHandler, serviceJobHandler,
-		supplierHandler, receivedInvoiceHandler, billingDocumentHandler, invoiceHandler, partHandler, fiscalIntegrationHandler,
+		supplierHandler, receivedInvoiceHandler, billingDocumentHandler, invoiceHandler, partHandler, fiscalIntegrationHandler, fiscalHandler,
 		authMiddleware, sqlxDB)
 
 	log.Printf("Routes set up")
@@ -488,6 +501,7 @@ func setupRoutes(
 	invoiceHandler *handler.InvoiceHandler,
 	partHandler *handler.PartHandler,
 	fiscalIntegrationHandler *handler.FiscalIntegrationHandler,
+	fiscalHandler *handler.FiscalHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	sqlxDB *sqlx.DB,
 ) {
@@ -628,19 +642,7 @@ func setupRoutes(
 			billingDocs.DELETE("/:id", billingDocumentHandler.DeleteBillingDocument)
 		}
 
-		invoices := protected.Group("/invoices")
-		{
-			invoices.GET("/me", invoiceHandler.ListMyInvoices)
-			staffInvoices := invoices.Group("")
-			staffInvoices.Use(middleware.RequireAccountingAccess())
-			{
-				staffInvoices.POST("", invoiceHandler.CreateIssuedInvoice)
-				staffInvoices.GET("", invoiceHandler.ListIssuedInvoicesStaff)
-				staffInvoices.DELETE("/:id", invoiceHandler.DeleteIssuedInvoice)
-			}
-			invoices.GET("/:id", invoiceHandler.GetIssuedInvoice)
-			invoices.PATCH("/:id", invoiceHandler.PatchIssuedInvoice)
-		}
+		handler.RegisterInvoiceAndFiscalRoutes(protected, invoiceHandler, fiscalHandler)
 
 		if fiscalIntegrationHandler != nil {
 			fiscal := protected.Group("/fiscal")

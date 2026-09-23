@@ -1,6 +1,683 @@
 basePath: /
 definitions:
-  github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.CreateEmployeeRequest:
+  domain.ServiceJob:
+    properties:
+      appointment_id:
+        type: string
+      car_id:
+        type: string
+      closed_at:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      opened_at:
+        type: string
+      opened_by_user_id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.ServiceJobStatus'
+      updated_at:
+        type: string
+    type: object
+  domain.ServiceJobHandover:
+    properties:
+      general_notes:
+        type: string
+      odometer_km:
+        type: integer
+      recorded_at:
+        type: string
+      recorded_by_user_id:
+        type: string
+      schema_version:
+        type: integer
+      service_job_id:
+        type: string
+      tires_note:
+        type: string
+    type: object
+  domain.ServiceJobReception:
+    properties:
+      coolant_level:
+        type: string
+      general_notes:
+        type: string
+      odometer_km:
+        type: integer
+      oil_level:
+        type: string
+      recorded_at:
+        type: string
+      recorded_by_user_id:
+        type: string
+      schema_version:
+        type: integer
+      service_job_id:
+        type: string
+      tires_note:
+        type: string
+    type: object
+  domain.ServiceJobStatus:
+    enum:
+    - open
+    - in_progress
+    - closed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - ServiceJobStatusOpen
+    - ServiceJobStatusInProgress
+    - ServiceJobStatusClosed
+    - ServiceJobStatusCancelled
+  handler.AppointmentResponse:
+    properties:
+      carId:
+        type: string
+      clientName:
+        type: string
+      createdAt:
+        type: string
+      date:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      service:
+        type: string
+      status:
+        type: string
+      time:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.BillingDocumentResponse:
+    properties:
+      amount:
+        type: number
+      createdAt:
+        type: string
+      customerId:
+        type: string
+      id:
+        type: string
+      kind:
+        type: string
+      notes:
+        type: string
+      reference:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.CarResponse:
+    properties:
+      color:
+        type: string
+      createdAt:
+        description: ✅ camelCase
+        type: string
+      id:
+        type: string
+      licensePlate:
+        description: ✅ camelCase
+        type: string
+      make:
+        type: string
+      mileage:
+        type: integer
+      model:
+        type: string
+      ownerID:
+        description: ✅ camelCase
+        type: string
+      updatedAt:
+        description: ✅ camelCase
+        type: string
+      vin:
+        type: string
+      year:
+        type: integer
+    type: object
+  handler.CreateAppointmentRequest:
+    properties:
+      carId:
+        description: frontend / Agent.md
+        type: string
+      customerID:
+        description: ✅ camelCase
+        type: string
+      employeeID:
+        description: ✅ camelCase
+        type: string
+      notes:
+        type: string
+      reason:
+        type: string
+      scheduledAt:
+        description: ✅ camelCase
+        type: string
+      scheduledTime:
+        description: legacy
+        type: string
+      serviceType:
+        description: ✅ camelCase
+        type: string
+      status:
+        type: string
+    type: object
+  handler.CreateBillingDocumentRequest:
+    properties:
+      amount:
+        type: number
+      customerId:
+        type: string
+      kind:
+        type: string
+      notes:
+        type: string
+      reference:
+        type: string
+      title:
+        type: string
+    type: object
+  handler.CreateCarRequest:
+    properties:
+      color:
+        type: string
+      licensePlate:
+        type: string
+      make:
+        type: string
+      mileage:
+        type: integer
+      model:
+        type: string
+      ownerID:
+        description: 'OwnerID optional: solo admin/manager asigna el cliente dueño.'
+        type: string
+      vin:
+        type: string
+      year:
+        type: integer
+    type: object
+  handler.CreateIssuedInvoiceRequest:
+    properties:
+      amount:
+        type: number
+      customerId:
+        type: string
+      notes:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.CreateReceivedInvoiceRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      invoiceDate:
+        type: string
+      notes:
+        type: string
+      supplierId:
+        type: string
+      vendorName:
+        type: string
+    type: object
+  handler.CreateSupplierRequest:
+    properties:
+      contactEmail:
+        type: string
+      contactPhone:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      notes:
+        type: string
+      taxId:
+        type: string
+    type: object
+  handler.FiscalFieldError:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  handler.FiscalValidationError:
+    properties:
+      error:
+        type: string
+      fields:
+        items:
+          $ref: '#/definitions/handler.FiscalFieldError'
+        type: array
+    type: object
+  handler.FiscalizationProjectionResponse:
+    properties:
+      allowedActions:
+        items:
+          type: string
+        type: array
+      artifactStatus:
+        type: string
+      currency:
+        type: string
+      documentId:
+        type: string
+      grossTotal:
+        type: string
+      invoiceId:
+        type: string
+      kind:
+        type: string
+      lastErrorCode:
+        type: string
+      lastErrorMessage:
+        type: string
+      lifecycle:
+        type: string
+      payableTotal:
+        type: string
+      readinessIssues:
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      taxTotal:
+        type: string
+      version:
+        type: integer
+    type: object
+  handler.FiscalizationSummariesResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handler.FiscalizationSummaryItem'
+        type: array
+    type: object
+  handler.FiscalizationSummaryItem:
+    properties:
+      allowedActions:
+        items:
+          type: string
+        type: array
+      invoiceId:
+        type: string
+      lifecycle:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.IssuedInvoiceResponse:
+    properties:
+      amount:
+        type: number
+      createdAt:
+        type: string
+      customerId:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.PatchIssuedInvoiceRequest:
+    properties:
+      amount:
+        type: number
+      notes:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.ReceivedInvoiceResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      invoiceDate:
+        type: string
+      notes:
+        type: string
+      supplierId:
+        type: string
+      updatedAt:
+        type: string
+      vendorName:
+        type: string
+    type: object
+  handler.RepairAPIModel:
+    properties:
+      car_id:
+        type: string
+      completed_at:
+        type: string
+      cost:
+        type: number
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+      technician_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handler.RepairResponse:
+    properties:
+      car:
+        $ref: '#/definitions/handler.CarResponse'
+      car_id:
+        type: string
+      cost:
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      employee:
+        $ref: '#/definitions/handler.UserResponse'
+      employee_id:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handler.SupplierResponse:
+    properties:
+      contactEmail:
+        type: string
+      contactPhone:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      notes:
+        type: string
+      taxId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.SwaggerLoginOK:
+    properties:
+      message:
+        type: string
+      token:
+        type: string
+    type: object
+  handler.SwaggerMeOK:
+    properties:
+      user:
+        $ref: '#/definitions/handler.SwaggerMeUser'
+    type: object
+  handler.SwaggerMeUser:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      lastName:
+        type: string
+      role:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.SwaggerMessage:
+    properties:
+      details:
+        type: string
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  handler.SwaggerProvisionUserOK:
+    properties:
+      user:
+        $ref: '#/definitions/handler.SwaggerMeUser'
+    type: object
+  handler.SwaggerRegisterOK:
+    properties:
+      message:
+        type: string
+      user:
+        $ref: '#/definitions/handler.SwaggerRegisterUser'
+    type: object
+  handler.SwaggerRegisterUser:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      lastName:
+        type: string
+      role:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handler.UpdateAppointmentRequest:
+    properties:
+      carId:
+        description: ✅ camelCase
+        type: string
+      customerID:
+        type: string
+      employeeID:
+        type: string
+      notes:
+        type: string
+      reason:
+        type: string
+      scheduledAt:
+        description: ✅ camelCase
+        type: string
+      scheduledTime:
+        description: ✅ camelCase
+        type: string
+      serviceType:
+        description: ✅ camelCase
+        type: string
+      status:
+        type: string
+    type: object
+  handler.UpdateBillingDocumentRequest:
+    properties:
+      amount:
+        type: number
+      customerId:
+        type: string
+      kind:
+        type: string
+      notes:
+        type: string
+      reference:
+        type: string
+      title:
+        type: string
+    type: object
+  handler.UpdateCarRequest:
+    properties:
+      color:
+        type: string
+      licensePlate:
+        description: ✅ camelCase
+        type: string
+      make:
+        type: string
+      mileage:
+        type: integer
+      model:
+        type: string
+      vin:
+        type: string
+      year:
+        type: integer
+    type: object
+  handler.UpdateReceivedInvoiceRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      invoiceDate:
+        type: string
+      notes:
+        type: string
+      supplierId:
+        type: string
+      vendorName:
+        type: string
+    type: object
+  handler.UpdateSupplierRequest:
+    properties:
+      contactEmail:
+        type: string
+      contactPhone:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      notes:
+        type: string
+      taxId:
+        type: string
+    type: object
+  handler.UserResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    type: object
+  handler.createRepairJSON:
+    properties:
+      car_id:
+        type: string
+      cost:
+        type: number
+      description:
+        type: string
+      start_date:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+    required:
+    - car_id
+    - description
+    type: object
+  handler.createServiceJobJSON:
+    properties:
+      car_id:
+        type: string
+    required:
+    - car_id
+    type: object
+  handler.serviceJobDetailResponse:
+    properties:
+      handover:
+        $ref: '#/definitions/domain.ServiceJobHandover'
+      job:
+        $ref: '#/definitions/domain.ServiceJob'
+      reception:
+        $ref: '#/definitions/domain.ServiceJobReception'
+      repair_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  handler.updateRepairJSON:
+    properties:
+      completed_at:
+        type: string
+      cost:
+        type: number
+      description:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+    type: object
+  ports.CreateEmployeeRequest:
     properties:
       createdAt:
         type: string
@@ -40,7 +717,7 @@ definitions:
     - email
     - position
     type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.ProvisionUserRequest:
+  ports.ProvisionUserRequest:
     properties:
       email:
         type: string
@@ -60,7 +737,7 @@ definitions:
     - password
     - role
     type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.RegisterRequest:
+  ports.RegisterRequest:
     properties:
       email:
         type: string
@@ -79,7 +756,7 @@ definitions:
     - lastName
     - password
     type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.UpdateEmployeeRequest:
+  ports.UpdateEmployeeRequest:
     properties:
       department:
         type: string
@@ -90,609 +767,6 @@ definitions:
       phone_number:
         type: string
       position:
-        type: string
-    type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJob:
-    properties:
-      appointment_id:
-        type: string
-      car_id:
-        type: string
-      closed_at:
-        type: string
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      id:
-        type: string
-      opened_at:
-        type: string
-      opened_by_user_id:
-        type: string
-      status:
-        $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobStatus'
-      updated_at:
-        type: string
-    type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobHandover:
-    properties:
-      general_notes:
-        type: string
-      odometer_km:
-        type: integer
-      recorded_at:
-        type: string
-      recorded_by_user_id:
-        type: string
-      schema_version:
-        type: integer
-      service_job_id:
-        type: string
-      tires_note:
-        type: string
-    type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobReception:
-    properties:
-      coolant_level:
-        type: string
-      general_notes:
-        type: string
-      odometer_km:
-        type: integer
-      oil_level:
-        type: string
-      recorded_at:
-        type: string
-      recorded_by_user_id:
-        type: string
-      schema_version:
-        type: integer
-      service_job_id:
-        type: string
-      tires_note:
-        type: string
-    type: object
-  github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobStatus:
-    enum:
-    - open
-    - in_progress
-    - closed
-    - cancelled
-    type: string
-    x-enum-varnames:
-    - ServiceJobStatusOpen
-    - ServiceJobStatusInProgress
-    - ServiceJobStatusClosed
-    - ServiceJobStatusCancelled
-  internal_handler.AppointmentResponse:
-    properties:
-      carId:
-        type: string
-      clientName:
-        type: string
-      createdAt:
-        type: string
-      date:
-        type: string
-      deletedAt:
-        type: string
-      id:
-        type: string
-      notes:
-        type: string
-      service:
-        type: string
-      status:
-        type: string
-      time:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.BillingDocumentResponse:
-    properties:
-      amount:
-        type: number
-      createdAt:
-        type: string
-      customerId:
-        type: string
-      id:
-        type: string
-      kind:
-        type: string
-      notes:
-        type: string
-      reference:
-        type: string
-      title:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.CarResponse:
-    properties:
-      color:
-        type: string
-      createdAt:
-        description: ✅ camelCase
-        type: string
-      id:
-        type: string
-      licensePlate:
-        description: ✅ camelCase
-        type: string
-      make:
-        type: string
-      mileage:
-        type: integer
-      model:
-        type: string
-      ownerID:
-        description: ✅ camelCase
-        type: string
-      updatedAt:
-        description: ✅ camelCase
-        type: string
-      vin:
-        type: string
-      year:
-        type: integer
-    type: object
-  internal_handler.CreateAppointmentRequest:
-    properties:
-      carId:
-        description: frontend / Agent.md
-        type: string
-      customerID:
-        description: ✅ camelCase
-        type: string
-      employeeID:
-        description: ✅ camelCase
-        type: string
-      notes:
-        type: string
-      reason:
-        type: string
-      scheduledAt:
-        description: ✅ camelCase
-        type: string
-      scheduledTime:
-        description: legacy
-        type: string
-      serviceType:
-        description: ✅ camelCase
-        type: string
-      status:
-        type: string
-    type: object
-  internal_handler.CreateBillingDocumentRequest:
-    properties:
-      amount:
-        type: number
-      customerId:
-        type: string
-      kind:
-        type: string
-      notes:
-        type: string
-      reference:
-        type: string
-      title:
-        type: string
-    type: object
-  internal_handler.CreateCarRequest:
-    properties:
-      color:
-        type: string
-      licensePlate:
-        type: string
-      make:
-        type: string
-      mileage:
-        type: integer
-      model:
-        type: string
-      ownerID:
-        description: 'OwnerID optional: solo personal del taller (admin/manager/employee)
-          asigna el cliente dueño.'
-        type: string
-      vin:
-        type: string
-      year:
-        type: integer
-    type: object
-  internal_handler.CreateIssuedInvoiceRequest:
-    properties:
-      amount:
-        type: number
-      customerId:
-        type: string
-      notes:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_handler.CreateReceivedInvoiceRequest:
-    properties:
-      amount:
-        type: number
-      category:
-        type: string
-      invoiceDate:
-        type: string
-      notes:
-        type: string
-      supplierId:
-        type: string
-      vendorName:
-        type: string
-    type: object
-  internal_handler.CreateSupplierRequest:
-    properties:
-      contactEmail:
-        type: string
-      contactPhone:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        type: string
-      notes:
-        type: string
-      taxId:
-        type: string
-    type: object
-  internal_handler.IssuedInvoiceResponse:
-    properties:
-      amount:
-        type: number
-      createdAt:
-        type: string
-      customerId:
-        type: string
-      id:
-        type: string
-      notes:
-        type: string
-      status:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  internal_handler.PatchIssuedInvoiceRequest:
-    properties:
-      amount:
-        type: number
-      notes:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_handler.ReceivedInvoiceResponse:
-    properties:
-      amount:
-        type: number
-      category:
-        type: string
-      createdAt:
-        type: string
-      id:
-        type: string
-      invoiceDate:
-        type: string
-      notes:
-        type: string
-      supplierId:
-        type: string
-      updatedAt:
-        type: string
-      vendorName:
-        type: string
-    type: object
-  internal_handler.RepairAPIModel:
-    properties:
-      car_id:
-        type: string
-      completed_at:
-        type: string
-      cost:
-        type: number
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      started_at:
-        type: string
-      status:
-        type: string
-      technician_id:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  internal_handler.RepairResponse:
-    properties:
-      car:
-        $ref: '#/definitions/internal_handler.CarResponse'
-      car_id:
-        type: string
-      cost:
-        type: number
-      created_at:
-        type: string
-      description:
-        type: string
-      employee:
-        $ref: '#/definitions/internal_handler.UserResponse'
-      employee_id:
-        type: string
-      end_date:
-        type: string
-      id:
-        type: string
-      start_date:
-        type: string
-      status:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  internal_handler.SupplierResponse:
-    properties:
-      contactEmail:
-        type: string
-      contactPhone:
-        type: string
-      createdAt:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        type: string
-      notes:
-        type: string
-      taxId:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.SwaggerLoginOK:
-    properties:
-      message:
-        type: string
-      token:
-        type: string
-    type: object
-  internal_handler.SwaggerMeOK:
-    properties:
-      user:
-        $ref: '#/definitions/internal_handler.SwaggerMeUser'
-    type: object
-  internal_handler.SwaggerMeUser:
-    properties:
-      createdAt:
-        type: string
-      email:
-        type: string
-      firstName:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      lastName:
-        type: string
-      role:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.SwaggerMessage:
-    properties:
-      details:
-        type: string
-      error:
-        type: string
-      message:
-        type: string
-    type: object
-  internal_handler.SwaggerProvisionUserOK:
-    properties:
-      user:
-        $ref: '#/definitions/internal_handler.SwaggerMeUser'
-    type: object
-  internal_handler.SwaggerRegisterOK:
-    properties:
-      message:
-        type: string
-      user:
-        $ref: '#/definitions/internal_handler.SwaggerRegisterUser'
-    type: object
-  internal_handler.SwaggerRegisterUser:
-    properties:
-      createdAt:
-        type: string
-      email:
-        type: string
-      firstName:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      lastName:
-        type: string
-      role:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  internal_handler.UpdateAppointmentRequest:
-    properties:
-      carId:
-        description: ✅ camelCase
-        type: string
-      customerID:
-        type: string
-      employeeID:
-        type: string
-      notes:
-        type: string
-      reason:
-        type: string
-      scheduledAt:
-        description: ✅ camelCase
-        type: string
-      scheduledTime:
-        description: ✅ camelCase
-        type: string
-      serviceType:
-        description: ✅ camelCase
-        type: string
-      status:
-        type: string
-    type: object
-  internal_handler.UpdateBillingDocumentRequest:
-    properties:
-      amount:
-        type: number
-      customerId:
-        type: string
-      kind:
-        type: string
-      notes:
-        type: string
-      reference:
-        type: string
-      title:
-        type: string
-    type: object
-  internal_handler.UpdateCarRequest:
-    properties:
-      color:
-        type: string
-      licensePlate:
-        description: ✅ camelCase
-        type: string
-      make:
-        type: string
-      mileage:
-        type: integer
-      model:
-        type: string
-      vin:
-        type: string
-      year:
-        type: integer
-    type: object
-  internal_handler.UpdateReceivedInvoiceRequest:
-    properties:
-      amount:
-        type: number
-      category:
-        type: string
-      invoiceDate:
-        type: string
-      notes:
-        type: string
-      supplierId:
-        type: string
-      vendorName:
-        type: string
-    type: object
-  internal_handler.UpdateSupplierRequest:
-    properties:
-      contactEmail:
-        type: string
-      contactPhone:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        type: string
-      notes:
-        type: string
-      taxId:
-        type: string
-    type: object
-  internal_handler.UserResponse:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
-        type: string
-      last_name:
-        type: string
-    type: object
-  internal_handler.createRepairJSON:
-    properties:
-      car_id:
-        type: string
-      cost:
-        type: number
-      description:
-        type: string
-      start_date:
-        type: string
-      started_at:
-        type: string
-      status:
-        type: string
-    required:
-    - car_id
-    - description
-    type: object
-  internal_handler.createServiceJobJSON:
-    properties:
-      car_id:
-        type: string
-    required:
-    - car_id
-    type: object
-  internal_handler.serviceJobDetailResponse:
-    properties:
-      handover:
-        $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobHandover'
-      job:
-        $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJob'
-      reception:
-        $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJobReception'
-      repair_ids:
-        items:
-          type: string
-        type: array
-    type: object
-  internal_handler.updateRepairJSON:
-    properties:
-      completed_at:
-        type: string
-      cost:
-        type: number
-      description:
-        type: string
-      started_at:
-        type: string
-      status:
         type: string
     type: object
 host: localhost:8080
@@ -715,33 +789,70 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.ProvisionUserRequest'
+          $ref: '#/definitions/ports.ProvisionUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerProvisionUserOK'
+            $ref: '#/definitions/handler.SwaggerProvisionUserOK'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Aprovisionar utilizador (staff)
+      tags:
+      - admin
+  /api/v1/admin/users/clients:
+    get:
+      description: Lista utilizadores com papel client para associação de viaturas.
+      parameters:
+      - description: Filtro por nome ou email
+        in: query
+        name: q
+        type: string
+      - description: Límite (default 100, max 200)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.SwaggerMessage'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.SwaggerMessage'
+      security:
+      - BearerAuth: []
+      summary: Listar clientes (staff)
       tags:
       - admin
   /api/v1/appointments:
@@ -782,20 +893,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.AppointmentResponse'
+              $ref: '#/definitions/handler.AppointmentResponse'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Listar citas
@@ -810,26 +921,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateAppointmentRequest'
+          $ref: '#/definitions/handler.CreateAppointmentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.AppointmentResponse'
+            $ref: '#/definitions/handler.AppointmentResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Crear cita
@@ -849,19 +960,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Eliminar cita
@@ -880,23 +991,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.AppointmentResponse'
+            $ref: '#/definitions/handler.AppointmentResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Obtener cita
@@ -916,30 +1027,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateAppointmentRequest'
+          $ref: '#/definitions/handler.UpdateAppointmentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.AppointmentResponse'
+            $ref: '#/definitions/handler.AppointmentResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Actualizar cita
@@ -957,22 +1068,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.LoginRequest'
+          $ref: '#/definitions/handler.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerLoginOK'
+            $ref: '#/definitions/handler.SwaggerLoginOK'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       summary: Iniciar sesión
       tags:
       - auth
@@ -985,15 +1096,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMeOK'
+            $ref: '#/definitions/handler.SwaggerMeOK'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Perfil actual
@@ -1010,22 +1121,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.RegisterRequest'
+          $ref: '#/definitions/ports.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerRegisterOK'
+            $ref: '#/definitions/handler.SwaggerRegisterOK'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       summary: Registro
       tags:
       - auth
@@ -1053,14 +1164,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateBillingDocumentRequest'
+          $ref: '#/definitions/handler.CreateBillingDocumentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.BillingDocumentResponse'
+            $ref: '#/definitions/handler.BillingDocumentResponse'
       security:
       - BearerAuth: []
       summary: Crear documento de facturación emitido
@@ -1095,7 +1206,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.BillingDocumentResponse'
+            $ref: '#/definitions/handler.BillingDocumentResponse'
       security:
       - BearerAuth: []
       summary: Obtener documento
@@ -1115,14 +1226,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateBillingDocumentRequest'
+          $ref: '#/definitions/handler.UpdateBillingDocumentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.BillingDocumentResponse'
+            $ref: '#/definitions/handler.BillingDocumentResponse'
       security:
       - BearerAuth: []
       summary: Actualizar documento
@@ -1150,20 +1261,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.CarResponse'
+              $ref: '#/definitions/handler.CarResponse'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Listar coches
@@ -1178,30 +1289,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateCarRequest'
+          $ref: '#/definitions/handler.CreateCarRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.CarResponse'
+            $ref: '#/definitions/handler.CarResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Crear coche
@@ -1221,19 +1332,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Eliminar coche
@@ -1252,23 +1363,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.CarResponse'
+            $ref: '#/definitions/handler.CarResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Obtener coche
@@ -1288,30 +1399,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateCarRequest'
+          $ref: '#/definitions/handler.UpdateCarRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.CarResponse'
+            $ref: '#/definitions/handler.CarResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Actualizar coche
@@ -1343,11 +1454,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Listar empleados
@@ -1362,7 +1473,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.CreateEmployeeRequest'
+          $ref: '#/definitions/ports.CreateEmployeeRequest'
       produces:
       - application/json
       responses:
@@ -1374,15 +1485,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Crear empleado
@@ -1402,19 +1513,19 @@ paths:
         "200":
           description: message
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Eliminar empleado
@@ -1438,19 +1549,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Obtener empleado
@@ -1470,7 +1581,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_core_ports.UpdateEmployeeRequest'
+          $ref: '#/definitions/ports.UpdateEmployeeRequest'
       produces:
       - application/json
       responses:
@@ -1482,15 +1593,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Actualizar empleado
@@ -1520,14 +1631,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateIssuedInvoiceRequest'
+          $ref: '#/definitions/handler.CreateIssuedInvoiceRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.IssuedInvoiceResponse'
+            $ref: '#/definitions/handler.IssuedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: Crear factura emitida a cliente
@@ -1562,7 +1673,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.IssuedInvoiceResponse'
+            $ref: '#/definitions/handler.IssuedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: Obtener factura emitida al cliente
@@ -1582,19 +1693,71 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.PatchIssuedInvoiceRequest'
+          $ref: '#/definitions/handler.PatchIssuedInvoiceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.IssuedInvoiceResponse'
+            $ref: '#/definitions/handler.IssuedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: 'Actualizar factura (notas cliente; staff: estado/importe)'
       tags:
       - invoices
+  /api/v1/invoices/{id}/fiscalization:
+    get:
+      parameters:
+      - description: Invoice UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.FiscalizationProjectionResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.SwaggerMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.SwaggerMessage'
+      security:
+      - BearerAuth: []
+      summary: Get invoice fiscalization projection
+      tags:
+      - fiscalization
+  /api/v1/invoices/fiscalization-summaries:
+    get:
+      parameters:
+      - description: CSV of invoice UUIDs (max 100)
+        in: query
+        name: invoiceIds
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.FiscalizationSummariesResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.FiscalValidationError'
+      security:
+      - BearerAuth: []
+      summary: Batch fiscalization summaries
+      tags:
+      - fiscalization
   /api/v1/invoices/me:
     get:
       parameters:
@@ -1643,14 +1806,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateReceivedInvoiceRequest'
+          $ref: '#/definitions/handler.CreateReceivedInvoiceRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.ReceivedInvoiceResponse'
+            $ref: '#/definitions/handler.ReceivedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: Registrar factura recibida
@@ -1685,7 +1848,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.ReceivedInvoiceResponse'
+            $ref: '#/definitions/handler.ReceivedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: Obtener factura recibida
@@ -1705,14 +1868,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateReceivedInvoiceRequest'
+          $ref: '#/definitions/handler.UpdateReceivedInvoiceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.ReceivedInvoiceResponse'
+            $ref: '#/definitions/handler.ReceivedInvoiceResponse'
       security:
       - BearerAuth: []
       summary: Actualizar factura recibida
@@ -1729,30 +1892,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.createRepairJSON'
+          $ref: '#/definitions/handler.createRepairJSON'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.RepairAPIModel'
+            $ref: '#/definitions/handler.RepairAPIModel'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Crear reparación
@@ -1774,19 +1937,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Eliminar reparación (soft delete)
@@ -1805,29 +1968,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.RepairAPIModel'
+            $ref: '#/definitions/handler.RepairAPIModel'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Obtener reparación por ID
       tags:
       - repairs
-    put:
+    patch:
       consumes:
       - application/json
       parameters:
@@ -1841,30 +2004,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.updateRepairJSON'
+          $ref: '#/definitions/handler.updateRepairJSON'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.RepairAPIModel'
+            $ref: '#/definitions/handler.RepairAPIModel'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Actualizar reparación
@@ -1886,24 +2049,24 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_handler.RepairResponse'
+              $ref: '#/definitions/handler.RepairResponse'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Listar reparaciones por coche
@@ -1922,7 +2085,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJob'
+              $ref: '#/definitions/domain.ServiceJob'
             type: array
     post:
       consumes:
@@ -1933,12 +2096,12 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.createServiceJobJSON'
+          $ref: '#/definitions/handler.createServiceJobJSON'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJob'
+            $ref: '#/definitions/domain.ServiceJob'
         "400":
           description: Bad Request
         "401":
@@ -1964,7 +2127,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.serviceJobDetailResponse'
+            $ref: '#/definitions/handler.serviceJobDetailResponse'
       tags:
       - service-jobs
   /api/v1/service-jobs/{id}/handover:
@@ -1989,7 +2152,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_gaston-garcia-cegid_gonsgarage_internal_domain.ServiceJob'
+              $ref: '#/definitions/domain.ServiceJob'
             type: array
   /api/v1/suppliers:
     get:
@@ -2024,26 +2187,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CreateSupplierRequest'
+          $ref: '#/definitions/handler.CreateSupplierRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.SupplierResponse'
+            $ref: '#/definitions/handler.SupplierResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Crear proveedor
@@ -2080,11 +2243,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.SupplierResponse'
+            $ref: '#/definitions/handler.SupplierResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.SwaggerMessage'
+            $ref: '#/definitions/handler.SwaggerMessage'
       security:
       - BearerAuth: []
       summary: Obtener proveedor
@@ -2104,14 +2267,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateSupplierRequest'
+          $ref: '#/definitions/handler.UpdateSupplierRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.SupplierResponse'
+            $ref: '#/definitions/handler.SupplierResponse'
       security:
       - BearerAuth: []
       summary: Actualizar proveedor

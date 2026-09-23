@@ -1,7 +1,7 @@
 # Apply Progress: Cloudware fiscal integration foundation
 
 ## Status
-WU1–WU5 remain complete. **WU6 `artifact archive` is complete**: immutable local private store (create-if-absent + collision), PostgreSQL artifact metadata/access logs, ownership-authorized streaming with checksum compromise refusal, worker `recover_artifact` wired through `ArtifactService.RecoverFromProvider` (FetchArtifact only — never Issue), and production object-store readiness boundary fail-closed until ACL/encryption/retention/backup/access-log pass. No commit or PR was created. Work stayed inside the WU6 boundary (no HTTP handlers / WU7).
+WU1–WU6 remain complete. **WU7 `additive HTTP API` is complete**: nested fiscalization routes (draft/detail/finalize/retry/reconcile/void), batch summaries registered before `/:id`, PDF streaming, strict decimal-string JSON + body/line limits, status mappings 403/404/409/422/202/503, client own-only projections/artifacts, manager/admin-only legal actions, legacy invoice contract regression, centralized safe response mapping, and swagger updates. No commit or PR was created. Work stayed inside the WU7 boundary (no WU8 UI).
 
 ## Completed tasks and persisted checkboxes
 - [x] 1.1–1.5 WU1 schema/migration (retained).
@@ -9,70 +9,73 @@ WU1–WU5 remain complete. **WU6 `artifact archive` is complete**: immutable loc
 - [x] 3.1–3.4 WU3 aggregate persistence (retained).
 - [x] 4.1–4.4 WU4 provider-neutral mock (retained).
 - [x] 5.1–5.4 WU5 outbox worker (retained).
-- [x] 6.1 RED — `artifact_service_test.go`, `local_test.go`, `fiscal_artifact_test.go` for create-if-absent, collision, failed archive, recovery without Issue, ownership, access logs, media/signature/size, compromised refusal. <!-- sdd-owner: implementation -->
-- [x] 6.2 GREEN — ports `FiscalArtifactStore`/`FiscalArtifactRepository`, `platform/fiscalartifact/local.go`, `postgres/fiscal_artifact_repository.go`, `service/fiscal/artifact_service.go`; worker + `cmd/fiscal-worker` recover path. <!-- sdd-owner: implementation -->
-- [x] 6.3 TRIANGULATE — owning vs non-owning clients, staff roles, unavailable/compromised, repeated archive, safe filenames/headers, no URL leakage, read while issuance disabled. <!-- sdd-owner: implementation -->
-- [x] 6.4 REFACTOR — `platform/fiscalartifact/object.go` readiness (private ACL, encryption, retention, backup/restore, access logging); production composition fail-closed on local/incomplete readiness. <!-- sdd-owner: implementation -->
+- [x] 6.1–6.4 WU6 artifact archive (retained).
+- [x] 7.1 RED — `fiscal_handler_test.go`, `fiscal_integration_handler_test.go`, `invoice_handler_test.go` for route ordering, strict decimals, body/line limits, 403/404/409/422/202, repeated actions, own-only, manager/admin-only legal actions. <!-- sdd-owner: implementation -->
+- [x] 7.2 GREEN — `fiscal_handler.go` DTOs/endpoints; `document_service.go`; register `/invoices/fiscalization-summaries` before `/:id` in `cmd/api/main.go`; service-level auth repeated. <!-- sdd-owner: implementation -->
+- [x] 7.3 TRIANGULATE — `p1_accounting_routes_test.go` + invoice handler/service tests: legacy list/create/own/detail/PATCH/delete envelopes, RFC3339, notes-only client patch, draft-vs-frozen delete conflicts. <!-- sdd-owner: implementation -->
+- [x] 7.4 REFACTOR — `fiscal_response.go` centralized error/projection sanitization; swagger models + regenerated `docs/swagger.yaml|json|docs.go`; secret/URL omission verified. <!-- sdd-owner: implementation -->
 
-## Files changed (WU6 batch)
+## Files changed (WU7 batch)
 | File | Action | What was done |
 |------|--------|---------------|
-| `backend/internal/core/ports/fiscal_artifact_store.go` | Modified | PutImmutable/Open/Stat + repository/access-log ports + typed errors |
-| `backend/internal/platform/fiscalartifact/local.go` | Created | Private FS store: streaming SHA-256, PDF checks, create-if-absent |
-| `backend/internal/platform/fiscalartifact/local_test.go` | Created | Store RED/GREEN coverage |
-| `backend/internal/platform/fiscalartifact/object.go` | Created | Production adapter boundary + readiness fail-closed |
-| `backend/internal/platform/fiscalartifact/object_test.go` | Created | Readiness triangulation |
-| `backend/internal/repository/postgres/fiscal_artifact_repository.go` | Created | Metadata upsert, status marks, access log, SQL invoice reader |
-| `backend/internal/service/fiscal/artifact_service.go` | Created | Archive / RecoverFromProvider / OpenDownload |
-| `backend/internal/service/fiscal/artifact_service_test.go` | Created | Ownership, recovery, compromise, issuance-disabled reads |
-| `backend/internal/service/fiscal/worker.go` | Modified | Optional ArtifactService on recover_artifact |
-| `backend/cmd/fiscal-worker/main.go` | Modified | Compose local store + production readiness gate |
-| `backend/tests/integration/fiscal_artifact_test.go` | Created | PostgreSQL archive/access-log/compromised path |
-| `openspec/.../tasks.md` | Modified | Mark 6.1–6.4 `[x]` |
-| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU6 progress |
+| `backend/internal/core/ports/fiscalization_service.go` | Created | Invoice-scoped FiscalizationService port + safe projection types |
+| `backend/internal/service/fiscal/document_service.go` | Created | DocumentService wrapping draft/finalization/artifact with ownership auth |
+| `backend/internal/handler/fiscal_handler.go` | Created | Nested fiscal HTTP endpoints + route registration helper |
+| `backend/internal/handler/fiscal_response.go` | Created | Centralized error mapping + projection sanitization |
+| `backend/internal/handler/fiscal_handler_test.go` | Created | RED/GREEN/triangulation HTTP coverage |
+| `backend/internal/handler/invoice_handler_test.go` | Created | Legacy snapshot + protected-history 409 |
+| `backend/internal/handler/fiscal_integration_handler_test.go` | Modified | Employee 403 on connection legal actions |
+| `backend/internal/handler/p1_accounting_routes_test.go` | Modified | Legacy invoice contract + additive summaries triangulation |
+| `backend/internal/handler/invoice_handler.go` | Modified | Map ErrFiscalHistoryProtected → 409 |
+| `backend/internal/handler/swagger_models.go` | Modified | Fiscalization swagger DTOs |
+| `backend/internal/service/invoice/invoice_service_test.go` | Modified | Frozen vs draft delete protection |
+| `backend/internal/domain/fiscal_document.go` | Modified | `legacy_unfiscalized` presentation constant |
+| `backend/cmd/api/main.go` | Modified | Wire DocumentService + RegisterInvoiceAndFiscalRoutes |
+| `backend/docs/swagger.yaml`, `swagger.json`, `docs.go` | Modified | Regenerated with fiscalization paths (LeftDelim stripped for swag v1.8.12) |
+| `openspec/.../tasks.md` | Modified | Mark 7.1–7.4 `[x]` |
+| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU7 progress |
 
 ## Verification
-- `cd backend && go test ./internal/platform/fiscalartifact/ ./internal/service/fiscal/ -count=1` → PASS
-- `FISCAL_TEST_DATABASE_URL=<redacted from backend/.env>` + `go test ./tests/integration/ -count=1 -run FiscalArtifact -timeout 180s` → PASS
-- `cd backend && go build ./cmd/fiscal-worker/` → PASS
+- `cd backend && go test ./internal/handler/ ./internal/service/fiscal/ ./internal/service/invoice/ ./internal/domain/ -count=1` → PASS
+- `cd backend && go build ./cmd/api/` → PASS
 - `gofmt` applied to touched Go files
-- Race detector: `go test -race` requires CGO; Windows agent reports CGO/gcc unavailable (same limitation as WU2–WU5). Non-race tests pass; CI/Linux should run `-race`.
+- Race detector: `go test -race` requires CGO; Windows agent reports CGO/gcc unavailable (same limitation as WU2–WU6). Non-race tests pass; CI/Linux should run `-race`.
 
-## Work Unit Evidence (WU6)
+## Work Unit Evidence (WU7)
 
 | Evidence | Result |
 |---|---|
-| Focused test command | `go test ./internal/platform/fiscalartifact/ ./internal/service/fiscal/ -count=1` → PASS; `go test ./tests/integration/ -count=1 -run FiscalArtifact` → PASS |
-| Runtime harness | PostgreSQL 16 via `FISCAL_TEST_DATABASE_URL` + migration 011 isolated schema → PASS (archive metadata, access log, compromised refusal, issued retained) |
-| Rollback boundary | Disable new issuance (`FISCAL_FINALIZATION_ENABLED=false` / stop worker claims); retain local/object bytes and `fiscal_artifacts` reads. Revert WU6 store/service/repo/worker wiring without touching WU7 HTTP |
+| Focused test command | `go test ./internal/handler/ ./internal/service/fiscal/ ./internal/service/invoice/ ./internal/domain/ -count=1` → PASS |
+| Runtime harness | N/A — WU7 is HTTP handler/service unit coverage with gin httptest stubs; no new runtime/provider boundary beyond existing fiscal feature flag wiring in `cmd/api` |
+| Rollback boundary | Disable `FISCAL_FEATURE_ENABLED` (fiscalHandler nil → only legacy invoice routes); revert WU7 handler/service/port/docs without touching WU1–WU6 persistence/worker |
 
-## TDD Cycle Evidence (WU6)
+## TDD Cycle Evidence (WU7)
 
 | Task | Test file/layer | Safety net | RED | GREEN | TRIANGULATE | REFACTOR |
 |---|---|---|---|---|---|---|
-| 6.1 | `local_test.go` + `artifact_service_test.go` + `fiscal_artifact_test.go` / unit+PG | ✅ `go test ./internal/service/fiscal` PASS before changes | Failing refs to NewLocalStore / ArtifactService / FiscalArtifactRepository (compile fail) | — | Covered with 6.3 | N/A in RED |
-| 6.2 | same | N/A (new) | Ports + APIs from RED | Local store + repo + service + worker recover wiring; tests PASS | — | Streaming hash + private keys |
-| 6.3 | service + object_test cases | unit green | Staff/client/unavailable/compromised/issuance-disabled/headers | Behaviors pass; no URL/key leakage | All listed authorization scenarios | Safe filename helper |
-| 6.4 | `object_test.go` | ✅ fiscalartifact PASS | Production readiness fail-closed | `object.go` AssertProductionIssuanceAllowed + worker compose gate | Local vs complete object readiness | Boundary kept SDK-free |
+| 7.1 | `fiscal_handler_test.go` + integration/invoice handler tests / unit+httptest | ✅ `go test ./internal/handler` PASS before changes | Compile-fail refs to NewFiscalHandler / RegisterInvoiceAndFiscalRoutes / MaxFiscal* | — | Covered with 7.3 | N/A in RED |
+| 7.2 | same + `document_service.go` | N/A (new) | Ports + handler APIs from RED | Handler + DocumentService + main wiring; tests PASS | — | Route helper + MaxBytesReader |
+| 7.3 | `p1_accounting_routes_test.go` + `invoice_service_test.go` | unit green | Legacy envelope/RFC3339/notes-only + frozen delete 409 | Behaviors pass; summaries additive | All listed legacy scenarios | Stub CreateInvoice timestamps |
+| 7.4 | `fiscal_response.go` + sanitize test | ✅ handler PASS | Secret/URL redaction assertions | Centralized mapping; swagger regen | Projection omit secrets | Extract fiscal_response.go |
 
 ## Prior work unit evidence (retained)
 
-### WU5
+### WU6
 | Evidence | Result |
 |---|---|
-| Focused tests | fiscal service + FiscalOutbox PG → PASS |
-| Runtime harness | PostgreSQL SKIP LOCKED / lease expiry → PASS |
-| Rollback | Stop fiscal-worker; leases expire conservatively |
+| Focused tests | fiscalartifact + fiscal service + FiscalArtifact PG → PASS |
+| Runtime harness | PostgreSQL archive/access-log → PASS |
+| Rollback | Disable issuance; retain bytes/metadata |
 
-### WU4 / WU3 / WU2 / WU1
-Retained: mock provider; draft/finalization repos; domain packages; migration 011 fail-fast schema checks.
+### WU5 / WU4 / WU3 / WU2 / WU1
+Retained: outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
 
 ## Deviations, budget, and remaining work
-- **Budget / size:exception**: Authored WU6 volume is estimated ~1,400–1,800 lines (ports + local/object + repo + service + dual test layers + worker/cmd wiring), above the preferred ~600-line manual slice. Completing WU6 coherently required store + metadata + auth download + recover wiring + readiness (same pattern as WU3–WU5). Documented as **size:exception** under parent-authorized manual WU6 slice.
-- **Deviation**: Production `ObjectStore` is a readiness/composition boundary only in WU6 — no cloud SDK PutImmutable yet. Production worker composition refuses local backend and incomplete readiness; full object I/O remains for enablement/later units.
-- **Closed WU5 gap**: `recover_artifact` now persists PDF bytes via `ArtifactService.RecoverFromProvider` when ArtifactService is wired (cmd/fiscal-worker does so for non-production local store).
-- Race/`gcc`: deferred to CI (same as WU2–WU5).
-- Delivery: Parent authorized manual WU6 only; agent created **no commits/PRs**.
+- **Budget / size:exception**: Authored WU7 volume is estimated ~1,400–2,000 lines including new handler/service/port/tests (plus large swagger regeneration churn). Completing WU7 coherently required HTTP surface + DocumentService + legacy regression + swagger (same pattern as WU3–WU6). Documented as **size:exception** under parent-authorized manual WU7 slice (~600 preferred).
+- **Deviation**: Artifact download wiring in production `cmd/api` leaves ArtifactService nil until object/local store is composed for the API process (worker already has it); OpenArtifact returns unavailable until wired — projection/status paths still work.
+- **Swagger**: `swag init` (CLI v1.16.4) emitted `LeftDelim`/`RightDelim` incompatible with module `swag v1.8.12`; fields removed post-generation so `go build ./cmd/api` succeeds.
+- Race/`gcc`: deferred to CI (same as WU2–WU6).
+- Delivery: Parent authorized manual WU7 only; agent created **no commits/PRs**.
 
 ## Deferred parent lifecycle actions
 - [ ] 13.2 Production fiscal-policy, issuer/series, retention, storage, backup, access-log, and legal-void decisions. <!-- sdd-owner: parent -->
@@ -104,7 +107,7 @@ contextFiles:
   verifyReport: []
   syncReport: []
 artifacts: { proposal: done, specs: done, design: done, tasks: done, applyProgress: done, verifyReport: missing, syncReport: missing }
-taskProgress: { total: 58, complete: 30, remaining: 28 }
+taskProgress: { total: 58, complete: 34, remaining: 24 }
 deferredParentActions: { total: 5, complete: 1, remaining: 4 }
 taskArtifactErrors: []
 applyState: ready
@@ -115,15 +118,15 @@ actionContext:
   allowedEditRoots:
     - D:/Repos/GonsGarage
   warnings:
-    - "WU6 authored ~1400-1800 lines (>600 preferred); size:exception like WU3–WU5"
+    - "WU7 authored ~1400-2000 lines (>600 preferred); size:exception like WU3–WU6"
     - "go test -race unavailable locally: CGO/gcc missing on Windows agent host"
-    - "Production ObjectStore is readiness boundary only; cloud SDK PutImmutable deferred"
+    - "API process ArtifactService nil until local/object store composed for downloads"
 nextRecommended: sdd-verify
 isNonAuthoritative: false
 ```
 
-WU6 finish state is satisfied: immutable local test storage, metadata, recovery, integrity checks, and authorized streaming pass unit + PostgreSQL tests. Next unit starts at Phase 7 (HTTP API) only after parent/verify.
+WU7 finish state is satisfied: additive fiscal HTTP APIs, legacy invoice regression, and safe projections pass unit tests. Next unit starts at Phase 8 (frontend) only after parent/verify.
 
 ## Remaining implementation tasks (verbatim start of next unit)
 
-- [ ] 7.1 RED — Add handler/route tests in `backend/internal/handler/fiscal_handler_test.go`, `fiscal_integration_handler_test.go`, and `invoice_handler_test.go` for static summary-route ordering, strict decimal JSON, body/line limits, 403/404/409/422/202 mappings, repeated actions, own-only projection/artifacts, and manager/admin-only legal actions. <!-- sdd-owner: implementation -->
+- [ ] 8.1 RED — Add Vitest coverage for fiscalization service client, shared components, and accounting badge integration covering decimal-string payloads, 202→poll, own-only client views, and unchanged legacy invoice columns/actions. <!-- sdd-owner: implementation -->

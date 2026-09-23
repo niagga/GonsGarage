@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaston-garcia-cegid/gonsgarage/internal/core/ports"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/domain"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/middleware"
 	"github.com/gin-gonic/gin"
@@ -109,10 +110,20 @@ func (s *p1StubInvoiceSvc) ListMyInvoices(_ context.Context, _ uuid.UUID, _, _ i
 }
 
 func (s *p1StubInvoiceSvc) CreateInvoice(_ context.Context, inv *domain.Invoice, _ uuid.UUID) (*domain.Invoice, error) {
-	return inv, nil
+	now := time.Now().UTC()
+	out := *inv
+	if out.ID == uuid.Nil {
+		out.ID = uuid.New()
+	}
+	out.CreatedAt = now
+	out.UpdatedAt = now
+	return &out, nil
 }
 
 func (s *p1StubInvoiceSvc) ListInvoicesForStaff(_ context.Context, _ uuid.UUID, _, _ int) ([]*domain.Invoice, int64, error) {
+	if s.myInvoices != nil {
+		return s.myInvoices, int64(len(s.myInvoices)), nil
+	}
 	return nil, 0, nil
 }
 
@@ -376,4 +387,108 @@ func TestP1Accounting_ClientGETIssuedInvoiceOwn_200(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out))
 	assert.Equal(t, invUUID.String(), out["id"])
 	assert.Equal(t, 99.0, out["amount"])
+}
+
+func TestP1Accounting_IssuedInvoiceLegacyContractSnapshot(t *testing.T) {
+	t.Parallel()
+	secret := "p1-inv-legacy-contract"
+	managerID := uuid.New()
+	clientID := uuid.New()
+	now := time.Date(2026, 6, 1, 9, 30, 0, 0, time.UTC)
+	invID := uuid.New()
+	invStub := &p1StubInvoiceSvc{
+		byID: map[uuid.UUID]*domain.Invoice{
+			invID: {ID: invID, CustomerID: clientID, Amount: 12.5, Status: "open", Notes: "n", CreatedAt: now, UpdatedAt: now},
+		},
+		myInvoices: []*domain.Invoice{
+			{ID: invID, CustomerID: clientID, Amount: 12.5, Status: "open", Notes: "n", CreatedAt: now, UpdatedAt: now},
+		},
+	}
+	r := p1AccountingRouter(secret, &p1StubReceivedSvc{}, &p1StubBillingSvc{}, invStub, &stubSupplierService{})
+
+	createBody := `{"customerId":"` + clientID.String() + `","amount":12.5,"status":"open","notes":"n"}`
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/invoices", bytes.NewBufferString(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, managerID, domain.RoleManager))
+	createW := httptest.NewRecorder()
+	r.ServeHTTP(createW, createReq)
+	require.Equal(t, http.StatusCreated, createW.Code)
+	var created map[string]any
+	require.NoError(t, json.Unmarshal(createW.Body.Bytes(), &created))
+	for _, key := range []string{"id", "customerId", "amount", "status", "notes", "createdAt", "updatedAt"} {
+		assert.Contains(t, created, key)
+	}
+	assert.NotContains(t, created, "fiscalEligibility")
+	assert.NotContains(t, created, "fiscalization")
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/v1/invoices?limit=20&offset=0", nil)
+	listReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, managerID, domain.RoleManager))
+	listW := httptest.NewRecorder()
+	r.ServeHTTP(listW, listReq)
+	require.Equal(t, http.StatusOK, listW.Code)
+	var listBody map[string]any
+	require.NoError(t, json.Unmarshal(listW.Body.Bytes(), &listBody))
+	assert.Contains(t, listBody, "items")
+	assert.Contains(t, listBody, "total")
+
+	ownReq := httptest.NewRequest(http.MethodGet, "/api/v1/invoices/"+invID.String(), nil)
+	ownReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, clientID, domain.RoleClient))
+	ownW := httptest.NewRecorder()
+	r.ServeHTTP(ownW, ownReq)
+	require.Equal(t, http.StatusOK, ownW.Code)
+	var own map[string]any
+	require.NoError(t, json.Unmarshal(ownW.Body.Bytes(), &own))
+	assert.Equal(t, "2026-06-01T09:30:00Z", own["createdAt"])
+	assert.Equal(t, "2026-06-01T09:30:00Z", own["updatedAt"])
+
+	patch := `{"notes":"only-notes"}`
+	patchReq := httptest.NewRequest(http.MethodPatch, "/api/v1/invoices/"+invID.String(), bytes.NewBufferString(patch))
+	patchReq.Header.Set("Content-Type", "application/json")
+	patchReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, clientID, domain.RoleClient))
+	patchW := httptest.NewRecorder()
+	r.ServeHTTP(patchW, patchReq)
+	require.Equal(t, http.StatusOK, patchW.Code)
+
+	delReq := httptest.NewRequest(http.MethodDelete, "/api/v1/invoices/"+invID.String(), nil)
+	delReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, managerID, domain.RoleManager))
+	delW := httptest.NewRecorder()
+	r.ServeHTTP(delW, delReq)
+	require.Equal(t, http.StatusNoContent, delW.Code)
+}
+
+func TestP1Accounting_FiscalSummariesDoNotChangeInvoiceEnvelope(t *testing.T) {
+	t.Parallel()
+	secret := "p1-fiscal-additive"
+	managerID := uuid.New()
+	invoiceID := uuid.New()
+	invStub := &p1StubInvoiceSvc{}
+	fiscalSvc := &stubFiscalizationService{
+		summaries: []ports.FiscalizationSummary{{InvoiceID: invoiceID.String(), Status: "legacy_unfiscalized"}},
+	}
+	gin.SetMode(gin.TestMode)
+	am := middleware.NewAuthMiddleware(secret)
+	r := gin.New()
+	api := r.Group("/api/v1")
+	api.Use(middleware.GinBearerJWT(am))
+	RegisterInvoiceAndFiscalRoutes(api, NewInvoiceHandler(invStub), NewFiscalHandler(fiscalSvc))
+
+	sumReq := httptest.NewRequest(http.MethodGet, "/api/v1/invoices/fiscalization-summaries?invoiceIds="+invoiceID.String(), nil)
+	sumReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, managerID, domain.RoleManager))
+	sumW := httptest.NewRecorder()
+	r.ServeHTTP(sumW, sumReq)
+	require.Equal(t, http.StatusOK, sumW.Code)
+	var sumBody map[string]any
+	require.NoError(t, json.Unmarshal(sumW.Body.Bytes(), &sumBody))
+	assert.Contains(t, sumBody, "items")
+	assert.NotContains(t, sumBody, "total")
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/v1/invoices", nil)
+	listReq.Header.Set("Authorization", "Bearer "+testJWT(t, secret, managerID, domain.RoleManager))
+	listW := httptest.NewRecorder()
+	r.ServeHTTP(listW, listReq)
+	require.Equal(t, http.StatusOK, listW.Code)
+	var listBody map[string]any
+	require.NoError(t, json.Unmarshal(listW.Body.Bytes(), &listBody))
+	assert.Contains(t, listBody, "items")
+	assert.Contains(t, listBody, "total")
 }

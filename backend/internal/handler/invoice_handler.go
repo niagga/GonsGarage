@@ -78,6 +78,10 @@ func writeInvoiceServiceError(c *gin.Context, err error) bool {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invoice not found"})
 		return true
 	}
+	if errors.Is(err, ports.ErrFiscalHistoryProtected) {
+		c.JSON(http.StatusConflict, gin.H{"error": "invoice has protected fiscal history"})
+		return true
+	}
 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	return true
 }

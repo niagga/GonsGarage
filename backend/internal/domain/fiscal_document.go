@@ -68,11 +68,12 @@ func (s FiscalDocumentState) IsFrozen() bool {
 type FiscalPresentationState string
 
 const (
-	FiscalPresentationStateDraft       FiscalPresentationState = "draft"
-	FiscalPresentationStatePending     FiscalPresentationState = "pending"
-	FiscalPresentationStateFinalized   FiscalPresentationState = "finalized"
-	FiscalPresentationStateVoided      FiscalPresentationState = "voided"
-	FiscalPresentationStateUnavailable FiscalPresentationState = "unavailable"
+	FiscalPresentationStateDraft              FiscalPresentationState = "draft"
+	FiscalPresentationStatePending            FiscalPresentationState = "pending"
+	FiscalPresentationStateFinalized          FiscalPresentationState = "finalized"
+	FiscalPresentationStateVoided             FiscalPresentationState = "voided"
+	FiscalPresentationStateUnavailable        FiscalPresentationState = "unavailable"
+	FiscalPresentationStateLegacyUnfiscalized FiscalPresentationState = "legacy_unfiscalized"
 )
 
 // Presentation maps the lifecycle to the simplified client-facing state.

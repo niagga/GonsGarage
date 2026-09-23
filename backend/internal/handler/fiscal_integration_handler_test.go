@@ -154,3 +154,53 @@ func TestFiscalIntegrationHandler_StatusSetupVerifyRevoke(t *testing.T) {
 	require.Equal(t, http.StatusOK, revokeResp.Code)
 	assert.Equal(t, 1, service.revokeCalls)
 }
+
+func TestFiscalIntegrationHandler_EmployeeLegalActionsForbidden(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+	secret := "fiscal-int-employee"
+	employeeID := uuid.New()
+	service := &stubFiscalIntegrationService{}
+	h := NewFiscalIntegrationHandler(service)
+
+	r := gin.New()
+	api := r.Group("/api/v1")
+	api.Use(middleware.GinBearerJWT(middleware.NewAuthMiddleware(secret)))
+	fiscal := api.Group("/fiscal")
+	fiscal.Use(middleware.RequireStaffManagers())
+	connections := fiscal.Group("/connections/:scopeKey/:providerKey")
+	connections.GET("", h.Status)
+	connections.PUT("", h.SetupConnection)
+	connections.POST("/verify", h.VerifyConnection)
+	connections.DELETE("", h.RevokeConnection)
+
+	token := testJWTHandler(t, secret, employeeID, domain.RoleEmployee)
+	for _, tc := range []struct {
+		method string
+		path   string
+		body   string
+	}{
+		{http.MethodGet, "/api/v1/fiscal/connections/default/mock", ""},
+		{http.MethodPut, "/api/v1/fiscal/connections/default/mock", `{"credentialBase64":"` + base64.StdEncoding.EncodeToString([]byte("x")) + `"}`},
+		{http.MethodPost, "/api/v1/fiscal/connections/default/mock/verify", ""},
+		{http.MethodDelete, "/api/v1/fiscal/connections/default/mock", ""},
+	} {
+		var bodyReader *bytes.Reader
+		if tc.body != "" {
+			bodyReader = bytes.NewReader([]byte(tc.body))
+		} else {
+			bodyReader = bytes.NewReader(nil)
+		}
+		req := httptest.NewRequest(tc.method, tc.path, bodyReader)
+		req.Header.Set("Authorization", "Bearer "+token)
+		if tc.body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusForbidden, w.Code, "%s %s", tc.method, tc.path)
+	}
+	assert.Equal(t, 0, service.statusCalls)
+	assert.Equal(t, 0, service.verifyCalls)
+	assert.Equal(t, 0, service.revokeCalls)
+}

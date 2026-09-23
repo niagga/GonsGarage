@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gaston-garcia-cegid/gonsgarage/internal/core/ports"
 	"github.com/gaston-garcia-cegid/gonsgarage/internal/domain"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -422,4 +423,47 @@ func TestInvoiceService_DeleteInvoice_EmployeeDenied(t *testing.T) {
 	err = svc.DeleteInvoice(context.Background(), invID, employeeID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
+}
+
+type protectFiscalReader struct {
+	protected bool
+}
+
+func (p protectFiscalReader) HasProtectedFiscalHistory(context.Context, uuid.UUID) (bool, error) {
+	return p.protected, nil
+}
+
+func TestInvoiceService_DeleteInvoice_FrozenHistoryConflict(t *testing.T) {
+	t.Parallel()
+	managerID := uuid.New()
+	invID := uuid.New()
+	manager, err := domain.NewUser("m-protect@x.com", "pw", "M", "M", domain.RoleManager)
+	require.NoError(t, err)
+	manager.ID = managerID
+	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 10, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
+	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
+		WithFiscalProtection(protectFiscalReader{protected: true})
+
+	err = svc.DeleteInvoice(context.Background(), invID, managerID)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ports.ErrFiscalHistoryProtected)
+	assert.Contains(t, repo.byID, invID)
+}
+
+func TestInvoiceService_DeleteInvoice_DraftHistoryAllowed(t *testing.T) {
+	t.Parallel()
+	managerID := uuid.New()
+	invID := uuid.New()
+	manager, err := domain.NewUser("m-draft@x.com", "pw", "M", "M", domain.RoleManager)
+	require.NoError(t, err)
+	manager.ID = managerID
+	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 10, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
+	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
+		WithFiscalProtection(protectFiscalReader{protected: false})
+
+	err = svc.DeleteInvoice(context.Background(), invID, managerID)
+	require.NoError(t, err)
+	assert.NotContains(t, repo.byID, invID)
 }
