@@ -29,6 +29,7 @@ type WorkerConfig struct {
 	Owner        string
 	Lease        time.Duration
 	PollInterval time.Duration
+	Environment  string
 	// AfterBeginHook runs after BeginLegalCall commits and before the provider call (tests).
 	AfterBeginHook func()
 }
@@ -44,6 +45,9 @@ func (c WorkerConfig) Normalize() WorkerConfig {
 	if c.Owner == "" {
 		c.Owner = DefaultWorkerOwner
 	}
+	if c.Environment == "" {
+		c.Environment = "default"
+	}
 	return c
 }
 
@@ -55,14 +59,23 @@ func (c WorkerConfig) Normalize() WorkerConfig {
 //  3. Provider gateway call — outside any DB transaction
 //  4. CompleteCall / RecoverStaleAttempt — completion tx under lease fencing
 type Worker struct {
-	outbox   ports.FiscalOutboxRepository
-	provider ports.FiscalProvider
-	cfg      WorkerConfig
+	outbox    ports.FiscalOutboxRepository
+	provider  ports.FiscalProvider
+	artifacts *ArtifactService
+	cfg       WorkerConfig
 }
 
 // NewWorker builds a lease-fenced fiscal worker.
 func NewWorker(outbox ports.FiscalOutboxRepository, provider ports.FiscalProvider, cfg WorkerConfig) *Worker {
 	return &Worker{outbox: outbox, provider: provider, cfg: cfg.Normalize()}
+}
+
+// WithArtifactService wires immutable PDF archive/recovery (WU6).
+func (w *Worker) WithArtifactService(svc *ArtifactService) *Worker {
+	if w != nil {
+		w.artifacts = svc
+	}
+	return w
 }
 
 // Run polls until ctx is cancelled.
@@ -243,13 +256,27 @@ func (w *Worker) processArtifactRecovery(ctx context.Context, claimed *ports.Cla
 	if claimed.Event.ArtifactID != nil {
 		artID = *claimed.Event.ArtifactID
 	}
-	_, err = w.provider.FetchArtifact(ctx, ports.FiscalFetchArtifactRequest{
-		FiscalOperationRequest: ports.FiscalOperationRequest{
+	if w.artifacts != nil {
+		classification := domain.FiscalArtifactClassificationLegal
+		if claimed.Document.ProviderKey == "mock" {
+			classification = domain.FiscalArtifactClassificationMock
+		}
+		_, err = w.artifacts.RecoverFromProvider(ctx, RecoverArtifactCommand{
+			ArtifactID: artID, DocumentID: claimed.Document.ID, SourceInvoiceID: claimed.Document.SourceInvoiceID,
+			Environment: w.cfg.Environment, Classification: classification,
+			ProviderReference: claimed.Document.ProviderReference, Provider: w.provider,
 			ConnectionID: connectionID(claimed), ProviderKey: claimed.Document.ProviderKey,
 			OperationKey: claimed.Event.OperationKey, CorrelationKey: claimed.Event.ID.String(),
-		},
-		ArtifactID: artID,
-	})
+		})
+	} else {
+		_, err = w.provider.FetchArtifact(ctx, ports.FiscalFetchArtifactRequest{
+			FiscalOperationRequest: ports.FiscalOperationRequest{
+				ConnectionID: connectionID(claimed), ProviderKey: claimed.Document.ProviderKey,
+				OperationKey: claimed.Event.OperationKey, CorrelationKey: claimed.Event.ID.String(),
+			},
+			ArtifactID: artID,
+		})
+	}
 	status := ports.FiscalAttemptSucceeded
 	if err != nil {
 		status = ports.FiscalAttemptFailed
