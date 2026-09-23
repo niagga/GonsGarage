@@ -2,10 +2,12 @@
 #
 # GonsGarage — deploy / rollback en el servidor (git pull + docker compose).
 #
+# Solo opera el stack GonsGarage en GONSGARAGE_DIR. No toca Arnela.
+# No adjunta docker-compose.prod.arnela-network.yml (aislamiento P0-T1).
 # No copia código desde tu PC: usa el clone en el servidor y lo que ya está en Git.
 #
 # Uso (en el servidor, p. ej. /DATA/AppData/gonsgarage):
-#   export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml   # si DATABASE_URL usa arnela-postgres
+#   unset COMPOSE_OVERRIDE
 #   bash scripts/deploy-prod.sh deploy
 #   bash scripts/deploy-prod.sh rollback
 #   bash scripts/deploy-prod.sh status
@@ -14,7 +16,7 @@
 #   GONSGARAGE_DIR   (default: /DATA/AppData/gonsgarage)
 #   GIT_REF          (default: main)
 #   COMPOSE_FILE     (default: docker-compose.prod.yml)
-#   COMPOSE_OVERRIDE (default: vacío; obligatorio con arnela-postgres)
+#   COMPOSE_OVERRIDE (default: vacío; NO usar arnela-network — rechazo explícito)
 #   ENV_FILE         (default: .env.prod)
 #   HEALTH_URL       (default: http://127.0.0.1:8102/health)
 #   READY_URL        (default: http://127.0.0.1:8102/ready)
@@ -45,8 +47,8 @@ Comandos:
   rollback   checkout del último SHA marcado como estable (.deploy-last-good) + rebuild + health
   status     muestra HEAD, last-good, contenedores y curls de health/ready
 
-Ejemplos:
-  export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
+Ejemplos (solo GonsGarage; sin red Arnela):
+  unset COMPOSE_OVERRIDE
   bash scripts/deploy-prod.sh deploy
   bash scripts/deploy-prod.sh rollback
 EOF
@@ -64,25 +66,43 @@ require_files() {
 
 compose_args=()
 
-setup_compose_args() {
-  compose_args=( -f "$COMPOSE_FILE" )
-  if [[ -n "$COMPOSE_OVERRIDE" ]]; then
+# Fail closed: never couple this deploy to Arnela's network/DB.
+assert_gonsgarage_isolation() {
+  if [[ -n "${COMPOSE_OVERRIDE}" ]]; then
+    if [[ "$COMPOSE_OVERRIDE" == *arnela* ]]; then
+      die "COMPOSE_OVERRIDE=$COMPOSE_OVERRIDE acopla Arnela. GonsGarage usa Postgres propio.
+      Usá: unset COMPOSE_OVERRIDE
+      DATABASE_URL debe apuntar a host compose 'postgres' (servicio en docker-compose.prod.yml)."
+    fi
     [[ -f "$COMPOSE_OVERRIDE" ]] || die "COMPOSE_OVERRIDE=$COMPOSE_OVERRIDE no existe en $(pwd)"
-    compose_args+=( -f "$COMPOSE_OVERRIDE" )
   fi
 
-  if grep -qE '@arnela-postgres[:/]|//arnela-postgres' "$ENV_FILE" 2>/dev/null && [[ -z "${COMPOSE_OVERRIDE:-}" ]]; then
-    local arnela_override="docker-compose.prod.arnela-network.yml"
-    if [[ -f "$arnela_override" ]]; then
-      die "$ENV_FILE referencia arnela-postgres pero COMPOSE_OVERRIDE está vacío.
-      Sin -f $arnela_override el API no resuelve ese DNS y suele reiniciar (502).
-      Ej.: export COMPOSE_OVERRIDE=$arnela_override"
-    fi
-    echo "WARN: $ENV_FILE usa arnela-postgres sin COMPOSE_OVERRIDE." >&2
+  if grep -qE '@arnela-postgres[:/]|//arnela-postgres' "$ENV_FILE" 2>/dev/null; then
+    die "$ENV_FILE referencia arnela-postgres. Tras el cutover P0-T1 eso está prohibido.
+      Esperado: DATABASE_URL=...@postgres:5432/gonsgarage?...
+      No uses docker-compose.prod.arnela-network.yml."
+  fi
+
+  if ! grep -qE '@postgres[:/]|//postgres[:/]' "$ENV_FILE" 2>/dev/null; then
+    echo "WARN: $ENV_FILE no parece usar host 'postgres' (servicio compose GonsGarage)." >&2
+  fi
+
+  if ! grep -qE '^[[:space:]]*postgres:' "$COMPOSE_FILE" 2>/dev/null; then
+    die "$COMPOSE_FILE no declara el servicio postgres. Sin él un deploy puede dejar el API sin DB
+      (o --remove-orphans borraría gonsgarage-postgres). Abortando."
+  fi
+}
+
+setup_compose_args() {
+  assert_gonsgarage_isolation
+  compose_args=( -f "$COMPOSE_FILE" )
+  if [[ -n "$COMPOSE_OVERRIDE" ]]; then
+    compose_args+=( -f "$COMPOSE_OVERRIDE" )
   fi
 }
 
 compose() {
+  # Never pass --remove-orphans here: safer if a future compose omits a long-lived service.
   docker compose "${compose_args[@]}" --env-file "$ENV_FILE" "$@"
 }
 
@@ -134,7 +154,7 @@ mark_last_good() {
 
 read_last_good_sha() {
   [[ -f "$LAST_GOOD_FILE" ]] || die "no hay $LAST_GOOD_FILE; no se puede rollback automático.
-      Tras un deploy exitoso el script lo crea. Alternativa: git checkout <sha> && bash scripts/deploy-prod.sh deploy (con GIT_REF=<sha> no aplica pull de main; usá rollback solo con last-good)."
+      Tras un deploy exitoso el script lo crea. Alternativa: usá rollback solo con last-good."
   # shellcheck disable=SC2002
   sed -n 's/^sha=//p' "$LAST_GOOD_FILE" | head -1
 }
@@ -173,6 +193,9 @@ cmd_deploy() {
   echo "==> git checkout $GIT_REF && pull --ff-only"
   git checkout "$GIT_REF"
   git pull --ff-only origin "$GIT_REF"
+
+  # Re-check isolation after pull (compose/env may have changed).
+  setup_compose_args
 
   local new_sha
   new_sha="$(git rev-parse HEAD)"
@@ -213,6 +236,8 @@ cmd_rollback() {
     git fetch --all --prune
     git checkout --detach "$target"
   fi
+
+  setup_compose_args
 
   echo "==> docker compose up -d --build"
   compose up -d --build

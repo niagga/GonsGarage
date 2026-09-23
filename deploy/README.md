@@ -10,7 +10,7 @@ Script canónico: [`scripts/deploy-prod.sh`](../scripts/deploy-prod.sh).
 
 ```bash
 cd /DATA/AppData/gonsgarage
-export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml   # si DATABASE_URL usa arnela-postgres
+unset COMPOSE_OVERRIDE
 bash scripts/deploy-prod.sh deploy
 ```
 
@@ -18,16 +18,17 @@ Qué hace:
 
 1. Guarda el SHA actual (pre-deploy).
 2. `git fetch` + `checkout` de `main` (override con `GIT_REF`) + `pull --ff-only`.
-3. `docker compose -f docker-compose.prod.yml [-f override] --env-file .env.prod up -d --build`
-4. Reintenta `GET /health` y `GET /ready` en `http://127.0.0.1:8102` hasta OK (API + Postgres vía `/ready`).
-5. Si ambos dan **200**, escribe `.deploy-last-good` con ese SHA (rollback seguro).
+3. `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build` (Postgres propio del stack; **sin** red Arnela).
+4. Rechaza `COMPOSE_OVERRIDE`/`DATABASE_URL` que apunten a Arnela.
+5. Reintenta `GET /health` y `GET /ready` en `http://127.0.0.1:8102` hasta OK.
+6. Si ambos dan **200**, escribe `.deploy-last-good` con ese SHA (rollback seguro).
 
 Equivalente a mano (sin script):
 
 ```bash
 cd /DATA/AppData/gonsgarage
 git fetch --all --prune && git checkout main && git pull --ff-only origin main
-docker compose -f docker-compose.prod.yml -f docker-compose.prod.arnela-network.yml --env-file .env.prod up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 curl -sS http://127.0.0.1:8102/health
 curl -sS http://127.0.0.1:8102/ready
 ```
@@ -38,7 +39,7 @@ Tras un deploy **exitoso**, el script marca el SHA en `.deploy-last-good` (archi
 
 ```bash
 cd /DATA/AppData/gonsgarage
-export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
+unset COMPOSE_OVERRIDE
 bash scripts/deploy-prod.sh rollback
 ```
 
@@ -75,19 +76,18 @@ Si `DATABASE_URL` usa `arnela-postgres`, en `deploy.ps1` dejá `$COMPOSE_OVERRID
 
 ---
 
-## Script del servidor y Arnela
+## Script del servidor e aislamiento de Arnela
 
-Si **`DATABASE_URL`** usa el hostname **`arnela-postgres`**, el API tiene que estar en la **misma red Docker** que ese contenedor (ver [Opción B](#opción-b-recomendada-misma-red-docker-que-arnela)). **Antes** de ejecutar el script:
+Tras el cutover **P0-T1**, GonsGarage PROD usa su propio servicio `postgres` en `docker-compose.prod.yml`.  
+`scripts/deploy-prod.sh` **rechaza**:
 
-```bash
-export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
-```
+- `COMPOSE_OVERRIDE` que contenga `arnela`
+- `DATABASE_URL` con host `arnela-postgres`
+- compose sin servicio `postgres`
 
-Sin el segundo `-f` (override vacío), el API suele entrar en **bucle de reinicio** y nginx devuelve **502** en `/health` (*no such host* al resolver `arnela-postgres`).
+El fichero `docker-compose.prod.arnela-network.yml` queda como **legado** (no usarlo en deploys normales).
 
-En **PowerShell** desde tu PC, [`deploy.ps1`](../deploy.ps1) admite la variable **`$COMPOSE_OVERRIDE`** (segundo `-f` en el `docker compose` remoto).
-
-## Paridad Arnela (checklist)
+## Paridad Arnela (checklist histórico)
 
 1. **Red Docker** — [Opción B (misma red que Arnela)](#opción-b-recomendada-misma-red-docker-que-arnela); en el servidor, `export COMPOSE_OVERRIDE=…` antes del script bash, o `$COMPOSE_OVERRIDE` en `deploy.ps1`.
 2. **`DATABASE_URL`** — Host resoluble desde el contenedor del API; [Postgres compartido con Arnela](#postgres-compartido-con-arnela-mismo-homeos). Si ves *lookup arnela-postgres*, revisá también [Incidente DNS en mvp-next-steps](../docs/mvp-next-steps.md#incidente-dns-arnela-postgres).
