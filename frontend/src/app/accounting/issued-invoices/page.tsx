@@ -8,7 +8,8 @@ import AppShell from '@/components/layout/AppShell';
 import { issuedInvoiceService } from '@/lib/services/issued-invoice.service';
 import { fiscalizationService } from '@/lib/services/fiscalization.service';
 import type { IssuedInvoice } from '@/types/accounting';
-import { fiscalPresentationLabel, type FiscalizationSummary } from '@/types/fiscal';
+import type { FiscalizationSummary } from '@/types/fiscal';
+import { FiscalStatusBadge } from '@/components/fiscal/FiscalStatusBadge';
 import styles from '../accounting.module.css';
 import { Button } from '@/components/ui/button';
 import {
@@ -119,7 +120,7 @@ function IssuedInvoicesListContent() {
                   </td>
                   <td>{inv.amount.toFixed(2)}</td>
                   <td>{inv.status}</td>
-                  <td>{fiscal ? fiscalPresentationLabel(fiscal.status) : '—'}</td>
+                  <td>{fiscal ? <FiscalStatusBadge status={fiscal.status} /> : '—'}</td>
                 </tr>
               );
             })}

@@ -1,25 +1,25 @@
 ```yaml
 schema: gentle-ai.verify-result/v1
-evidence_revision: sha256:47fb0559b67cf48c8e974dd9a4430c21df35a85ad9b7d8e1c2deb5f0a288e965
+evidence_revision: sha256:0dcacbb9c46f7a00d1aa277b30699151f57b679cfc11e3b7bc75e72d0599ce99
 verdict: fail
 blockers: 1
 critical_findings: 1
 requirements: 21/29
-scenarios: 44/58
-remediation_note: "2026-09-23 mid-change post-WU8: staff fiscal UI green (151 FE tests); WU1–WU8 focused correctness OK; API ArtifactService nil + projection omits artifactId → PDF download PARTIAL; WU9+ client/admin and WU10+ Cloudware deferred UNTESTED; archive gate FAIL at 38/58"
-test_command: cd backend && go test ./internal/domain/... ./internal/service/fiscal/... ./internal/service/invoice/... ./internal/integration/fiscal/mock/... ./internal/platform/fiscalartifact/... ./internal/handler/... ./internal/core/ports/... -count=1 ; FISCAL_TEST_DATABASE_URL=<redacted> go test ./tests/integration/ -count=1 -run Fiscal(Migration|Repository|Mock|Outbox|Artifact) -timeout 180s ; cd frontend && pnpm test -- --passWithNoTests && pnpm lint && pnpm typecheck
+scenarios: 45/58
+remediation_note: "2026-09-23 mid-change post-WU9: client/admin fiscal UI green (FE confirm 175); WU1–WU9 focused correctness OK; API ArtifactService nil + projection omits artifactId → PDF download PARTIAL; flaky notes optimism once under full suite (isolated+retest green); WU10+ Cloudware deferred UNTESTED; archive gate FAIL at 42/58"
+test_command: cd backend && go test ./internal/domain/... ./internal/service/fiscal/... ./internal/service/invoice/... ./internal/integration/fiscal/mock/... ./internal/platform/fiscalartifact/... ./internal/handler/... ./internal/core/ports/... -count=1 ; FISCAL_TEST_DATABASE_URL=<redacted> go test ./tests/integration/ -count=1 -run Fiscal(Migration|Repository|Mock|Outbox|Artifact) -timeout 180s ; cd frontend && pnpm test -- --passWithNoTests && pnpm lint && pnpm typecheck && pnpm build
 test_exit_code: 0
-test_output_hash: sha256:727ed002927b1fa5a51fa1a46212dd8084f200d98607288543f4f6ff15887354
+test_output_hash: sha256:c01c8012403f1924e619a898fdffa8b3c7e467eef9c4c203a41dab2ed260eed8
 build_command: cd backend && go vet ./internal/domain/... ./internal/service/fiscal/... ./internal/service/invoice/... ./internal/integration/fiscal/mock/... ./internal/platform/fiscalartifact/... ./internal/handler/... ./internal/core/ports/... ./internal/repository/postgres/... ; go build -o NUL ./cmd/api/ ; go build -o NUL ./cmd/fiscal-worker/
 build_exit_code: 0
-build_output_hash: sha256:1feef24cc5f14b2eece990b911e5e17d703ef993281a79d2bec25ad8455a2a0a
+build_output_hash: sha256:74a28e3264802c211ce58f3ddacef03f8bc24d598aa779fc09f31355716b2483
 ```
 
 ## Verification Report
 
 **Change**: cloudware-fiscal-integration-foundation
 **Version**: N/A (OpenSpec change; four delta specs)
-**Mode**: Standard (focused mid-change verify after WU1–WU8; full suite not claimed)
+**Mode**: Standard (focused mid-change verify after WU1–WU9; full suite not claimed)
 **Artifact store**: openspec
 **Validator**: `gentle-ai sdd-verify-validate` **unavailable** on installed gentle-ai 3.5.0 (command not present; only `sdd-status` / `sdd-continue` / `sdd-attempt grant`). Report persisted per parent Persistence instruction; admission tooling could not attest bytes.
 
@@ -28,16 +28,16 @@ build_output_hash: sha256:1feef24cc5f14b2eece990b911e5e17d703ef993281a79d2bec25a
 | Metric | Value |
 |--------|-------|
 | Tasks total | 58 |
-| Tasks complete | 38 (1.1–1.5, 2.1–2.8, 3.1–3.4, 4.1–4.4, 5.1–5.4, 6.1–6.4, 7.1–7.4, 8.1–8.4, 13.1) |
-| Tasks incomplete | 20 (WU9–WU12 implementation + parent 13.2–13.5) |
+| Tasks complete | 42 (1.1–1.5, 2.1–2.8, 3.1–3.4, 4.1–4.4, 5.1–5.4, 6.1–6.4, 7.1–7.4, 8.1–8.4, 9.1–9.4, 13.1) |
+| Tasks incomplete | 16 (WU10–WU12 implementation + parent 13.2–13.5) |
 | Change-level archive gate | **FAIL** — `allComplete: false` |
-| WU1–WU8 local finish claims | Satisfied in `tasks.md` / `apply-progress.md` checkboxes |
+| WU1–WU9 local finish claims | Satisfied in `tasks.md` / `apply-progress.md` checkboxes |
 
-Scope of this verify: **completed work units only** (schema through staff fiscal UI). Remaining WU9–WU12 scenarios are expected deferred, not false PASS.
+Scope of this verify: **completed work units only** (schema through client/admin fiscal UI). Remaining WU10–WU12 Cloudware scenarios are expected deferred, not false PASS.
 
 ### Build & Tests Execution
 
-**Build**: ✅ Passed (`cmd/api` + `cmd/fiscal-worker` + focused vet)
+**Build**: ✅ Passed (`cmd/api` + `cmd/fiscal-worker` + focused vet + frontend `pnpm build`)
 ```text
 cd backend
 go vet ./internal/domain/... ./internal/service/fiscal/... ./internal/service/invoice/... ./internal/integration/fiscal/mock/... ./internal/platform/fiscalartifact/... ./internal/handler/... ./internal/core/ports/... ./internal/repository/postgres/...
@@ -46,32 +46,37 @@ go build -o NUL ./cmd/api/
 → BUILD_API:0
 go build -o NUL ./cmd/fiscal-worker/
 → BUILD_WORKER:0
-build_output_hash: sha256:1feef24cc5f14b2eece990b911e5e17d703ef993281a79d2bec25ad8455a2a0a
+cd frontend && pnpm build
+→ FE_BUILD_EXIT:0 (route tree includes /admin/integrations/fiscal, /my-invoices, /my-invoices/[id])
+build_output_hash: sha256:74a28e3264802c211ce58f3ddacef03f8bc24d598aa779fc09f31355716b2483
 ```
 
-**Tests**: ✅ Backend focused + Fiscal* PostgreSQL + frontend full suite / ⚠️ race unavailable
+**Tests**: ✅ Backend focused + Fiscal* PostgreSQL + frontend confirm suite / ⚠️ race unavailable / ⚠️ one flaky FE observation
 ```text
 # Unit / service / mock / platform / handler / invoice / ports (CGO_ENABLED=0)
 go test ./internal/domain/... ./internal/service/fiscal/... ./internal/service/invoice/... ./internal/integration/fiscal/mock/... ./internal/platform/fiscalartifact/... ./internal/handler/... ./internal/core/ports/... -count=1
-→ ok (exit 0); unit hash sha256:f3bc3b4dd4d1416c6362d6e7ed803b26398614af82333a8b5268aea0fb8c2669
+→ ok (exit 0)
 
 # PostgreSQL integration (FISCAL_TEST_DATABASE_URL from backend/.env, redacted)
 go test ./tests/integration/ -count=1 -run 'Fiscal(Migration|Repository|Mock|Outbox|Artifact)' -timeout 180s
-→ ok tests/integration 45.468s (exit 0); pg hash sha256:fa80c334400efbcf959f4b6745fd2c98ac96a10bca8adb6220dcfac138c94e8f
+→ ok tests/integration 23.259s (exit 0)
 
-# Frontend WU8 + regression
+# Frontend WU9 + regression
 cd frontend && pnpm test -- --passWithNoTests
-→ Test Files 32 passed (32) / Tests 151 passed (151) (exit 0)
-→ focused WU8 files: 34 passed
-→ fe hash sha256:6e342711e3de634e6ab2d2623e9dee9dcf755db22991662a94d471b53a70de37
+→ run1: Test Files 1 failed | 33 passed; Tests 1 failed | 174 passed (exit 1)
+  failing case: MyInvoiceDetailClient — useOptimistic notes save > shows optimistic… on API error
+→ isolate retry of that file: 6/6 passed (exit 0)
+→ run2 (full suite confirm): Test Files 34 passed (34) / Tests 175 passed (175) (exit 0)
 pnpm lint → exit 0
 pnpm typecheck → exit 0
+pnpm build → exit 0
 
-test_output_hash (combined unit+pg+fe): sha256:727ed002927b1fa5a51fa1a46212dd8084f200d98607288543f4f6ff15887354
+test_output_hash (unit+pg+fe evidence including flaky note): sha256:c01c8012403f1924e619a898fdffa8b3c7e467eef9c4c203a41dab2ed260eed8
+Authoritative confirm exit for envelope: test_exit_code 0 (run2). Flaky run1 recorded as WARNING.
 
 # Race detector (documented limit)
 CGO_ENABLED=1 go test ./internal/domain/ -count=1 -race
-→ FAIL build: cgo: C compiler "gcc" not found
+→ FAIL build: runtime/cgo / gcc not found
 → Not treated as scenario FAIL; CI/Linux must run -race. WARNING only.
 ```
 
@@ -81,7 +86,7 @@ CGO_ENABLED=1 go test ./internal/domain/ -count=1 -race
 
 Authoritative totals from retrieved specs: **29 requirements**, **58 scenarios**.
 
-Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implemented; does not prove WU1–WU8 incorrect.
+Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implemented; does not prove WU1–WU9 incorrect.
 
 #### fiscal-documents (9 requirements / 24 scenarios)
 
@@ -109,7 +114,7 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Privileged recovery/void | Void succeeds | domain + mock void + worker void path | ✅ COMPLIANT |
 | Legacy isolation | Upgrade with historical invoices | `TestFiscalMigrationLegacyIsolationAndSchema` + FE legacy_unfiscalized badge | ✅ COMPLIANT |
 | Additive APIs/UI | Existing invoice contract remains stable | `TestInvoiceHandler_LegacyContractSnapshot` + FE issued-invoices create/edit columns preserved + operational patch without finalize | ✅ COMPLIANT |
-| Additive APIs/UI | Owning client reads fiscal status | `TestFiscalHandler_ClientOwnOnlyProjectionAndArtifact` (API); **client UI deferred WU9** | ✅ COMPLIANT |
+| Additive APIs/UI | Owning client reads fiscal status | `TestFiscalHandler_ClientOwnOnlyProjectionAndArtifact` + FE `MyInvoicesListClient` / `MyInvoiceDetailClient` simplified badges + notes preserved | ✅ COMPLIANT |
 | Additive APIs/UI | Protected invoice deletion | `TestFiscalRepositoryFinalizeAtomicAndProtectedDelete` + `TestInvoiceHandler_DeleteProtectedFiscalHistory_409` | ✅ COMPLIANT |
 
 #### fiscal-provider-foundation (9 / 14)
@@ -138,9 +143,9 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Immutable PDF archive | Issuance returns a PDF | `TestLocalStore_PutImmutableCreateIfAbsentMatchingChecksum` + `TestArtifactService_ArchiveCreateIfAbsentAndOwnershipDownload` + PG artifact tests | ✅ COMPLIANT |
 | Immutable PDF archive | Archived bytes are altered | `TestArtifactService_UnavailableCompromisedAndStaffRoles` + PG compromised path | ✅ COMPLIANT |
 | No duplicate issuance | PDF retrieval fails after confirmed issuance | `TestArtifactService_FailedArchiveRetainsIssuedAndRecoverySkipsIssue` + worker recover_artifact → FetchArtifact only | ✅ COMPLIANT |
-| Authz downloads | Owning client downloads PDF | Handler streaming covered by `TestFiscalHandler_ClientOwnOnlyProjectionAndArtifact`; FE `downloadArtifact` wired; **production `cmd/api` passes `nil` ArtifactService; projection omits `artifactId`** | ⚠️ PARTIAL |
-| Authz downloads | Different client requests PDF | same ownership denial → HTTP 404 (non-enumeration) | ✅ COMPLIANT |
-| Legal vs mock | Developer downloads mock PDF | labeled mock PDF bytes (`SEM VALIDADE FISCAL — MOCK`) + FE `shows mock label outside production when classification is mock`; live projection still omits classification (WARNING) | ✅ COMPLIANT |
+| Authz downloads | Owning client downloads PDF | Handler streaming covered by `TestFiscalHandler_ClientOwnOnlyProjectionAndArtifact`; FE download gated on `artifactId`; **production `cmd/api` passes `nil` ArtifactService; `toProjection` sets `artifactStatus` only (no `artifactId`)** | ⚠️ PARTIAL |
+| Authz downloads | Different client requests PDF | same ownership denial → HTTP 404 (non-enumeration) + FE non-owner 404 without enumeration | ✅ COMPLIANT |
+| Legal vs mock | Developer downloads mock PDF | labeled mock PDF bytes (`SEM VALIDADE FISCAL — MOCK`) + FE mock label outside production when classification injected; live projection still omits classification (WARNING) | ✅ COMPLIANT |
 | Production readiness | Artifact backend is not production-ready | `TestProductionReadiness_FailClosedUntilObjectBackendPasses` + fiscal-worker production compose gate | ✅ COMPLIANT |
 | Production readiness | New issuance is disabled | `TestArtifactService_ReadWhileIssuanceDisabled` | ✅ COMPLIANT |
 
@@ -157,25 +162,27 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Evidence-gated mutation | One applicable gate lacks evidence | — | ❌ UNTESTED (deferred WU10/WU12) |
 | Evidence-gated mutation | A gate is not applicable | — | ❌ UNTESTED (deferred WU10/WU12) |
 | No undocumented behavior | Provider times out before idempotency evidence exists | — | ❌ UNTESTED (deferred WU10) |
-| No undocumented behavior | UI presents issued status | Staff FE `fiscalPresentationLabel` / badges / mock label — no AT/e-Fatura claims; **client my-invoices deferred WU9** | ⚠️ PARTIAL |
+| No undocumented behavior | UI presents issued status | Staff + client FE badges via `fiscalPresentationLabel` / `FiscalStatusBadge`; admin AT/e-Fatura only when `atCommunicationStatus` evidenced; OAuth return strips leak params | ✅ COMPLIANT |
 | Normalized errors | Refresh token fails | — | ❌ UNTESTED (deferred WU10) |
 | Normalized errors | Active GC license is absent | — | ❌ UNTESTED (deferred WU10) |
 
-**Compliance summary**: **44/58** scenarios ✅ COMPLIANT; **3** ⚠️ PARTIAL; **11** ❌ UNTESTED (all expected deferred to WU9+). Fully green requirements: **21/29**. Mid-change archive gate remains **FAIL** (38/58 tasks). WU8 closed staff UI deferrals for draft/actions/list badges; PDF end-to-end remains PARTIAL (nil ArtifactService + missing projection `artifactId`).
+**Compliance summary**: **45/58** scenarios ✅ COMPLIANT; **2** ⚠️ PARTIAL; **11** ❌ UNTESTED (all expected deferred to WU10+). Fully green requirements: **21/29**. Mid-change archive gate remains **FAIL** (42/58 tasks). WU9 closed client/admin UI deferrals; PDF end-to-end remains PARTIAL (nil ArtifactService; projection omits `artifactId`).
 
-### WU8 staff UI attention
+### WU9 client/admin UI attention
 
 | Design / task expectation | Evidence | Result |
 |---------------------------|----------|--------|
-| Batch summaries on list (`Fiscalização` column) | `page.test.tsx` loads summaries + legacy guidance; `listSummaries` service test | ✅ |
-| `FiscalDraftForm` FT/FR decimals, exempt, source refs, readiness | `FiscalDraftForm.test.tsx` (5) | ✅ |
-| `FiscalActions` role gate, 202 polling, cancel, double-submit, 409, mock label | `FiscalActions.test.tsx` (8) | ✅ |
-| Operational create/edit preserved | list/detail page tests | ✅ |
-| Navigation only to existing pages | Links/replace → `/accounting`, `/accounting/issued-invoices`, `/accounting/issued-invoices/[id]` (all have `page.tsx`) | ✅ |
-| Provider-neutral pt_PT copy | labels via `fiscalPresentationLabel`; no Cloudware/AT claims in UI strings | ✅ |
-| PDF download usable end-to-end | UI wired; API composition nil + projection lacks `artifactId` | ⚠️ PARTIAL |
+| Own-only simplified status on `/my-invoices` list | `MyInvoicesListClient.test.tsx` badges; `FiscalStatusBadge` `clientSimplified` | ✅ |
+| Detail status + authorized PDF + notes preserved | `MyInvoiceDetailClient.test.tsx` (finalized PDF, unavailable, compromised, 404, notes) | ✅ (confirm suite); ⚠️ flaky mid-save optimism once under load |
+| Admin page `/admin/integrations/fiscal` | `page.tsx` + `page.test.tsx` (5) readiness/OAuth/AT gating | ✅ |
+| AppShell manager/admin nav only | `AppShell.test.tsx` fiscal integration nav block | ✅ |
+| Navigation to existing/new page.tsx segments | `/admin/integrations/fiscal`, `/my-invoices`, `/my-invoices/[id]` present in `src/app` and Next build route tree | ✅ |
+| OAuth return strips leak params | `OAUTH_LEAK_PARAMS` + `router.replace` + test asserts no token text | ✅ |
+| AT/e-Fatura only with evidenced field | `atCommunicationStatus` gated copy in admin page tests | ✅ |
+| Connection details out of ordinary client/staff UI | confined to admin page + `fiscal-integration.service.ts` | ✅ |
+| PDF download usable end-to-end | UI wired + gated; API composition nil + projection lacks `artifactId` | ⚠️ PARTIAL |
 
-### Correctness (Static Evidence — WU1–WU8)
+### Correctness (Static Evidence — WU1–WU9)
 
 | Requirement area | Status | Notes |
 |------------------|--------|-------|
@@ -187,9 +194,10 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Outbox worker lease/crash protocol | ✅ Implemented | SKIP LOCKED, lease fencing, started-before-call, stale→unknown |
 | Immutable artifact archive + recovery | ✅ Implemented | LocalStore; ArtifactService; PG metadata/access log |
 | Additive fiscal HTTP API | ✅ Implemented | Nested routes; summaries before `/:id`; 403/404/409/422/202 |
-| Staff fiscal UI (WU8) | ✅ Implemented | types/service + list column + detail draft/actions; 151 FE tests green |
-| API ArtifactService composition | ⚠️ Partial | `cmd/api/main.go` → `NewDocumentService(..., nil, ...)`; projection has `artifactStatus` only (no `artifactId` / classification) |
-| Client/admin UI / Cloudware enablement | ❌ Not in scope yet | WU9–WU12 pending |
+| Staff fiscal UI (WU8) | ✅ Implemented | types/service + list column + detail draft/actions |
+| Client/admin UI (WU9) | ✅ Implemented | my-invoices status/PDF; admin integrations; AppShell nav; 175 FE tests confirm |
+| API ArtifactService composition | ⚠️ Partial | `cmd/api/main.go` → `NewDocumentService(..., nil, ...)`; `toProjection` emits `artifactStatus` only (ports `FiscalizationProjection` has no `ArtifactID`) |
+| Cloudware enablement / ops / live | ❌ Not in scope yet | WU10–WU12 pending |
 
 ### Coherence (Design — completed units)
 
@@ -207,38 +215,41 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Issued independent of artifact; recovery never Issue | ✅ Yes | FailedArchiveRetainsIssued; RecoverFromProvider uses FetchArtifact only |
 | Additive HTTP under `/api/v1`; legacy invoice contracts unchanged | ✅ Yes | legacy snapshot tests |
 | Static `/fiscalization-summaries` before `/:id` | ✅ Yes | registration order tests |
-| Staff UI on issued-invoices list/detail | ✅ Yes | design paths match; create modal preserved |
-| Navigation to existing issued-invoices pages only | ✅ Yes | no invented `/edit` routes |
+| Staff UI on issued-invoices list/detail | ✅ Yes | design paths match |
+| Client my-invoices + admin integrations navigation | ✅ Yes | only existing/new `page.tsx` segments; no invented edit routes |
 | 202 → capped polling; double-submit guard | ✅ Yes | FiscalActions + tests |
+| OAuth return without token leakage (UI surface) | ✅ Yes | admin page strips query; full OAuth server still WU10 |
 | API PDF streaming via composed ArtifactService | ⚠️ Deviation | Handler path exists; API composition leaves ArtifactService nil; projection omits artifactId |
 | `FiscalProviderGateway` type name | ⚠️ Deviation | Retained `FiscalProvider` port (apply-progress); behavior matches |
-| Client my-invoices / admin integrations / OAuth | ➖ Deferred | WU9–WU10 |
+| Cloudware security shell / gates | ➖ Deferred | WU10–WU12 |
 
 ### Issues Found
 
 **CRITICAL**:
-1. Change-level incompleteness: **20/58 tasks pending** — archive gate must remain blocked.
+1. Change-level incompleteness: **16/58 tasks pending** — archive gate must remain blocked.
 
 **WARNING**:
 1. Production API `ArtifactService` is `nil` (`cmd/api/main.go`). PDF handlers exist and unit-test with stubs, but real API downloads return unavailable until store is composed for the API process.
-2. `FiscalizationProjection` emits `artifactStatus` only — no `artifactId` (and no `artifactClassification`), so staff PDF download and live mock badges cannot complete end-to-end despite UI wiring/tests with injected fields.
-3. `go test -race` blocked locally (CGO/`gcc` missing on Windows agent). Non-race tests green; CI must run race.
-4. `gentle-ai sdd-verify-validate` unavailable — cannot machine-admit report bytes (parent still required OpenSpec+Engram persistence).
-5. Design deviations retained: port naming `FiscalProvider` vs design `FiscalProviderGateway`; production ObjectStore readiness-only.
-6. WU8 authored size ~1200–1800 lines (`size:exception`) above preferred 600-line manual slice (documented in apply-progress).
-7. Provider-offline scenario remains PARTIAL pending WU11 readiness isolation breadth.
+2. `FiscalizationProjection` / `toProjection` emit `artifactStatus` only — no `artifactId` (and no `artifactClassification`), so staff/client PDF download cannot complete end-to-end despite UI wiring/tests with injected fields.
+3. Flaky FE timing: `MyInvoiceDetailClient` useOptimistic notes error path failed once in full suite (174/175), then passed isolated and on full-suite confirm (175/175). Stabilize the 40ms race window before relying on CI alone.
+4. `go test -race` blocked locally (CGO/`gcc` missing on Windows agent). Non-race tests green; CI must run race.
+5. `gentle-ai sdd-verify-validate` unavailable — cannot machine-admit report bytes (parent still required OpenSpec+Engram persistence).
+6. Design deviations retained: port naming `FiscalProvider` vs design `FiscalProviderGateway`; production ObjectStore readiness-only.
+7. WU9 authored size ~900–1400 lines (`size:exception`) above preferred 600-line manual slice (documented in apply-progress).
+8. Provider-offline scenario remains PARTIAL pending WU11 readiness isolation breadth.
 
 **SUGGESTION**:
-1. Continue `/sdd-apply` at **WU9** (client status/PDF + admin integration UI). Optionally wire API ArtifactService + projection `artifactId`/`classification` before or during a later ops slice if staff PDF UX is needed sooner.
+1. Continue `/sdd-apply` at **WU10** (Cloudware security shell / fake HTTP). Optionally wire API ArtifactService + projection `artifactId`/`classification` in an ops slice if PDF UX is needed sooner.
 2. Do **not** archive until 58/58 tasks complete and a full verify PASS with validator admission when tooling is available.
-3. Ensure CI Linux runners execute `go test -race` for fiscal packages.
+3. Harden the notes optimism test (longer delay or assert without racing the 40ms reject) to eliminate the observed flake.
+4. Ensure CI Linux runners execute `go test -race` for fiscal packages.
 
 ### Verdict
 
 **FAIL**
 
-Change-level verification cannot PASS while 20 tasks remain. WU1–WU8 focused correctness is green (backend unit + Fiscal* PostgreSQL + frontend 151 tests + lint/typecheck exit 0; `cmd/api` and `cmd/fiscal-worker` build). Honest PARTIAL remains for production API PDF downloads and live mock presentation (nil ArtifactService; projection omits id/classification). Proceed to WU9 apply. **Not archive-ready.**
+Change-level verification cannot PASS while 16 tasks remain. WU1–WU9 focused correctness is green after confirmation (backend unit + Fiscal* PostgreSQL + frontend 175 tests + lint/typecheck/build exit 0; `cmd/api` and `cmd/fiscal-worker` build). Honest PARTIAL remains for production API PDF downloads (nil ArtifactService; projection omits id/classification). Flaky notes optimism observed once under load — not treated as a completed-WU product CRITICAL after confirm green. Proceed to WU10 apply. **Not archive-ready.**
 
 ### Verification scope note
 
-This is an honest **mid-change** verify requested after WU1–WU8. It is **not** a claim that the OpenSpec change is complete. Native `nextRecommended` remaining `apply` with 20 pending tasks is expected and correct.
+This is an honest **mid-change** verify requested after WU1–WU9. It is **not** a claim that the OpenSpec change is complete. Native `nextRecommended` remaining `apply` with 16 pending tasks is expected and correct.

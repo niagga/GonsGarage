@@ -170,3 +170,79 @@ export function canShowFiscalAction(role: string, action: string, allowed: strin
   }
   return true;
 }
+
+/** Client-facing simplified statuses only (no staff draft presentation). */
+export const CLIENT_FISCAL_PRESENTATION_STATUSES = new Set([
+  'pending',
+  'finalized',
+  'voided',
+  'unavailable',
+]);
+
+export function clientFiscalPresentationStatus(status: string | undefined): FiscalPresentationStatus | string {
+  if (!status) return 'unavailable';
+  if (status === 'draft' || status === 'legacy_unfiscalized') return 'unavailable';
+  if (CLIENT_FISCAL_PRESENTATION_STATUSES.has(status)) return status;
+  return 'unavailable';
+}
+
+export type FiscalConnectionState =
+  | 'disconnected'
+  | 'authorizing'
+  | 'connected'
+  | 'action_required'
+  | 'revoked';
+
+export interface FiscalConnectionStatus {
+  id?: string;
+  scopeKey: string;
+  providerKey: string;
+  state: FiscalConnectionState | string;
+  providerReference?: string;
+  grantedScopes?: string[];
+  accessExpiresAt?: string | null;
+  lastVerifiedAt?: string | null;
+  connectedAt?: string | null;
+  revokedAt?: string | null;
+  hasCredentials: boolean;
+  version?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FiscalReadinessGate {
+  name: string;
+  status: 'pending' | 'passed' | 'failed' | 'not_applicable' | string;
+  guidance?: string;
+}
+
+export interface FiscalReadiness {
+  ready: boolean;
+  gates: FiscalReadinessGate[];
+  /** Only render AT/e-Fatura claims when this evidenced field is present. */
+  atCommunicationStatus?: string;
+}
+
+export function fiscalConnectionStateLabel(state: string | undefined): string {
+  switch (state) {
+    case 'disconnected':
+      return 'Desligado';
+    case 'authorizing':
+      return 'A autorizar';
+    case 'connected':
+      return 'Ligado';
+    case 'action_required':
+      return 'Ação necessária';
+    case 'revoked':
+      return 'Revogado';
+    default:
+      return state || '—';
+  }
+}
+
+export function canDownloadFiscalArtifact(projection: {
+  artifactStatus?: string;
+  artifactId?: string;
+}): boolean {
+  return projection.artifactStatus === 'available' && Boolean(projection.artifactId);
+}

@@ -206,3 +206,70 @@ describe('AppShell parts inventory nav (manager/admin only)', () => {
     expect(btn.className).toMatch(/active/);
   });
 });
+
+describe('AppShell fiscal integration nav (manager/admin only)', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
+  it('shows Integração fiscal and navigates to /admin/integrations/fiscal for manager', async () => {
+    const user = userEvent.setup();
+    const manager = buildUser({ role: UserRole.MANAGER });
+    render(
+      <AppShell user={manager} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>Conteúdo</p>
+      </AppShell>,
+    );
+
+    const navFiscal = screen.getByRole('button', { name: 'Integração fiscal' });
+    expect(navFiscal).toBeInTheDocument();
+    await user.click(navFiscal);
+    expect(mockPush).toHaveBeenCalledWith('/admin/integrations/fiscal');
+  });
+
+  it('shows Integração fiscal for admin', () => {
+    const admin = buildUser({ role: UserRole.ADMIN });
+    render(
+      <AppShell user={admin} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.getByRole('button', { name: 'Integração fiscal' })).toBeInTheDocument();
+  });
+
+  it('does not show Integração fiscal for employee', () => {
+    const employee = buildUser({ role: UserRole.EMPLOYEE });
+    render(
+      <AppShell user={employee} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.queryByRole('button', { name: 'Integração fiscal' })).not.toBeInTheDocument();
+  });
+
+  it('does not show Integração fiscal for client', () => {
+    const client = buildUser({ role: UserRole.CLIENT });
+    render(
+      <AppShell user={client} subtitle="Teste" activeNav="dashboard" onLogout={vi.fn()}>
+        <p>X</p>
+      </AppShell>,
+    );
+    expect(screen.queryByRole('button', { name: 'Integração fiscal' })).not.toBeInTheDocument();
+  });
+
+  it('marks Integração fiscal active when activeNav is admin_fiscal', () => {
+    const manager = buildUser({ role: UserRole.MANAGER });
+    render(
+      <AppShell
+        user={manager}
+        subtitle="Integração"
+        activeNav="admin_fiscal"
+        onLogout={vi.fn()}
+      >
+        <p>Definições</p>
+      </AppShell>,
+    );
+    const btn = screen.getByRole('button', { name: 'Integração fiscal' });
+    expect(btn.className).toMatch(/active/);
+  });
+});

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canDownloadFiscalArtifact,
   canShowFiscalAction,
+  clientFiscalPresentationStatus,
+  fiscalConnectionStateLabel,
   fiscalPresentationLabel,
   isTransientFiscalLifecycle,
 } from '@/types/fiscal';
@@ -27,5 +30,25 @@ describe('fiscal presentation helpers', () => {
     expect(canShowFiscalAction('manager', 'finalize', allowed)).toBe(true);
     expect(canShowFiscalAction('admin', 'void', allowed)).toBe(true);
     expect(canShowFiscalAction('manager', 'finalize', ['view'])).toBe(false);
+  });
+
+  it('maps draft and legacy to unavailable for client simplified surfaces', () => {
+    expect(clientFiscalPresentationStatus('draft')).toBe('unavailable');
+    expect(clientFiscalPresentationStatus('legacy_unfiscalized')).toBe('unavailable');
+    expect(clientFiscalPresentationStatus('pending')).toBe('pending');
+    expect(clientFiscalPresentationStatus('finalized')).toBe('finalized');
+  });
+
+  it('labels connection states in Portuguese without provider branding', () => {
+    expect(fiscalConnectionStateLabel('connected')).toBe('Ligado');
+    expect(fiscalConnectionStateLabel('disconnected')).toBe('Desligado');
+    expect(fiscalConnectionStateLabel('action_required')).toBe('Ação necessária');
+  });
+
+  it('allows PDF download only when artifact is available with an id', () => {
+    expect(canDownloadFiscalArtifact({ artifactStatus: 'available', artifactId: 'a1' })).toBe(true);
+    expect(canDownloadFiscalArtifact({ artifactStatus: 'available' })).toBe(false);
+    expect(canDownloadFiscalArtifact({ artifactStatus: 'compromised', artifactId: 'a1' })).toBe(false);
+    expect(canDownloadFiscalArtifact({ artifactStatus: 'unavailable', artifactId: 'a1' })).toBe(false);
   });
 });

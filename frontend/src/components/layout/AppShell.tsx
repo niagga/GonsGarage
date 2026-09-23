@@ -15,6 +15,7 @@ export type AppShellNavId =
   | 'appointments'
   | 'admin_users'
   | 'admin_parts'
+  | 'admin_fiscal'
   | 'accounting'
   | 'my_invoices'
   | 'workshop';
@@ -142,6 +143,14 @@ export default function AppShell({
               className={cn(styles.navButton, activeNav === 'admin_parts' && styles.active)}
             >
               Peças (stock)
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => router.push('/admin/integrations/fiscal')}
+              className={cn(styles.navButton, activeNav === 'admin_fiscal' && styles.active)}
+            >
+              Integração fiscal
             </Button>
           </>
         ) : null}

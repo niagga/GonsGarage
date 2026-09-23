@@ -8,6 +8,11 @@ export { receivedInvoiceService, ReceivedInvoiceService } from './received-invoi
 export { billingDocumentService, BillingDocumentService } from './billing-document.service';
 export { issuedInvoiceService, IssuedInvoiceService } from './issued-invoice.service';
 export { fiscalizationService, FiscalizationService } from './fiscalization.service';
+export {
+  fiscalIntegrationService,
+  FiscalIntegrationService,
+} from './fiscal-integration.service';
+export type { FiscalConnectionSetupBody } from './fiscal-integration.service';
 
 // ✅ Export types for convenience
 export type { 

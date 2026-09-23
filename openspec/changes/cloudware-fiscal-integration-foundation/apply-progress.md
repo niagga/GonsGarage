@@ -1,7 +1,7 @@
 # Apply Progress: Cloudware fiscal integration foundation
 
 ## Status
-WU1–WU7 remain complete. **WU8 `staff fiscal UI` is complete**: provider-neutral fiscalization service + types, issued-invoices list batch summaries/badges, detail `FiscalDraftForm` / `FiscalActions` (decimal-string drafts, readiness, role-gated privileged actions, 202→capped polling, double-submit guard, mock label, PDF download wiring). Operational invoice columns/create/edit controls preserved. No commit or PR was created. Work stayed inside the WU8 boundary (stopped before WU9 client/admin UI).
+WU1–WU8 remain complete. **WU9 `client/admin UI` is complete**: own-only client fiscal status/PDF on `/my-invoices`, manager/admin fiscal integration settings page + AppShell nav, shared provider-neutral `FiscalStatusBadge`, connection/readiness service without token leakage. Notes and auth flows preserved. No commit or PR was created. Work stayed inside the WU9 boundary (stopped before WU10 Cloudware security shell).
 
 ## Completed tasks and persisted checkboxes
 - [x] 1.1–1.5 WU1 schema/migration (retained).
@@ -11,71 +11,77 @@ WU1–WU7 remain complete. **WU8 `staff fiscal UI` is complete**: provider-neutr
 - [x] 5.1–5.4 WU5 outbox worker (retained).
 - [x] 6.1–6.4 WU6 artifact archive (retained).
 - [x] 7.1–7.4 WU7 additive HTTP API (retained).
-- [x] 8.1 RED — Vitest/Testing Library: `fiscalization.service.test.ts`, `issued-invoices/page.test.tsx`, `[id]/FiscalDraftForm.test.tsx`, `FiscalActions.test.tsx`, `page.test.tsx` for summaries, FT/FR decimals, readiness, roles, 202 polling, cancellation, double-click, operational edits. <!-- sdd-owner: implementation -->
-- [x] 8.2 GREEN — `types/fiscal.ts`, `fiscalization.service.ts`, `FiscalDraftForm.tsx`, `FiscalActions.tsx`; extend list + detail pages. <!-- sdd-owner: implementation -->
-- [x] 8.3 TRIANGULATE — employee vs manager/admin, FT/FR/exempt, stale 409, unavailable/unknown, source refs, server totals, mock labels, capped polling stop; `fiscal.test.ts` helpers. <!-- sdd-owner: implementation -->
-- [x] 8.4 REFACTOR — reuse Button/form/apiClient patterns; preserve create modal + operational fields; pt_PT provider-neutral copy; `pnpm test`, `pnpm lint`, `pnpm typecheck`. <!-- sdd-owner: implementation -->
+- [x] 8.1–8.4 WU8 staff fiscal UI (retained).
+- [x] 9.1 RED — Extend my-invoices + AppShell tests; add admin fiscal page tests for own-only status/PDF, notes, hidden privileged actions, role-gated nav, readiness. <!-- sdd-owner: implementation -->
+- [x] 9.2 GREEN — Update MyInvoicesList/Detail; add `fiscal-integration.service.ts`, `admin/integrations/fiscal/page.tsx`, AppShell manager/admin nav. <!-- sdd-owner: implementation -->
+- [x] 9.3 TRIANGULATE — Non-owner 404, compromised artifacts, employee/client nav absence, OAuth-return strip, AT/e-Fatura only when evidenced. <!-- sdd-owner: implementation -->
+- [x] 9.4 REFACTOR — Shared `FiscalStatusBadge`; connection details confined to admin page; full frontend test/lint/typecheck/build. <!-- sdd-owner: implementation -->
 - [x] 13.1 Parent delivery decision (retained).
 
-## Files changed (WU8 batch)
+## Files changed (WU9 batch)
 | File | Action | What was done |
 |------|--------|---------------|
-| `frontend/src/types/fiscal.ts` | Created | Decimal-string DTOs, presentation helpers, privileged-action gate |
-| `frontend/src/types/fiscal.test.ts` | Created | Helper triangulation (labels, polling states, roles) |
-| `frontend/src/types/index.ts` | Modified | Re-export fiscal types/helpers |
-| `frontend/src/lib/services/fiscalization.service.ts` | Created | Draft/actions/summaries/artifact client |
-| `frontend/src/lib/services/fiscalization.service.test.ts` | Created | Contract tests for paths + decimal payloads + PDF fetch |
-| `frontend/src/lib/services/index.ts` | Modified | Export fiscalization service |
-| `frontend/src/app/accounting/issued-invoices/page.tsx` | Modified | Batch summaries + Fiscalização column |
-| `frontend/src/app/accounting/issued-invoices/page.test.tsx` | Modified | Summary badges + legacy guidance; keep create-modal safety net |
-| `frontend/src/app/accounting/issued-invoices/[id]/page.tsx` | Modified | Fiscal panel beside operational edit form |
-| `frontend/src/app/accounting/issued-invoices/[id]/page.test.tsx` | Created | Operational controls + projection load |
-| `frontend/src/app/accounting/issued-invoices/[id]/FiscalDraftForm.tsx` | Created | Manual FT/FR lines, decimals, readiness, source refs |
-| `frontend/src/app/accounting/issued-invoices/[id]/FiscalDraftForm.test.tsx` | Created | Draft form behavioral coverage |
-| `frontend/src/app/accounting/issued-invoices/[id]/FiscalActions.tsx` | Created | Privileged actions, polling, double-submit, PDF, mock label |
-| `frontend/src/app/accounting/issued-invoices/[id]/FiscalActions.test.tsx` | Created | Role/polling/conflict/mock coverage |
-| `openspec/.../tasks.md` | Modified | Mark 8.1–8.4 `[x]` |
-| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU8 progress |
+| `frontend/src/types/fiscal.ts` | Modified | Client presentation helpers, connection/readiness types, download gate |
+| `frontend/src/types/fiscal.test.ts` | Modified | Helper triangulation for client/connection/download |
+| `frontend/src/types/index.ts` | Modified | Re-export new fiscal helpers/types |
+| `frontend/src/lib/services/fiscal-integration.service.ts` | Created | Manager/admin connection + readiness client |
+| `frontend/src/lib/services/fiscal-integration.service.test.ts` | Created | Path/contract tests without secrets |
+| `frontend/src/lib/services/index.ts` | Modified | Export fiscal-integration service |
+| `frontend/src/components/fiscal/FiscalStatusBadge.tsx` | Created | Shared provider-neutral badge |
+| `frontend/src/app/my-invoices/MyInvoicesListClient.tsx` | Modified | Summaries + simplified badges |
+| `frontend/src/app/my-invoices/MyInvoicesListClient.test.tsx` | Modified | Badge + no-privileged-action coverage |
+| `frontend/src/app/my-invoices/[id]/MyInvoiceDetailClient.tsx` | Modified | Status, PDF, notes preserved |
+| `frontend/src/app/my-invoices/[id]/MyInvoiceDetailClient.test.tsx` | Modified | PDF/unavailable/compromised/404 cases |
+| `frontend/src/app/admin/integrations/fiscal/page.tsx` | Created | Connection state, verify/disconnect, readiness, OAuth strip |
+| `frontend/src/app/admin/integrations/fiscal/page.test.tsx` | Created | Readiness, OAuth, AT field gating |
+| `frontend/src/components/layout/AppShell.tsx` | Modified | Manager/admin Integração fiscal → `/admin/integrations/fiscal` |
+| `frontend/src/components/layout/AppShell.test.tsx` | Modified | Role-gated fiscal nav cases |
+| `frontend/src/app/accounting/issued-invoices/page.tsx` | Modified | Reuse FiscalStatusBadge |
+| `frontend/src/app/accounting/issued-invoices/[id]/FiscalActions.tsx` | Modified | Reuse FiscalStatusBadge |
+| `openspec/.../tasks.md` | Modified | Mark 9.1–9.4 `[x]` |
+| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU9 progress |
 
 ## Verification
-- Focused: `pnpm exec vitest run` on WU8 test files → **34 passed**
-- Full: `cd frontend && pnpm test -- --passWithNoTests` → **32 files / 151 tests passed**
+- Focused: WU9 vitest files → **45 passed**
+- Full: `cd frontend && pnpm test -- --passWithNoTests` → **34 files / 175 tests passed**
 - `pnpm lint` → PASS (exit 0)
 - `pnpm typecheck` → PASS (exit 0)
+- `pnpm build` → PASS (includes `/admin/integrations/fiscal`)
 
-## Work Unit Evidence (WU8)
+## Work Unit Evidence (WU9)
 
 | Evidence | Result |
 |---|---|
-| Focused test command | `pnpm exec vitest run src/lib/services/fiscalization.service.test.ts src/types/fiscal.test.ts src/app/accounting/issued-invoices/page.test.tsx src/app/accounting/issued-invoices/[id]/FiscalDraftForm.test.tsx src/app/accounting/issued-invoices/[id]/FiscalActions.test.tsx src/app/accounting/issued-invoices/[id]/page.test.tsx` → **34 passed** |
-| Runtime harness | N/A — WU8 is Vitest/Testing Library against mocked API client; no browser E2E in tooling inventory |
-| Rollback boundary | Hide fiscal column/panel (revert WU8 frontend files); operational issued-invoice list/create/edit remain; no backend schema change |
+| Focused test command | `pnpm exec vitest run` on my-invoices list/detail, AppShell, admin fiscal page, fiscal-integration.service, fiscal.test → **45 passed** |
+| Runtime harness | N/A — WU9 is Vitest/Testing Library against mocked API client; no browser E2E in tooling inventory |
+| Rollback boundary | Revert WU9 frontend files (my-invoices fiscal panels, AppShell nav item, admin/integrations/fiscal, fiscal-integration.service, FiscalStatusBadge); notes/auth and staff WU8 UI remain |
 
-## TDD Cycle Evidence (WU8)
+## TDD Cycle Evidence (WU9)
 
 | Task | Test file/layer | Safety net | RED | GREEN | TRIANGULATE | REFACTOR |
 |---|---|---|---|---|---|---|
-| 8.1 | service + page + `[id]/*` tests / unit+RTL | ✅ prior issued-invoices create-modal tests PASS (123 suite baseline) | ✅ Written (import fail / missing UI) | — | Covered with 8.3 | N/A in RED |
-| 8.2 | same + production modules | N/A (new) | From 8.1 | ✅ types/service/forms/pages; focused PASS | — | Shared Button/styles/apiClient |
-| 8.3 | + `fiscal.test.ts` | unit green | Role/FT/FR/exempt/409/unknown/mock/poll cases | Behaviors PASS | ✅ All listed scenarios | Helpers extracted |
-| 8.4 | full frontend quality | ✅ focused green | Approval tests preserved | lint+typecheck+full test | — | Exports + alert role + submit ref |
+| 9.1 | my-invoices + AppShell + admin page tests / RTL | ✅ 18/18 prior my-invoices+AppShell PASS | ✅ Written (missing UI / missing page import) | — | Covered with 9.3 | N/A in RED |
+| 9.2 | same + production modules | N/A (new admin page/service) | From 9.1 | ✅ list/detail/service/page/nav; focused PASS | — | Shared badge later |
+| 9.3 | + service + fiscal helpers + AT/compromised | unit green | 404/compromised/OAuth/AT/employee-client nav | Behaviors PASS | ✅ All listed scenarios | Helpers extracted |
+| 9.4 | full frontend quality | ✅ focused green | Approval tests preserved | lint+typecheck+test+build | — | FiscalStatusBadge shared; OAuth notice without setState-in-effect |
 
 ## Prior work unit evidence (retained)
 
-### WU7
+### WU8
 | Evidence | Result |
 |---|---|
-| Focused tests | handler/fiscal + invoice + domain PASS |
-| Runtime harness | N/A httptest stubs |
-| Rollback | Disable `FISCAL_FEATURE_ENABLED` |
+| Focused tests | 34 passed fiscalization UI |
+| Full frontend | 151 tests (pre-WU9) |
+| Rollback | Hide fiscal column/panel |
 
-### WU6 / WU5 / WU4 / WU3 / WU2 / WU1
-Retained: artifact archive; outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
+### WU7 / WU6 / WU5 / WU4 / WU3 / WU2 / WU1
+Retained: additive HTTP API; artifact archive; outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
 
 ## Deviations, budget, and remaining work
-- **Budget / size:exception**: Authored WU8 volume is estimated ~1,200–1,800 lines including tests/components (preferred ~600). Completing WU8 coherently required service + types + list/detail wiring + RTL coverage (same pattern as WU3–WU7). Documented as **size:exception** under parent-authorized manual WU8 slice.
-- **PDF download**: UI wires `downloadArtifact` when `artifactId`/`artifactStatus` present. WU7 projection still omits `artifactId`; API process `ArtifactService` may remain nil (503 / unavailable guidance). Optional note: PDF UX needs projection `artifactId` + API ArtifactService composition for reliable downloads.
-- Delivery: Parent authorized manual WU8 only; agent created **no commits/PRs**. Stopped before WU9.
+- **Budget / size:exception**: Authored WU9 volume is estimated ~900–1,400 lines including tests/components (preferred ~600). Completing WU9 coherently required client list/detail + admin page + service + AppShell + RTL coverage (same pattern as WU3–WU8). Documented as **size:exception** under parent-authorized manual WU9 slice.
+- **Readiness API**: Admin UI calls `/fiscal-integrations/cloudware/readiness`; when unavailable, shows fail-closed local guidance. Full Cloudware OAuth connect remains WU10.
+- **PDF download**: Still depends on projection `artifactId` + API ArtifactService (same WU8 note).
+- Delivery: Parent authorized manual WU9 only; agent created **no commits/PRs**. Stopped before WU10.
 
 ## Deferred parent lifecycle actions
 - [ ] 13.2 Production fiscal-policy, issuer/series, retention, storage, backup, access-log, and legal-void decisions. <!-- sdd-owner: parent -->
@@ -107,7 +113,7 @@ contextFiles:
   verifyReport: []
   syncReport: []
 artifacts: { proposal: done, specs: done, design: done, tasks: done, applyProgress: done, verifyReport: missing, syncReport: missing }
-taskProgress: { total: 58, complete: 38, remaining: 20 }
+taskProgress: { total: 58, complete: 42, remaining: 16 }
 deferredParentActions: { total: 5, complete: 1, remaining: 4 }
 taskArtifactErrors: []
 applyState: ready
@@ -118,14 +124,15 @@ actionContext:
   allowedEditRoots:
     - D:/Repos/GonsGarage
   warnings:
-    - "WU8 authored ~1200-1800 lines (>600 preferred); size:exception like WU3–WU7"
-    - "PDF download needs artifactId on projection + API ArtifactService (may be nil)"
+    - "WU9 authored ~900-1400 lines (>600 preferred); size:exception like WU3–WU8"
+    - "Cloudware readiness route may 503 until WU10; UI fail-closes with safe guidance"
+    - "PDF download still needs artifactId on projection + API ArtifactService"
 nextRecommended: sdd-verify
 isNonAuthoritative: false
 ```
 
-WU8 finish state is satisfied: staff can prepare drafts and authorized managers/admins can act using provider-neutral projections on issued-invoice pages. Next: `sdd-verify`, then WU9 only after parent/verify.
+WU9 finish state is satisfied: owning clients see simplified fiscal status/PDF; managers/admins reach integration settings; employees/clients lack those controls. Next: `sdd-verify`, then WU10 only after parent/verify.
 
 ## Remaining implementation tasks (verbatim start of next unit)
 
-- [ ] 9.1 RED — Extend my-invoices tests and add admin fiscal integration page tests for own-only status/PDF and role-gated settings. <!-- sdd-owner: implementation -->
+- [ ] 10.1 RED — Add Cloudware adapter/crypto/connection tests for OAuth state, AES-GCM, gates blocking before HTTP. <!-- sdd-owner: implementation -->

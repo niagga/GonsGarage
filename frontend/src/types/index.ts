@@ -21,10 +21,16 @@ export type {
   FiscalizationSummary,
   FiscalDocumentKind,
   FiscalPresentationStatus,
+  FiscalConnectionStatus,
+  FiscalReadiness,
+  FiscalReadinessGate,
 } from './fiscal';
 
 export {
   fiscalPresentationLabel,
+  fiscalConnectionStateLabel,
+  clientFiscalPresentationStatus,
+  canDownloadFiscalArtifact,
   isTransientFiscalLifecycle,
   canShowFiscalAction,
 } from './fiscal';

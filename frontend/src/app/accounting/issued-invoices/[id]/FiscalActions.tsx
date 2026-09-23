@@ -7,10 +7,10 @@ import {
   canShowFiscalAction,
   DEFAULT_FISCAL_MAX_POLL_ATTEMPTS,
   DEFAULT_FISCAL_POLL_INTERVAL_MS,
-  fiscalPresentationLabel,
   isTransientFiscalLifecycle,
   type FiscalizationProjection,
 } from '@/types/fiscal';
+import { FiscalStatusBadge } from '@/components/fiscal/FiscalStatusBadge';
 import styles from '../../accounting.module.css';
 
 export interface FiscalActionsProps {
@@ -171,7 +171,7 @@ export function FiscalActions({
   return (
     <div className={styles.form}>
       <p>
-        Estado: <strong>{fiscalPresentationLabel(projection.status)}</strong>
+        Estado: <strong><FiscalStatusBadge status={projection.status} /></strong>
         {projection.lifecycle ? ` (${projection.lifecycle})` : ''}
       </p>
       {progress ? (
