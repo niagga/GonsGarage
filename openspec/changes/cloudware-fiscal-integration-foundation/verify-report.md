@@ -1,25 +1,25 @@
 ```yaml
 schema: gentle-ai.verify-result/v1
-evidence_revision: sha256:6b5dbb9332520789cb53fc09993d24d60f7b9501a42ef442989feb70b3e9e9fa
+evidence_revision: sha256:de6bb928b108077567f5e077eb9e9de96f4d87cdb66c04c4d750b1d3c685c85c
 verdict: fail
 blockers: 1
-critical_findings: 2
-requirements: 7/29
-scenarios: 28/58
-remediation_note: "2026-09-23 remediated 3 in-scope covering tests; archive still blocked by incomplete tasks"
-test_command: cd backend && go test ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... -count=1 ; FISCAL_TEST_DATABASE_URL=postgres://admindb:***@localhost:5432/gonsgarage?sslmode=disable go test ./tests/integration/ -count=1 -run Fiscal(Migration|Repository|Mock) -timeout 120s
+critical_findings: 1
+requirements: 16/29
+scenarios: 35/58
+remediation_note: "2026-09-23 remediated 3 covering tests remain COMPLIANT; WU5 outbox scenarios now covered"
+test_command: cd backend && go test ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... -count=1 ; FISCAL_TEST_DATABASE_URL=<redacted> go test ./tests/integration/ -count=1 -run Fiscal(Migration|Repository|Mock|Outbox) -timeout 180s
 test_exit_code: 0
-test_output_hash: sha256:4ff8b21727e25077cf0a36b53e00fe59f5670ce1d9a7438673937863f8ae813c
-build_command: cd backend && go vet ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... ./internal/repository/postgres/... ; go test -c -o NUL ./internal/domain/ ./internal/service/fiscal/ ./internal/integration/fiscal/mock/
+test_output_hash: sha256:0423cce5e1140b4b6b083d036562f1cb56d44b70567386018bf29e136a9d0fd6
+build_command: cd backend && go vet ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... ./internal/repository/postgres/... ; go test -c -o NUL ./internal/domain/ ./internal/service/fiscal/ ./internal/integration/fiscal/mock/ ; go build -o NUL ./cmd/fiscal-worker/
 build_exit_code: 0
-build_output_hash: sha256:47100eb16365ae44d654bb6e5038b8126271d01420e4b06d928ac345f681a22e
+build_output_hash: sha256:2e69bf22c3dceee1b4939615c03d112aaf69dda09bfc1fb03140e5cfc6295119
 ```
 
 ## Verification Report
 
 **Change**: cloudware-fiscal-integration-foundation
 **Version**: N/A (OpenSpec change; four delta specs)
-**Mode**: Standard (focused mid-change verify after WU1–WU4; full suite not claimed)
+**Mode**: Standard (focused mid-change verify after WU1–WU5; full suite not claimed)
 **Artifact store**: openspec
 **Validator**: `gentle-ai sdd-verify-validate` **unavailable** on gentle-ai 3.5.0 (command not present; `sdd-attempt grant` is edit-authority only). Report persisted per parent Persistence instruction; admission tooling could not attest bytes.
 
@@ -28,34 +28,39 @@ build_output_hash: sha256:47100eb16365ae44d654bb6e5038b8126271d01420e4b06d928ac3
 | Metric | Value |
 |--------|-------|
 | Tasks total | 58 |
-| Tasks complete | 22 (1.1–1.5, 2.1–2.8, 3.1–3.4, 4.1–4.4, 13.1) |
-| Tasks incomplete | 36 (WU5–WU12 implementation + parent 13.2–13.5) |
+| Tasks complete | 26 (1.1–1.5, 2.1–2.8, 3.1–3.4, 4.1–4.4, 5.1–5.4, 13.1) |
+| Tasks incomplete | 32 (WU6–WU12 implementation + parent 13.2–13.5) |
 | Change-level archive gate | **FAIL** — `allComplete: false` |
-| WU1–WU4 local finish claims | Satisfied in `tasks.md` / `apply-progress.md` checkboxes |
+| WU1–WU5 local finish claims | Satisfied in `tasks.md` / `apply-progress.md` checkboxes |
 
-Scope of this verify: **completed work units only** (schema/domain/persistence/mock). Remaining WU5–WU12 scenarios are expected deferred, not false PASS.
+Scope of this verify: **completed work units only** (schema, domain, persistence, mock, outbox worker). Remaining WU6–WU12 scenarios are expected deferred, not false PASS.
 
 ### Build & Tests Execution
 
-**Build**: ✅ Passed (focused packages)
+**Build**: ✅ Passed (focused packages + fiscal-worker)
 ```text
 cd backend
 go vet ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... ./internal/repository/postgres/...
 → VET_EXIT:0
 go test -c -o NUL ./internal/domain/ ; ./internal/service/fiscal/ ; ./internal/integration/fiscal/mock/
 → BUILD_DOMAIN:0 BUILD_SVC:0 BUILD_MOCK:0
+go build -o NUL ./cmd/fiscal-worker/
+→ BUILD_WORKER:0
+build_output_hash: sha256:2e69bf22c3dceee1b4939615c03d112aaf69dda09bfc1fb03140e5cfc6295119
 ```
 
 **Tests**: ✅ Focused packages passed / ⚠️ race unavailable
 ```text
 # Unit / service / mock / ports (CGO_ENABLED=0)
 go test ./internal/domain/... ./internal/service/fiscal/... ./internal/integration/fiscal/mock/... ./internal/core/ports/... -count=1
-→ ok domain, service/fiscal, integration/fiscal/mock, core/ports (exit 0)
+→ ok domain, service/fiscal (Worker_* + draft/finalization), integration/fiscal/mock, core/ports (exit 0)
 
-# PostgreSQL integration (FISCAL_TEST_DATABASE_URL set from local .env DATABASE_URL)
-go test ./tests/integration/ -count=1 -run 'Fiscal(Migration|Repository|Mock)' -timeout 120s
-→ ok tests/integration 25.260s (exit 0)
-  covers FiscalMigration*, FiscalRepository*, FiscalMock*
+# PostgreSQL integration (FISCAL_TEST_DATABASE_URL set privately from local DATABASE_URL)
+go test ./tests/integration/ -count=1 -run 'Fiscal(Migration|Repository|Mock|Outbox)' -timeout 180s
+→ ok tests/integration 13.209s (exit 0)
+  covers FiscalMigration*, FiscalRepository*, FiscalMock*, FiscalOutbox*
+
+test_output_hash: sha256:0423cce5e1140b4b6b083d036562f1cb56d44b70567386018bf29e136a9d0fd6
 
 # Race detector (documented limit)
 CGO_ENABLED=1 go test ./internal/domain/ -count=1 -race
@@ -69,7 +74,7 @@ CGO_ENABLED=1 go test ./internal/domain/ -count=1 -race
 
 Authoritative totals from retrieved specs: **29 requirements**, **58 scenarios**.
 
-Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implemented; does not prove WU1–WU4 incorrect.
+Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implemented; does not prove WU1–WU5 incorrect.
 
 #### fiscal-documents (9 requirements / 24 scenarios)
 
@@ -94,7 +99,7 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Lifecycle guarded | Definite void failure | same | ✅ COMPLIANT |
 | Privileged recovery/void | Manager retries after connection recovery | domain transitions + role matrix | ✅ COMPLIANT |
 | Privileged recovery/void | Employee requests reconciliation or void | `TestFiscalDocumentRoleActionMatrixAndSupersession` | ✅ COMPLIANT |
-| Privileged recovery/void | Void succeeds | domain + mock void; **no outbox worker end-to-end** | ⚠️ PARTIAL |
+| Privileged recovery/void | Void succeeds | domain + mock void + `TestWorker_VoidDispatchAndArtifactRecoveryPaths` | ✅ COMPLIANT |
 | Legacy isolation | Upgrade with historical invoices | `TestFiscalMigrationLegacyIsolationAndSchema` | ✅ COMPLIANT |
 | Additive APIs/UI | Existing invoice contract remains stable | invoice service regression retained; **HTTP snapshot is WU7** | ⚠️ PARTIAL |
 | Additive APIs/UI | Owning client reads fiscal status | — | ❌ UNTESTED (deferred WU7/WU9) |
@@ -104,18 +109,18 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 
 | Requirement | Scenario | Test | Result |
 |-------------|----------|------|--------|
-| Gateway normalized | Provider becomes unavailable after finalization | — | ❌ UNTESTED (deferred WU5/WU11) |
+| Gateway normalized | Provider becomes unavailable after finalization | `TestWorker_ReconcileUsesSameFrozenProviderAndKey` + domain provider fixation | ✅ COMPLIANT |
 | Finalization atomic | Dispatch event persistence fails | `TestFinalizationServiceOutboxFailureRollsBack` + `TestFiscalRepositoryOutboxInsertFailureRollsBack` | ✅ COMPLIANT |
-| Finalization atomic | Process stops after commit | — | ❌ UNTESTED (deferred WU5) |
-| Outbox crash-safe | Concurrent workers claim one event | — | ❌ UNTESTED (deferred WU5) |
-| Outbox crash-safe | Worker crashes while leased | — | ❌ UNTESTED (deferred WU5) |
+| Finalization atomic | Process stops after commit | `TestFiscalOutboxWorkerEndToEndIssueWithMock` + claimable durable events | ✅ COMPLIANT |
+| Outbox crash-safe | Concurrent workers claim one event | `TestFiscalOutboxSkipLockedSingleClaim` | ✅ COMPLIANT |
+| Outbox crash-safe | Worker crashes while leased | `TestFiscalOutboxLeaseExpiryRecoversWithoutBlindResubmit` + `TestWorker_StaleStartedAttemptBecomesUnknownWithoutResubmit` | ✅ COMPLIANT |
 | Idempotent correlation | User double-clicks finalization | concurrent finalize PG + service idempotency | ✅ COMPLIANT |
 | Failures classified | Rate limit response is definite | `TestMockProvider_ScenariosCoverValidationExpiredTransientRateLimitAmbiguousReconcileAndVoids` | ✅ COMPLIANT |
-| Failures classified | Timeout may have followed issuance | mock `ambiguous` class; **lease/crash protocol is WU5** | ⚠️ PARTIAL |
-| Ambiguous reconciliation | Reconciliation finds an issued document | mock ambiguous→Reconcile matched | ✅ COMPLIANT |
-| Ambiguous reconciliation | Reconciliation cannot establish a result | `TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry` (2026-09-23 remediation) | ✅ COMPLIANT |
-| Attempts redacted | Provider returns a secret-bearing error | — | ❌ UNTESTED (deferred WU5/WU10) |
-| Outages isolate core | Provider is offline | `TestConnectionServiceProviderFailureFailsClosed` (partial surface) | ⚠️ PARTIAL |
+| Failures classified | Timeout may have followed issuance | `TestWorker_AmbiguousTimeoutNeverAutoResubmitsIssue` | ✅ COMPLIANT |
+| Ambiguous reconciliation | Reconciliation finds an issued document | mock ambiguous→Reconcile matched + worker reconcile path | ✅ COMPLIANT |
+| Ambiguous reconciliation | Reconciliation cannot establish a result | `TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry` (2026-09-23) + `TestWorker_ReconcileInconclusiveRetainsUnknownWithoutIssue` | ✅ COMPLIANT |
+| Attempts redacted | Provider returns a secret-bearing error | `TestRedactSecrets_StripsBearerAndTokens` | ✅ COMPLIANT |
+| Outages isolate core | Provider is offline | `TestConnectionServiceProviderFailureFailsClosed` (partial surface; full invoice isolation WU7/WU11) | ⚠️ PARTIAL |
 | Deterministic mock | Same mock issuance is repeated | `TestMockProvider_FTAndFRIssuanceAreStableAndLabeled` + concurrent + reload | ✅ COMPLIANT |
 | Deterministic mock | Production selects mock | `TestMockProvider_ProductionRejectsSelectionAndLegalClassification` | ✅ COMPLIANT |
 
@@ -125,7 +130,7 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 |-------------|----------|------|--------|
 | Immutable PDF archive | Issuance returns a PDF | mock deterministic PDF bytes; **archive store WU6** | ⚠️ PARTIAL |
 | Immutable PDF archive | Archived bytes are altered | — | ❌ UNTESTED (deferred WU6) |
-| No duplicate issuance | PDF retrieval fails after confirmed issuance | — | ❌ UNTESTED (deferred WU6) |
+| No duplicate issuance | PDF retrieval fails after confirmed issuance | worker `recover_artifact` path exists; **immutable archive WU6** | ❌ UNTESTED (deferred WU6) |
 | Authz downloads | Owning client downloads PDF | — | ❌ UNTESTED (deferred WU6/WU7) |
 | Authz downloads | Different client requests PDF | — | ❌ UNTESTED (deferred WU6/WU7) |
 | Legal vs mock | Developer downloads mock PDF | labeled PDF generation (`SEM VALIDADE FISCAL — MOCK`); download API deferred | ⚠️ PARTIAL |
@@ -149,9 +154,9 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Normalized errors | Refresh token fails | — | ❌ UNTESTED (deferred WU10) |
 | Normalized errors | Active GC license is absent | — | ❌ UNTESTED (deferred WU10) |
 
-**Compliance summary**: **28/58** scenarios ✅ COMPLIANT; **6** ⚠️ PARTIAL; **24** ❌ UNTESTED (all expected deferred to later WUs). Fully green requirements: **7/29** (+3 in-scope covering tests remediated 2026-09-23). Mid-change archive gate remains **FAIL** (22/58 tasks).
+**Compliance summary**: **35/58** scenarios ✅ COMPLIANT; **4** ⚠️ PARTIAL; **19** ❌ UNTESTED (all expected deferred to later WUs). Fully green requirements: **16/29**. Mid-change archive gate remains **FAIL** (26/58 tasks). Remediations from 2026-09-23 remain green.
 
-### Correctness (Static Evidence — WU1–WU4)
+### Correctness (Static Evidence — WU1–WU5)
 
 | Requirement area | Status | Notes |
 |------------------|--------|-------|
@@ -159,8 +164,9 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Exact decimal + policy calculator | ✅ Implemented | shopspring/decimal; no float64 in fiscal calc |
 | Lifecycle domain (11 states) | ✅ Implemented | transitions, role matrix, freeze invariants |
 | Aggregate persistence / finalize+outbox | ✅ Implemented | atomic finalize, concurrent one-intent, delete protection |
-| Provider-neutral ports + mock | ✅ Implemented | registry-keyed scenarios; persisted `fiscal_mock_operations`; prod guards |
-| Outbox worker / artifact archive / HTTP / UI / Cloudware | ❌ Not in scope yet | WU5–WU12 pending |
+| Provider-neutral ports + mock | ✅ Implemented | registry-keyed scenarios; prod guards; labeled mock PDFs |
+| Outbox worker lease/crash protocol | ✅ Implemented | SKIP LOCKED, lease fencing, started-before-call, stale→unknown, 4-tx boundaries, `cmd/fiscal-worker` |
+| Artifact archive / HTTP / UI / Cloudware | ❌ Not in scope yet | WU6–WU12 pending |
 
 ### Coherence (Design — completed units)
 
@@ -172,37 +178,38 @@ Legend for deferred rows: `UNTESTED (deferred WUn)` = expected not yet implement
 | Gateway Issue/Reconcile/Void/Fetch/Verify | ✅ Yes | ports + mock |
 | Deterministic mock via injected registry | ✅ Yes | no magic identity fields |
 | Production rejects mock / legal mock classification | ✅ Yes | `guard.go` + `cmd/api/main.go` |
+| Worker SKIP LOCKED + lease-token/owner fencing | ✅ Yes | `fiscal_outbox_repository.go` ClaimNext + Complete fencing |
+| Crashed started mutation → unknown, no blind Issue | ✅ Yes | RecoverStaleAttempt + worker crash tests |
+| Separate claim / pre-call / gateway / completion txs | ✅ Yes | documented on `Worker`; unit coverage |
+| Graceful worker shutdown | ✅ Yes | `TestWorker_GracefulShutdownStopsNewClaims` + SIGINT/SIGTERM in cmd |
 | `FiscalProviderGateway` type name | ⚠️ Deviation | Retained `FiscalProvider` port (apply-progress); behavior matches |
 | PDF bytes only checksum in PG mock table | ⚠️ Deviation | regenerate from canonical; checksum enforced |
-| Worker SKIP LOCKED / crash→unknown | ➖ Deferred | WU5 |
+| Artifact recovery persists PDF archive | ➖ Deferred | WU5 completes event only; WU6 owns immutable store |
 | Private artifact store / OAuth / Cloudware gates | ➖ Deferred | WU6/WU10 |
 
 ### Issues Found
 
 **CRITICAL**:
-1. Change-level incompleteness: **36/58 tasks pending** — archive gate must remain blocked.
-2. ~~In-scope UNTESTED: Unsupported document kind~~ — remediated 2026-09-23 (`TestDraftServiceRejectsUnsupportedDocumentKind`).
-3. ~~In-scope UNTESTED: Legacy floating-point amount~~ — remediated 2026-09-23 (`TestDraftServiceStoresCanonicalDecimalsIndependentOfLegacyFloatAmount`).
-4. ~~In-scope UNTESTED: Reconciliation cannot establish a result~~ — remediated 2026-09-23 (`TestMockProvider_InconclusiveReconcileRemainsUnmatchedWithoutBlindRetry`).
-5. `gentle-ai sdd-verify-validate` unavailable on installed 3.5.0 — cannot machine-admit report bytes (parent still required OpenSpec+Engram persistence).
+1. Change-level incompleteness: **32/58 tasks pending** — archive gate must remain blocked.
 
 **WARNING**:
 1. `go test -race` blocked locally (CGO/`gcc` missing on Windows agent). Non-race tests green; CI must run race.
-2. Design deviations: port naming `FiscalProvider` vs design `FiscalProviderGateway`; mock PDF regen-from-canonical when row stores sha only.
-3. WU4 authored size ~1100–1400 lines (`size:exception`) above preferred 600-line manual slice.
-4. Six PARTIAL scenarios in completed surface (void E2E, invoice HTTP stability, timeout/worker protocol, provider-offline breadth, mock PDF archive/download).
+2. `gentle-ai sdd-verify-validate` unavailable on installed 3.5.0 — cannot machine-admit report bytes (parent still required OpenSpec+Engram persistence).
+3. Design deviations: port naming `FiscalProvider` vs design `FiscalProviderGateway`; mock PDF regen-from-canonical when row stores sha only; artifact recovery without byte persistence until WU6.
+4. WU5 authored size ~1500 lines (`size:exception`) above preferred 600-line manual slice (documented in apply-progress).
+5. Four PARTIAL scenarios remain in completed surface (invoice HTTP stability, provider-offline breadth, mock PDF archive/download).
 
 **SUGGESTION**:
-1. Before WU5 apply, add small RED tests for unsupported kind, legacy amount independence, and inconclusive reconcile.
-2. Continue `/sdd-apply` at **WU5** (outbox worker) — native next after mid-change verify.
-3. Do **not** archive until 58/58 tasks complete and a full verify PASS with validator admission.
+1. Continue `/sdd-apply` at **WU6** (immutable artifact archive).
+2. Do **not** archive until 58/58 tasks complete and a full verify PASS with validator admission when tooling is available.
+3. Ensure CI Linux runners execute `go test -race` for fiscal packages.
 
 ### Verdict
 
 **FAIL**
 
-Change-level verification cannot PASS while 36 tasks remain and three in-scope scenarios lack covering tests. WU1–WU4 focused correctness is largely green (unit + PostgreSQL FiscalMigration/FiscalRepository/FiscalMock exit 0); proceed to WU5 apply after optionally remediating the three in-scope UNTESTED gaps. **Not archive-ready.**
+Change-level verification cannot PASS while 32 tasks remain. WU1–WU5 focused correctness is green (unit + PostgreSQL FiscalMigration/FiscalRepository/FiscalMock/FiscalOutbox exit 0); WU5 outbox/worker scenarios are COMPLIANT. Proceed to WU6 apply. **Not archive-ready.**
 
 ### Verification scope note
 
-This is an honest **mid-change** verify requested after WU1–WU4. It is **not** a claim that the OpenSpec change is complete. Native `nextRecommended` remaining `apply` with 36 pending tasks is expected and correct.
+This is an honest **mid-change** verify requested after WU1–WU5. It is **not** a claim that the OpenSpec change is complete. Native `nextRecommended` remaining `apply` with 32 pending tasks is expected and correct.

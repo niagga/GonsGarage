@@ -72,10 +72,10 @@ Each unit is intended to map to a reviewable manual commit or, if the delivery s
 
 ## Phase 5 — Transactional outbox, worker, and reconciliation (WU5)
 
-- [ ] 5.1 RED — Add `backend/tests/integration/fiscal_outbox_test.go` and `backend/internal/service/fiscal/worker_test.go` for `SKIP LOCKED` single claims, lease-token/owner fencing, lease expiry, started-attempt-before-call, stale started mutation becoming unknown, result transaction atomicity, and graceful shutdown. <!-- sdd-owner: implementation -->
-- [ ] 5.2 GREEN — Implement `backend/internal/repository/postgres/fiscal_outbox_repository.go`, attempt persistence/redaction, and `backend/internal/service/fiscal/worker.go`; add `backend/cmd/fiscal-worker/main.go` with issue, reconcile-issue, void, reconcile-void, and artifact-recovery dispatch outside HTTP requests. <!-- sdd-owner: implementation -->
-- [ ] 5.3 TRIANGULATE — Exercise process-crash windows before call, during call, after provider response, and after lease loss; prove only definite non-acceptance reaches retryable/rejected states, ambiguous mutations never auto-resubmit, and reconciliations use the same frozen provider/key. <!-- sdd-owner: implementation -->
-- [ ] 5.4 REFACTOR — Separate claim, pre-call, gateway, and completion transactions; centralize bounded lease settings and redaction; verify `cd backend && go test ./internal/service/fiscal ./tests/integration -count=1 -race -timeout=2m`. <!-- sdd-owner: implementation -->
+- [x] 5.1 RED — Add `backend/tests/integration/fiscal_outbox_test.go` and `backend/internal/service/fiscal/worker_test.go` for `SKIP LOCKED` single claims, lease-token/owner fencing, lease expiry, started-attempt-before-call, stale started mutation becoming unknown, result transaction atomicity, and graceful shutdown. <!-- sdd-owner: implementation -->
+- [x] 5.2 GREEN — Implement `backend/internal/repository/postgres/fiscal_outbox_repository.go`, attempt persistence/redaction, and `backend/internal/service/fiscal/worker.go`; add `backend/cmd/fiscal-worker/main.go` with issue, reconcile-issue, void, reconcile-void, and artifact-recovery dispatch outside HTTP requests. <!-- sdd-owner: implementation -->
+- [x] 5.3 TRIANGULATE — Exercise process-crash windows before call, during call, after provider response, and after lease loss; prove only definite non-acceptance reaches retryable/rejected states, ambiguous mutations never auto-resubmit, and reconciliations use the same frozen provider/key. <!-- sdd-owner: implementation -->
+- [x] 5.4 REFACTOR — Separate claim, pre-call, gateway, and completion transactions; centralize bounded lease settings and redaction; verify `cd backend && go test ./internal/service/fiscal ./tests/integration -count=1 -race -timeout=2m`. <!-- sdd-owner: implementation -->
 
 ## Phase 6 — Immutable private artifact storage and recovery (WU6)
 
