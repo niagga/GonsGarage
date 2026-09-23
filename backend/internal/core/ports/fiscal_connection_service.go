@@ -75,4 +75,8 @@ type FiscalConnectionService interface {
 	StoreCredentials(ctx context.Context, requestingUserID uuid.UUID, req FiscalConnectionSetupRequest) (*FiscalConnectionStatus, error)
 	Verify(ctx context.Context, requestingUserID uuid.UUID, scopeKey, providerKey string) (*FiscalConnectionStatus, error)
 	Revoke(ctx context.Context, requestingUserID uuid.UUID, scopeKey, providerKey string) (*FiscalConnectionStatus, error)
+	StartOAuthConnect(ctx context.Context, requestingUserID uuid.UUID, req FiscalOAuthStartRequest) (*FiscalOAuthStartResult, error)
+	CompleteOAuthCallback(ctx context.Context, req FiscalOAuthCallbackRequest) (*FiscalConnectionStatus, error)
+	RefreshCredentials(ctx context.Context, requestingUserID uuid.UUID, scopeKey, providerKey string) (*FiscalConnectionStatus, error)
+	Readiness(ctx context.Context, requestingUserID uuid.UUID) (*FiscalReadinessReport, error)
 }

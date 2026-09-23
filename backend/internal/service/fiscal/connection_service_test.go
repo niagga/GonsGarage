@@ -170,11 +170,15 @@ func TestConnectionServiceStoreVerifyAndRevoke(t *testing.T) {
 	require.NotNil(t, record)
 	assert.NotEqual(t, []byte("top-secret"), record.CredentialCiphertext)
 	assert.Len(t, record.CredentialNonce, 12)
-	decrypted, err := cipher.Decrypt(fiscalcrypto.FiscalCredentialEnvelope{
+	decrypted, err := cipher.DecryptWithBinding(fiscalcrypto.FiscalCredentialEnvelope{
 		FormatVersion: record.CredentialFormatVersion,
 		KeyVersion:    record.CredentialKeyVersion,
 		Nonce:         record.CredentialNonce,
 		Ciphertext:    record.CredentialCiphertext,
+	}, fiscalcrypto.FiscalCredentialBinding{
+		ConnectionID: record.ID,
+		ProviderKey:  record.ProviderKey,
+		ScopeKey:     record.ScopeKey,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, []byte("top-secret"), decrypted)

@@ -227,3 +227,160 @@ func (h *FiscalIntegrationHandler) RevokeConnection(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, statusResponseFromStatus(status))
 }
+
+// CloudwareReadiness returns enablement gate status without secrets.
+func (h *FiscalIntegrationHandler) CloudwareReadiness(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	userID, err := ContextUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	report, err := h.svc.Readiness(c.Request.Context(), userID)
+	if err != nil {
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	gates := make([]gin.H, 0, len(report.Gates))
+	for _, g := range report.Gates {
+		gates = append(gates, gin.H{
+			"name":      g.Name,
+			"status":    g.Status,
+			"guidance":  g.Guidance,
+			"rationale": g.Rationale,
+		})
+	}
+	resp := gin.H{
+		"ready": report.Ready,
+		"gates": gates,
+	}
+	if report.ATCommunicationStatus != "" {
+		resp["atCommunicationStatus"] = report.ATCommunicationStatus
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// CloudwareConnect starts the manager/admin OAuth authorization redirect.
+func (h *FiscalIntegrationHandler) CloudwareConnect(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	userID, err := ContextUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		ScopeKey    string `json:"scopeKey"`
+		RedirectURI string `json:"redirectUri"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if strings.TrimSpace(body.ScopeKey) == "" {
+		body.ScopeKey = "default"
+	}
+	result, err := h.svc.StartOAuthConnect(c.Request.Context(), userID, ports.FiscalOAuthStartRequest{
+		ScopeKey:    body.ScopeKey,
+		ProviderKey: "cloudware",
+		RedirectURI: body.RedirectURI,
+	})
+	if err != nil {
+		if errors.Is(err, ports.ErrFiscalOAuthUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "cloudware oauth unavailable"})
+			return
+		}
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"authorizationUrl": result.AuthorizationURL,
+		"expiresAt":        result.ExpiresAt.UTC(),
+		"connection":       statusResponseFromStatus(result.Status),
+	})
+}
+
+// CloudwareOAuthCallback consumes one-time state and exchanges the authorization code.
+func (h *FiscalIntegrationHandler) CloudwareOAuthCallback(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	state := strings.TrimSpace(c.Query("state"))
+	code := strings.TrimSpace(c.Query("code"))
+	status, err := h.svc.CompleteOAuthCallback(c.Request.Context(), ports.FiscalOAuthCallbackRequest{State: state, Code: code})
+	if err != nil {
+		if errors.Is(err, ports.ErrFiscalOAuthStateInvalid) || errors.Is(err, ports.ErrFiscalOAuthStateReused) || errors.Is(err, ports.ErrFiscalOAuthStateExpired) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid oauth state"})
+			return
+		}
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, statusResponseFromStatus(status))
+}
+
+const cloudwareDefaultScopeKey = "default"
+const cloudwareProviderKey = "cloudware"
+
+// CloudwareConnectionStatus returns the Cloudware connection for the default scope.
+func (h *FiscalIntegrationHandler) CloudwareConnectionStatus(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	userID, err := ContextUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	status, err := h.svc.Status(c.Request.Context(), userID, cloudwareDefaultScopeKey, cloudwareProviderKey)
+	if err != nil {
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, statusResponseFromStatus(status))
+}
+
+// CloudwareVerify verifies the Cloudware connection credentials.
+func (h *FiscalIntegrationHandler) CloudwareVerify(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	userID, err := ContextUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	status, err := h.svc.Verify(c.Request.Context(), userID, cloudwareDefaultScopeKey, cloudwareProviderKey)
+	if err != nil {
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, statusResponseFromStatus(status))
+}
+
+// CloudwareDisconnect revokes the Cloudware connection credentials.
+func (h *FiscalIntegrationHandler) CloudwareDisconnect(c *gin.Context) {
+	if h == nil || h.svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fiscal integration unavailable"})
+		return
+	}
+	userID, err := ContextUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	status, err := h.svc.Revoke(c.Request.Context(), userID, cloudwareDefaultScopeKey, cloudwareProviderKey)
+	if err != nil {
+		writeFiscalConnectionError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, statusResponseFromStatus(status))
+}

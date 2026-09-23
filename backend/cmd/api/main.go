@@ -261,6 +261,8 @@ func main() {
 			log.Printf("Warning: fiscal integration disabled: missing FISCAL_CREDENTIAL_KEY or FISCAL_CREDENTIAL_KEY_B64")
 		} else if cipher, cipherErr := fiscalcrypto.NewFiscalCredentialCipher(credentialKeyVersion, credentialKey); cipherErr != nil {
 			log.Printf("Warning: fiscal integration disabled: %v", cipherErr)
+		} else if keyringErr := fiscalcrypto.ValidateProductionKeyring(strings.TrimSpace(os.Getenv("APP_ENV")), credentialKeyVersion, credentialKey); keyringErr != nil {
+			log.Printf("Warning: fiscal integration disabled: %v", keyringErr)
 		} else {
 			appEnv := strings.TrimSpace(os.Getenv("APP_ENV"))
 			if appEnv == "" {
@@ -656,6 +658,17 @@ func setupRoutes(
 					connections.DELETE("", fiscalIntegrationHandler.RevokeConnection)
 				}
 			}
+			cloudwareIntegrations := protected.Group("/fiscal-integrations/cloudware")
+			cloudwareIntegrations.Use(middleware.RequireStaffManagers())
+			{
+				cloudwareIntegrations.GET("/readiness", fiscalIntegrationHandler.CloudwareReadiness)
+				cloudwareIntegrations.GET("/connection", fiscalIntegrationHandler.CloudwareConnectionStatus)
+				cloudwareIntegrations.POST("/connect", fiscalIntegrationHandler.CloudwareConnect)
+				cloudwareIntegrations.POST("/verify", fiscalIntegrationHandler.CloudwareVerify)
+				cloudwareIntegrations.POST("/disconnect", fiscalIntegrationHandler.CloudwareDisconnect)
+			}
+			// OAuth callback is state-protected; raw state binding replaces session cookie auth.
+			api.GET("/fiscal-integrations/cloudware/oauth/callback", fiscalIntegrationHandler.CloudwareOAuthCallback)
 		}
 	}
 }

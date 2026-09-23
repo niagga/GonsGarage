@@ -76,6 +76,22 @@ func (s *stubFiscalIntegrationService) Revoke(ctx context.Context, requestingUse
 	return &ports.FiscalConnectionStatus{ScopeKey: scopeKey, ProviderKey: providerKey, State: ports.FiscalConnectionStateRevoked}, nil
 }
 
+func (s *stubFiscalIntegrationService) StartOAuthConnect(ctx context.Context, requestingUserID uuid.UUID, req ports.FiscalOAuthStartRequest) (*ports.FiscalOAuthStartResult, error) {
+	return nil, ports.ErrFiscalOAuthUnavailable
+}
+
+func (s *stubFiscalIntegrationService) CompleteOAuthCallback(ctx context.Context, req ports.FiscalOAuthCallbackRequest) (*ports.FiscalConnectionStatus, error) {
+	return nil, ports.ErrFiscalOAuthUnavailable
+}
+
+func (s *stubFiscalIntegrationService) RefreshCredentials(ctx context.Context, requestingUserID uuid.UUID, scopeKey, providerKey string) (*ports.FiscalConnectionStatus, error) {
+	return nil, ports.ErrFiscalOAuthUnavailable
+}
+
+func (s *stubFiscalIntegrationService) Readiness(ctx context.Context, requestingUserID uuid.UUID) (*ports.FiscalReadinessReport, error) {
+	return &ports.FiscalReadinessReport{Ready: false, Gates: []ports.FiscalEnablementGateView{{Name: "oauth_security", Status: "pending", Guidance: "Complete OAuth evidence."}}}, nil
+}
+
 func TestFiscalIntegrationHandler_StatusSetupVerifyRevoke(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)

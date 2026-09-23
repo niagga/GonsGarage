@@ -423,4 +423,3 @@ func TestRedactSecrets_StripsBearerAndTokens(t *testing.T) {
 	assert.NotContains(t, out, "TokenXYZ")
 	assert.Contains(t, out, "[REDACTED]")
 }
-

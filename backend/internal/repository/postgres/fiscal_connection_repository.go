@@ -199,3 +199,95 @@ func uuidPtrClone(value *uuid.UUID) *uuid.UUID {
 	clone := *value
 	return &clone
 }
+
+type fiscalOAuthModel struct {
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;column:id"`
+	ConnectionID uuid.UUID  `gorm:"type:uuid;column:connection_id"`
+	ActorID      uuid.UUID  `gorm:"type:uuid;column:actor_id"`
+	StateSHA256  string     `gorm:"type:char(64);column:state_sha256"`
+	RedirectURI  string     `gorm:"type:text;column:redirect_uri"`
+	ExpiresAt    time.Time  `gorm:"column:expires_at"`
+	ConsumedAt   *time.Time `gorm:"column:consumed_at"`
+	CreatedAt    time.Time  `gorm:"column:created_at"`
+}
+
+func (fiscalOAuthModel) TableName() string {
+	return "fiscal_oauth_authorizations"
+}
+
+// SaveOAuthAuthorization persists a hashed OAuth state row.
+func (r *PostgresFiscalConnectionRepository) SaveOAuthAuthorization(ctx context.Context, auth *ports.FiscalOAuthAuthorization) error {
+	if r == nil || r.db == nil {
+		return fmt.Errorf("fiscal connection repository is nil")
+	}
+	if auth == nil {
+		return fmt.Errorf("oauth authorization is nil")
+	}
+	if auth.ID == uuid.Nil {
+		auth.ID = uuid.New()
+	}
+	if auth.CreatedAt.IsZero() {
+		auth.CreatedAt = time.Now().UTC()
+	}
+	model := fiscalOAuthModel{
+		ID:           auth.ID,
+		ConnectionID: auth.ConnectionID,
+		ActorID:      auth.ActorID,
+		StateSHA256:  auth.StateSHA256,
+		RedirectURI:  auth.RedirectURI,
+		ExpiresAt:    auth.ExpiresAt,
+		ConsumedAt:   timePtrClone(auth.ConsumedAt),
+		CreatedAt:    auth.CreatedAt,
+	}
+	if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
+		return fmt.Errorf("save oauth authorization: %w", err)
+	}
+	return nil
+}
+
+// ConsumeOAuthAuthorization atomically consumes a one-time hashed state.
+func (r *PostgresFiscalConnectionRepository) ConsumeOAuthAuthorization(ctx context.Context, stateSHA256 string, now time.Time) (*ports.FiscalOAuthAuthorization, error) {
+	if r == nil || r.db == nil {
+		return nil, fmt.Errorf("fiscal connection repository is nil")
+	}
+	stateSHA256 = strings.TrimSpace(stateSHA256)
+	if stateSHA256 == "" {
+		return nil, ports.ErrFiscalOAuthStateInvalid
+	}
+	var out *ports.FiscalOAuthAuthorization
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var model fiscalOAuthModel
+		if err := tx.Where("state_sha256 = ?", stateSHA256).First(&model).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return ports.ErrFiscalOAuthStateInvalid
+			}
+			return err
+		}
+		if model.ConsumedAt != nil {
+			return ports.ErrFiscalOAuthStateReused
+		}
+		if !model.ExpiresAt.After(now) {
+			return ports.ErrFiscalOAuthStateExpired
+		}
+		consumed := now.UTC()
+		if err := tx.Model(&model).Update("consumed_at", consumed).Error; err != nil {
+			return err
+		}
+		model.ConsumedAt = &consumed
+		out = &ports.FiscalOAuthAuthorization{
+			ID:           model.ID,
+			ConnectionID: model.ConnectionID,
+			ActorID:      model.ActorID,
+			StateSHA256:  model.StateSHA256,
+			RedirectURI:  model.RedirectURI,
+			ExpiresAt:    model.ExpiresAt,
+			ConsumedAt:   timePtrClone(model.ConsumedAt),
+			CreatedAt:    model.CreatedAt,
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
