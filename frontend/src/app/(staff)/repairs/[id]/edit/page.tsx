@@ -34,7 +34,8 @@ export default function EditRepairPage({ params }: { params: { id: string } }) {
 
     if (response.data) {
       toast({ title: "Repair updated successfully" });
-      router.push(`/repairs/${params.id}`);
+      const carId = repair?.car_id;
+      router.push(carId ? `/cars/${carId}` : '/cars');
     } else {
       toast({ title: "Error updating repair", description: response.error?.message, variant: "destructive" });
     }

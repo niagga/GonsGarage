@@ -57,6 +57,19 @@ func (s *stubInvoiceRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.In
 	return s.byID[id], nil
 }
 
+func (s *stubInvoiceRepo) GetByRepairID(ctx context.Context, repairID uuid.UUID) (*domain.Invoice, error) {
+	if s.byID == nil {
+		return nil, domain.ErrInvoiceNotFound
+	}
+	for _, inv := range s.byID {
+		if inv != nil && inv.RepairID != nil && *inv.RepairID == repairID {
+			cp := *inv
+			return &cp, nil
+		}
+	}
+	return nil, domain.ErrInvoiceNotFound
+}
+
 func (s *stubInvoiceRepo) Update(ctx context.Context, invoice *domain.Invoice) error {
 	if s.updateErr != nil {
 		return s.updateErr
@@ -108,6 +121,10 @@ func (s *stubInvoiceRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+func newTestInvoiceService(inv ports.InvoiceRepository, users ports.UserRepository) *InvoiceService {
+	return NewInvoiceService(inv, users, nil, nil)
+}
+
 func TestInvoiceService_GetInvoice_ClientOwn(t *testing.T) {
 	t.Parallel()
 	cust := uuid.New()
@@ -125,7 +142,7 @@ func TestInvoiceService_GetInvoice_ClientOwn(t *testing.T) {
 		UpdatedAt:  time.Now(),
 	}
 
-	svc := NewInvoiceService(
+	svc := newTestInvoiceService(
 		&stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}},
 		&invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u}},
 	)
@@ -145,7 +162,7 @@ func TestInvoiceService_GetInvoice_ClientOtherDenied(t *testing.T) {
 	u.ID = cust
 
 	inv := &domain.Invoice{ID: invID, CustomerID: other, Amount: 50, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
-	svc := NewInvoiceService(
+	svc := newTestInvoiceService(
 		&stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}},
 		&invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u}},
 	)
@@ -163,7 +180,7 @@ func TestInvoiceService_GetInvoice_EmployeeDenied(t *testing.T) {
 	require.NoError(t, err)
 	employee.ID = employeeID
 	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 50, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
-	svc := NewInvoiceService(
+	svc := newTestInvoiceService(
 		&stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}},
 		&invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}},
 	)
@@ -186,7 +203,7 @@ func TestInvoiceService_UpdateInvoice_ClientNotesOnly(t *testing.T) {
 		CreatedAt: time.Now(), UpdatedAt: time.Now(),
 	}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: existing}}
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u}})
 
 	out, err := svc.UpdateInvoice(context.Background(), &domain.Invoice{ID: invID, Notes: "new note", Status: "paid"}, cust)
 	require.NoError(t, err)
@@ -206,7 +223,7 @@ func TestInvoiceService_UpdateInvoice_ClientOtherDenied(t *testing.T) {
 	u.ID = cust
 
 	existing := &domain.Invoice{ID: invID, CustomerID: other, Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
-	svc := NewInvoiceService(
+	svc := newTestInvoiceService(
 		&stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: existing}},
 		&invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u}},
 	)
@@ -225,7 +242,7 @@ func TestInvoiceService_UpdateInvoice_EmployeeDenied(t *testing.T) {
 	employee.ID = employeeID
 
 	existing := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
-	svc := NewInvoiceService(
+	svc := newTestInvoiceService(
 		&stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: existing}},
 		&invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}},
 	)
@@ -250,7 +267,7 @@ func TestInvoiceService_ListMyInvoices_ClientOnly(t *testing.T) {
 	repo := &stubInvoiceRepo{byCust: map[uuid.UUID][]*domain.Invoice{
 		cust: {{ID: uuid.New(), CustomerID: cust, Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}},
 	}, listTotal: 1}
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u, empID: emp}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{cust: u, empID: emp}})
 	list, total, err := svc.ListMyInvoices(context.Background(), cust, 10, 0)
 	require.NoError(t, err)
 	assert.Len(t, list, 1)
@@ -273,7 +290,7 @@ func TestInvoiceService_CreateInvoice_ManagerForClient(t *testing.T) {
 	manager.ID = managerID
 
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{}}
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust, managerID: manager}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust, managerID: manager}})
 
 	in := &domain.Invoice{CustomerID: custID, Amount: 42, Notes: "svc"}
 	out, err := svc.CreateInvoice(context.Background(), in, managerID)
@@ -293,7 +310,7 @@ func TestInvoiceService_CreateInvoice_ClientDenied(t *testing.T) {
 	require.NoError(t, err)
 	cust.ID = custID
 
-	svc := NewInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
+	svc := newTestInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
 	out, err := svc.CreateInvoice(context.Background(), &domain.Invoice{CustomerID: custID, Amount: 1}, custID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -307,7 +324,7 @@ func TestInvoiceService_CreateInvoice_EmployeeDenied(t *testing.T) {
 	require.NoError(t, err)
 	employee.ID = employeeID
 
-	svc := NewInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	svc := newTestInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
 	out, err := svc.CreateInvoice(context.Background(), &domain.Invoice{CustomerID: uuid.New(), Amount: 1}, employeeID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -325,7 +342,7 @@ func TestInvoiceService_CreateInvoice_CustomerMustBeClient(t *testing.T) {
 	require.NoError(t, err)
 	actor.ID = empID
 
-	svc := NewInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: empAsCust, empID: actor}})
+	svc := newTestInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: empAsCust, empID: actor}})
 	out, err := svc.CreateInvoice(context.Background(), &domain.Invoice{CustomerID: custID, Amount: 10}, empID)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "client")
@@ -341,7 +358,7 @@ func TestInvoiceService_ListInvoicesForStaff_ManagerOk(t *testing.T) {
 	inv := &domain.Invoice{ID: uuid.New(), CustomerID: uuid.New(), Amount: 9, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{inv.ID: inv}}
 
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
 	list, total, err := svc.ListInvoicesForStaff(context.Background(), managerID, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), total)
@@ -356,7 +373,7 @@ func TestInvoiceService_ListInvoicesForStaff_ClientDenied(t *testing.T) {
 	require.NoError(t, err)
 	cust.ID = custID
 
-	svc := NewInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
+	svc := newTestInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
 	_, _, err = svc.ListInvoicesForStaff(context.Background(), custID, 10, 0)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -369,7 +386,7 @@ func TestInvoiceService_ListInvoicesForStaff_EmployeeDenied(t *testing.T) {
 	require.NoError(t, err)
 	employee.ID = employeeID
 
-	svc := NewInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	svc := newTestInvoiceService(&stubInvoiceRepo{}, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
 	_, _, err = svc.ListInvoicesForStaff(context.Background(), employeeID, 10, 0)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -385,7 +402,7 @@ func TestInvoiceService_DeleteInvoice_ManagerOk(t *testing.T) {
 	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
 
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}})
 	err = svc.DeleteInvoice(context.Background(), invID, managerID)
 	require.NoError(t, err)
 	got, gerr := repo.GetByID(context.Background(), invID)
@@ -403,7 +420,7 @@ func TestInvoiceService_DeleteInvoice_ClientDenied(t *testing.T) {
 	inv := &domain.Invoice{ID: invID, CustomerID: custID, Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
 
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{custID: cust}})
 	err = svc.DeleteInvoice(context.Background(), invID, custID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -419,7 +436,7 @@ func TestInvoiceService_DeleteInvoice_EmployeeDenied(t *testing.T) {
 	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 1, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
 
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{employeeID: employee}})
 	err = svc.DeleteInvoice(context.Background(), invID, employeeID)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrUnauthorizedAccess)
@@ -442,7 +459,7 @@ func TestInvoiceService_DeleteInvoice_FrozenHistoryConflict(t *testing.T) {
 	manager.ID = managerID
 	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 10, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
 		WithFiscalProtection(protectFiscalReader{protected: true})
 
 	err = svc.DeleteInvoice(context.Background(), invID, managerID)
@@ -460,7 +477,7 @@ func TestInvoiceService_DeleteInvoice_DraftHistoryAllowed(t *testing.T) {
 	manager.ID = managerID
 	inv := &domain.Invoice{ID: invID, CustomerID: uuid.New(), Amount: 10, Status: "open", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	repo := &stubInvoiceRepo{byID: map[uuid.UUID]*domain.Invoice{invID: inv}}
-	svc := NewInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
+	svc := newTestInvoiceService(repo, &invTestUserRepo{users: map[uuid.UUID]*domain.User{managerID: manager}}).
 		WithFiscalProtection(protectFiscalReader{protected: false})
 
 	err = svc.DeleteInvoice(context.Background(), invID, managerID)

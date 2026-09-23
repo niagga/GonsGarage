@@ -498,6 +498,13 @@ export default function CarDetailsPage() {
                           <button
                             type="button"
                             className={styles.staffSecondaryBtn}
+                            onClick={() => router.push(`/repairs/${repair.id}`)}
+                          >
+                            Detalhe
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.staffSecondaryBtn}
                             onClick={() => startEdit(repair)}
                           >
                             Editar

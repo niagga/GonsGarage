@@ -41,10 +41,12 @@ export interface BillingDocument {
   updatedAt: string;
 }
 
-/** Customer-issued invoice (emitida al cliente). */
+/** Customer-issued invoice (emitida al cliente — interna, sem valor fiscal). */
 export interface IssuedInvoice {
   id: string;
   customerId: string;
+  repairId?: string;
+  carId?: string;
   amount: number;
   status: string;
   notes: string;

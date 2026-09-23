@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,10 +22,12 @@ func NewInvoiceHandler(svc ports.InvoiceService) *InvoiceHandler {
 	return &InvoiceHandler{svc: svc}
 }
 
-// IssuedInvoiceResponse JSON for customer invoices (emitidas al cliente).
+// IssuedInvoiceResponse JSON for customer invoices (emitidas al cliente; internas, sem valor fiscal).
 type IssuedInvoiceResponse struct {
 	ID         string  `json:"id"`
 	CustomerID string  `json:"customerId"`
+	RepairID   string  `json:"repairId,omitempty"`
+	CarID      string  `json:"carId,omitempty"`
 	Amount     float64 `json:"amount"`
 	Status     string  `json:"status"`
 	Notes      string  `json:"notes"`
@@ -36,7 +39,7 @@ func issuedInvoiceToResponse(inv *domain.Invoice) IssuedInvoiceResponse {
 	if inv == nil {
 		return IssuedInvoiceResponse{}
 	}
-	return IssuedInvoiceResponse{
+	out := IssuedInvoiceResponse{
 		ID:         inv.ID.String(),
 		CustomerID: inv.CustomerID.String(),
 		Amount:     inv.Amount,
@@ -45,11 +48,19 @@ func issuedInvoiceToResponse(inv *domain.Invoice) IssuedInvoiceResponse {
 		CreatedAt:  inv.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt:  inv.UpdatedAt.UTC().Format(time.RFC3339),
 	}
+	if inv.RepairID != nil {
+		out.RepairID = inv.RepairID.String()
+	}
+	if inv.CarID != nil {
+		out.CarID = inv.CarID.String()
+	}
+	return out
 }
 
 // CreateIssuedInvoiceRequest body for staff POST /invoices.
 type CreateIssuedInvoiceRequest struct {
 	CustomerID string  `json:"customerId"`
+	RepairID   string  `json:"repairId"`
 	Amount     float64 `json:"amount"`
 	Status     string  `json:"status"`
 	Notes      string  `json:"notes"`
@@ -76,6 +87,18 @@ func writeInvoiceServiceError(c *gin.Context, err error) bool {
 	}
 	if errors.Is(err, domain.ErrInvoiceNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invoice not found"})
+		return true
+	}
+	if errors.Is(err, domain.ErrRepairNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "repair not found"})
+		return true
+	}
+	if errors.Is(err, domain.ErrRepairNotCompleted) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "repair must be completed to create an invoice"})
+		return true
+	}
+	if errors.Is(err, domain.ErrInvoiceAlreadyExistsForRepair) {
+		c.JSON(http.StatusConflict, gin.H{"error": "an invoice already exists for this repair"})
 		return true
 	}
 	if errors.Is(err, ports.ErrFiscalHistoryProtected) {
@@ -211,15 +234,26 @@ func (h *InvoiceHandler) CreateIssuedInvoice(c *gin.Context) {
 		return
 	}
 	custID, err := uuid.Parse(req.CustomerID)
-	if err != nil {
+	if err != nil && strings.TrimSpace(req.RepairID) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid customerId"})
 		return
+	}
+	if err != nil {
+		custID = uuid.Nil
 	}
 	inv := &domain.Invoice{
 		CustomerID: custID,
 		Amount:     req.Amount,
 		Status:     req.Status,
 		Notes:      req.Notes,
+	}
+	if rid := strings.TrimSpace(req.RepairID); rid != "" {
+		parsed, perr := uuid.Parse(rid)
+		if perr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid repairId"})
+			return
+		}
+		inv.RepairID = &parsed
 	}
 	out, err := h.svc.CreateInvoice(c.Request.Context(), inv, uid)
 	if err != nil {
@@ -240,6 +274,27 @@ func (h *InvoiceHandler) ListIssuedInvoicesStaff(c *gin.Context) {
 	uid, err := ContextUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	if rid := strings.TrimSpace(c.Query("repairId")); rid != "" {
+		repairID, perr := uuid.Parse(rid)
+		if perr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid repairId"})
+			return
+		}
+		inv, gerr := h.svc.GetInvoiceByRepairID(c.Request.Context(), repairID, uid)
+		if gerr != nil {
+			if errors.Is(gerr, domain.ErrInvoiceNotFound) {
+				c.JSON(http.StatusOK, gin.H{"items": []IssuedInvoiceResponse{}, "total": 0})
+				return
+			}
+			writeInvoiceServiceError(c, gerr)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"items": []IssuedInvoiceResponse{issuedInvoiceToResponse(inv)},
+			"total": 1,
+		})
 		return
 	}
 	limit, offset := QueryLimitOffset(c, 20, 100)

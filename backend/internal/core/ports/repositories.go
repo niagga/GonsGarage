@@ -137,6 +137,8 @@ type ServiceJobRepository interface {
 // (see fiscal_repository.go) and wired through InvoiceService.WithFiscalProtection.
 type InvoiceRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Invoice, error)
+	// GetByRepairID returns the internal invoice linked to a repair, or ErrInvoiceNotFound.
+	GetByRepairID(ctx context.Context, repairID uuid.UUID) (*domain.Invoice, error)
 	Create(ctx context.Context, invoice *domain.Invoice) error
 	Update(ctx context.Context, invoice *domain.Invoice) error
 	Delete(ctx context.Context, id uuid.UUID) error

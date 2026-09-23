@@ -16,10 +16,13 @@ const (
 	FiscalEligibilityEligible FiscalEligibility = "eligible"
 )
 
-// Invoice represents a customer invoice (client may read/update own rows — see invoice service).
+// Invoice represents an internal customer invoice (no fiscal validity by itself).
+// Optional RepairID/CarID link a workshop intervention for operational billing.
 type Invoice struct {
 	ID                uuid.UUID         `json:"id" gorm:"type:uuid;primaryKey"`
 	CustomerID        uuid.UUID         `json:"customerId" gorm:"type:uuid;column:customer_id;not null;index"`
+	RepairID          *uuid.UUID        `json:"repairId,omitempty" gorm:"type:uuid;column:repair_id;uniqueIndex:invoices_repair_id_uq"`
+	CarID             *uuid.UUID        `json:"carId,omitempty" gorm:"type:uuid;column:car_id;index"`
 	Amount            float64           `json:"amount" gorm:"not null"`
 	Status            string            `json:"status" gorm:"type:varchar(40);not null;default:'open'"`
 	Notes             string            `json:"notes" gorm:"type:text"`

@@ -28,6 +28,11 @@ function IssuedInvoicesListContent() {
   const [summaries, setSummaries] = useState<Record<string, FiscalizationSummary>>({});
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createDefaults, setCreateDefaults] = useState<{
+    customerId?: string;
+    carId?: string;
+    repairId?: string;
+  }>({});
   const openedFromCreateQuery = useRef(false);
 
   const load = useCallback(async () => {
@@ -68,6 +73,11 @@ function IssuedInvoicesListContent() {
   useEffect(() => {
     if (searchParams.get('create') !== '1' || openedFromCreateQuery.current) return;
     openedFromCreateQuery.current = true;
+    setCreateDefaults({
+      customerId: searchParams.get('customerId') ?? undefined,
+      carId: searchParams.get('carId') ?? undefined,
+      repairId: searchParams.get('repairId') ?? undefined,
+    });
     setCreateOpen(true);
     router.replace('/accounting/issued-invoices');
   }, [searchParams, router]);
@@ -76,6 +86,7 @@ function IssuedInvoicesListContent() {
 
   const handleCreated = () => {
     setCreateOpen(false);
+    setCreateDefaults({});
     void load();
   };
 
@@ -144,7 +155,16 @@ function IssuedInvoicesListContent() {
             <DialogTitle>Nova fatura emitida</DialogTitle>
           </DialogHeader>
           <div className={styles.dialogFormBody}>
-            <IssuedInvoiceCreateForm onSuccess={handleCreated} onCancel={() => setCreateOpen(false)} />
+            <IssuedInvoiceCreateForm
+              onSuccess={handleCreated}
+              onCancel={() => {
+                setCreateOpen(false);
+                setCreateDefaults({});
+              }}
+              initialCustomerId={createDefaults.customerId}
+              initialCarId={createDefaults.carId}
+              initialRepairId={createDefaults.repairId}
+            />
           </div>
         </DialogContent>
       </Dialog>

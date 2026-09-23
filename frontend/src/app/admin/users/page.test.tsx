@@ -6,6 +6,7 @@ import AdminUsersPage from './page';
 import { UserRole } from '@/types';
 
 const provisionUserMock = vi.fn();
+const listUsersMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -17,6 +18,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     provisionUser: (...args: unknown[]) => provisionUserMock(...args),
+    listUsers: (...args: unknown[]) => listUsersMock(...args),
   },
 }));
 
@@ -40,6 +42,10 @@ vi.mock('@/stores', () => ({
 describe('AdminUsersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listUsersMock.mockResolvedValue({
+      success: true,
+      data: { items: [], total: 0 },
+    });
     provisionUserMock.mockResolvedValue({
       success: true,
       data: {

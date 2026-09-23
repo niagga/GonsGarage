@@ -428,6 +428,33 @@ export class ApiClient {
     return this.post<{ user: User }>('/admin/users', body);
   }
 
+  /** Staff-only: GET /api/v1/admin/users (all roles; optional role + q). */
+  async listUsers(params?: {
+    role?: string;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<{
+    items: Array<{
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      isActive: boolean;
+      createdAt: string;
+    }>;
+    total: number;
+  }>> {
+    const q = new URLSearchParams();
+    if (params?.role) q.set('role', params.role);
+    if (params?.q) q.set('q', params.q);
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.offset != null) q.set('offset', String(params.offset));
+    const qs = q.toString();
+    return this.get(`/admin/users${qs ? `?${qs}` : ''}`);
+  }
+
   /** Staff-only: GET /api/v1/admin/users/clients for car owner association. */
   async listClientUsers(params?: {
     q?: string;

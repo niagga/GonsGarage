@@ -169,6 +169,9 @@ func main() {
 	if err := postgresRepo.EnsureRepairsSchema(db); err != nil {
 		log.Fatalf("repairs schema fix: %v", err)
 	}
+	if err := postgresRepo.EnsureInvoicesRepairLink(db); err != nil {
+		log.Fatalf("invoices repair link schema: %v", err)
+	}
 
 	// Create indexes manually if they don't exist
 	if err := createIndexes(db); err != nil {
@@ -235,7 +238,7 @@ func main() {
 	supplierService := supplier.NewSupplierService(supplierRepo, userRepo)
 	receivedInvoiceService := received_invoice.NewReceivedInvoiceService(receivedInvoiceRepo, userRepo)
 	billingDocumentService := billing_document.NewBillingDocumentService(billingDocRepo, userRepo)
-	invoiceService := invoice.NewInvoiceService(invoiceRepo, userRepo)
+	invoiceService := invoice.NewInvoiceService(invoiceRepo, userRepo, repairRepo, carRepo)
 	partService := part.NewPartService(partItemRepo, userRepo)
 
 	var fiscalIntegrationHandler *handler.FiscalIntegrationHandler
@@ -571,6 +574,7 @@ func setupRoutes(
 		adminUsers.Use(middleware.RequireStaffManagers())
 		{
 			adminUsers.POST("/users", adminUserHandler.ProvisionUser)
+			adminUsers.GET("/users", adminUserHandler.ListUsers)
 			adminUsers.GET("/users/clients", adminUserHandler.ListClients)
 		}
 

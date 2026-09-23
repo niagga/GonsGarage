@@ -1,0 +1,137 @@
+.back {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+}
+
+.back a {
+  color: var(--color-primary, #1d4ed8);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back a:hover {
+  text-decoration: underline;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  color: #991b1b;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.panel {
+  max-width: 40rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 0.75rem;
+  background: var(--surface-header, #fff);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.in_progress {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cost {
+  font-size: 1.125rem;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.5rem;
+}
+
+.meta dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 600;
+}
+
+.meta dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.875rem;
+}
+
+.billing {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-default, #e2e8f0);
+}
+
+.billing h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.billingHint {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.45;
+}
+
+.billingMuted {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted, #64748b);
+}
+
+.billingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

@@ -8,11 +8,15 @@ import { UserRole } from '@/types';
 const mockReplace = vi.fn();
 let searchParamsString = '';
 
-const { listMock, createMock, summariesMock } = vi.hoisted(() => ({
-  listMock: vi.fn(),
-  createMock: vi.fn(),
-  summariesMock: vi.fn(),
-}));
+const { listMock, createMock, summariesMock, listClientsMock, getCarsByOwnerMock, getRepairsMock } =
+  vi.hoisted(() => ({
+    listMock: vi.fn(),
+    createMock: vi.fn(),
+    summariesMock: vi.fn(),
+    listClientsMock: vi.fn(),
+    getCarsByOwnerMock: vi.fn(),
+    getRepairsMock: vi.fn(),
+  }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -44,6 +48,25 @@ vi.mock('@/lib/services/issued-invoice.service', () => ({
   },
 }));
 
+vi.mock('@/lib/api-client', () => ({
+  apiClient: {
+    listClientUsers: (...args: unknown[]) => listClientsMock(...args),
+  },
+}));
+
+vi.mock('@/lib/api', () => ({
+  apiClient: {
+    getRepairs: (...args: unknown[]) => getRepairsMock(...args),
+  },
+}));
+
+vi.mock('@/lib/services/car.service', () => ({
+  carService: {
+    getCarsByOwner: (...args: unknown[]) => getCarsByOwnerMock(...args),
+    getCar: vi.fn(),
+  },
+}));
+
 vi.mock('@/lib/services/fiscalization.service', () => ({
   fiscalizationService: {
     listSummaries: (...args: unknown[]) => summariesMock(...args),
@@ -69,6 +92,51 @@ describe('IssuedInvoicesStaffListPage create modal', () => {
     listMock.mockResolvedValue(emptyList);
     createMock.mockResolvedValue({ success: true, data: issuedRow });
     summariesMock.mockResolvedValue({ success: true, data: { items: [] } });
+    listClientsMock.mockResolvedValue({
+      success: true,
+      data: {
+        items: [
+          {
+            id: '22222222-2222-2222-2222-222222222222',
+            email: 'cli@test.com',
+            firstName: 'Cliente',
+            lastName: 'Teste',
+          },
+        ],
+        total: 1,
+      },
+    });
+    getCarsByOwnerMock.mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+          make: 'VW',
+          model: 'Golf',
+          year: 2020,
+          licensePlate: 'AA-00-BB',
+          color: 'preto',
+          ownerId: '22222222-2222-2222-2222-222222222222',
+          createdAt: '2020-01-01T00:00:00.000Z',
+          updatedAt: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    getRepairsMock.mockResolvedValue({
+      data: [
+        {
+          id: 'rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr',
+          car_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+          technician_id: '11111111-1111-1111-1111-111111111111',
+          description: 'Revisão',
+          status: 'completed',
+          cost: 250,
+          created_at: '2020-01-01T00:00:00.000Z',
+          updated_at: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
   });
 
   it('opens the create dialog from the toolbar button', async () => {
@@ -151,16 +219,54 @@ describe('IssuedInvoicesStaffListPage create modal', () => {
     expect(listMock).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: 'Nova fatura' }));
-    await user.type(
-      screen.getByLabelText('ID do cliente (UUID)'),
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Cliente')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /Cliente Teste/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.selectOptions(
+      screen.getByLabelText('Cliente'),
       '22222222-2222-2222-2222-222222222222',
     );
-    await user.type(screen.getByLabelText('Valor'), '250');
-    await user.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /VW Golf/i })).toBeInTheDocument();
+    });
+    await user.selectOptions(
+      screen.getByLabelText('Viatura'),
+      'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /Revisão/i })).toBeInTheDocument();
+    });
+    await user.selectOptions(
+      screen.getByLabelText('Reparação concluída'),
+      'rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr',
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Valor')).toHaveValue('250');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Criar fatura interna' }));
 
     await waitFor(() => {
       expect(createMock).toHaveBeenCalledTimes(1);
     });
+    expect(createMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: '22222222-2222-2222-2222-222222222222',
+        repairId: 'rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr',
+        amount: 250,
+      }),
+    );
     await waitFor(() => {
       expect(listMock).toHaveBeenCalledTimes(2);
     });
@@ -175,6 +281,9 @@ describe('IssuedInvoicesStaffListPage fiscalization summaries', () => {
     vi.clearAllMocks();
     searchParamsString = '';
     createMock.mockResolvedValue({ success: true, data: issuedRow });
+    listClientsMock.mockResolvedValue({ success: true, data: { items: [], total: 0 } });
+    getCarsByOwnerMock.mockResolvedValue({ success: true, data: [] });
+    getRepairsMock.mockResolvedValue({ data: [], error: null });
   });
 
   it('loads batch summaries and shows provider-neutral fiscal badges without changing columns', async () => {

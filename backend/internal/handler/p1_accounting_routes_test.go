@@ -101,6 +101,18 @@ func (s *p1StubInvoiceSvc) GetInvoice(_ context.Context, invoiceID uuid.UUID, re
 	return inv, nil
 }
 
+func (s *p1StubInvoiceSvc) GetInvoiceByRepairID(_ context.Context, repairID uuid.UUID, _ uuid.UUID) (*domain.Invoice, error) {
+	if s.byID == nil {
+		return nil, domain.ErrInvoiceNotFound
+	}
+	for _, inv := range s.byID {
+		if inv != nil && inv.RepairID != nil && *inv.RepairID == repairID {
+			return inv, nil
+		}
+	}
+	return nil, domain.ErrInvoiceNotFound
+}
+
 func (s *p1StubInvoiceSvc) UpdateInvoice(_ context.Context, inv *domain.Invoice, _ uuid.UUID) (*domain.Invoice, error) {
 	return inv, nil
 }

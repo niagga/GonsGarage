@@ -150,9 +150,10 @@ type AppointmentService interface {
 	ListAppointments(ctx context.Context, requestingUserID uuid.UUID, filters *AppointmentFilters) ([]*domain.Appointment, int64, error)
 }
 
-// InvoiceService customer invoices (client: own invoices only for read/update notes).
+	// InvoiceService customer invoices (client: own invoices only for read/update notes).
 type InvoiceService interface {
 	GetInvoice(ctx context.Context, invoiceID uuid.UUID, requestingUserID uuid.UUID) (*domain.Invoice, error)
+	GetInvoiceByRepairID(ctx context.Context, repairID uuid.UUID, requestingUserID uuid.UUID) (*domain.Invoice, error)
 	UpdateInvoice(ctx context.Context, invoice *domain.Invoice, requestingUserID uuid.UUID) (*domain.Invoice, error)
 	ListMyInvoices(ctx context.Context, requestingUserID uuid.UUID, limit, offset int) ([]*domain.Invoice, int64, error)
 	CreateInvoice(ctx context.Context, invoice *domain.Invoice, requestingUserID uuid.UUID) (*domain.Invoice, error)

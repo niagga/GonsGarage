@@ -263,7 +263,12 @@ export default function ClientDashboardPage() {
               ) : (
                 <div className={styles.repairsList}>
                   {recentRepairs.map((repair) => (
-                    <div key={repair.id} className={styles.repairItem}>
+                    <button
+                      key={repair.id}
+                      type="button"
+                      className={styles.repairItem}
+                      onClick={() => router.push(`/repairs/${repair.id}`)}
+                    >
                       <div className={styles.repairStatus}>
                         <span className={`${styles.statusBadge} ${styles[repair.status]}`}>
                           {repairStatusPt(repair.status)}
@@ -275,7 +280,7 @@ export default function ClientDashboardPage() {
                           {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(repair.cost)}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

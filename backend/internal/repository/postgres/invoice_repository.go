@@ -46,6 +46,18 @@ func (r *postgresInvoiceRepository) GetByID(ctx context.Context, id uuid.UUID) (
 	return &inv, nil
 }
 
+func (r *postgresInvoiceRepository) GetByRepairID(ctx context.Context, repairID uuid.UUID) (*domain.Invoice, error) {
+	var inv domain.Invoice
+	err := r.db.WithContext(ctx).Where("repair_id = ?", repairID).First(&inv).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrInvoiceNotFound
+		}
+		return nil, fmt.Errorf("failed to get invoice by repair: %w", err)
+	}
+	return &inv, nil
+}
+
 func (r *postgresInvoiceRepository) Update(ctx context.Context, invoice *domain.Invoice) error {
 	if invoice == nil {
 		return fmt.Errorf("invoice is nil")
@@ -53,6 +65,8 @@ func (r *postgresInvoiceRepository) Update(ctx context.Context, invoice *domain.
 	res := r.db.WithContext(ctx).Model(&domain.Invoice{}).Where("id = ?", invoice.ID).
 		Updates(map[string]interface{}{
 			"customer_id": invoice.CustomerID,
+			"repair_id":   invoice.RepairID,
+			"car_id":      invoice.CarID,
 			"amount":      invoice.Amount,
 			"status":      invoice.Status,
 			"notes":       invoice.Notes,

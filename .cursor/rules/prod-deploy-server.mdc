@@ -1,0 +1,45 @@
+---
+description: Canonical PROD deploy — server git pull + compose (never SCP by default)
+alwaysApply: true
+---
+
+# Deploy a producción (GonsGarage)
+
+When the user asks to **deploy to Prod** (or equivalent), use **only** this path. Do **not** use `deploy.ps1` / recursive `scp` of `frontend/` or `backend/` unless they explicitly request an emergency SCP deploy.
+
+## Canonical flow (on the server)
+
+SSH as `ggarcia@192.168.1.100` with WSL key `~/.ssh/pi_gonsgarage` (not `root`).
+
+```bash
+cd /DATA/AppData/gonsgarage
+export COMPOSE_OVERRIDE=docker-compose.prod.arnela-network.yml
+bash scripts/deploy-prod.sh deploy
+```
+
+- Pulls from Git on the server + `docker compose up -d --build` + verifies `http://127.0.0.1:8102/health` and `/ready`.
+- On success, marks `.deploy-last-good` for rollback:
+
+```bash
+bash scripts/deploy-prod.sh rollback
+bash scripts/deploy-prod.sh status
+```
+
+Docs: `deploy/README.md`. Script: `scripts/deploy-prod.sh`. Legacy alias: `scripts/update-server-gonsgarage.sh` → `deploy`.
+
+## Prerequisites
+
+1. The commit to ship must already be on the remote (`git push`); the server only deploys what is in Git.
+2. Preserve `.env.prod` always. Never overwrite it from `.env.prod.example` if it already exists.
+3. If `git pull` fails due to a dirty tree (e.g. leftover SCP), `git reset --hard origin/main` and `git clean -fd` **excluding** `.env.prod`, `.deploy-*`, `data/`, `staging/`, `backups/` — then re-run `deploy-prod.sh deploy`.
+
+## Anti-patterns
+
+- Do not `scp -r` the whole `frontend/` (includes `node_modules`; multi‑minute stalls; never reaches compose).
+- Do not deploy as `root@192.168.1.100` with the default agent SSH (publickey denied); use `ggarcia` + `pi_gonsgarage`.
+- Do not mix `docker-compose.yml` (dev) with prod compose.
+- Do not enable fiscal finalization/Cloudware mutations as part of a routine deploy.
+
+## Timing baseline
+
+A clean server-side deploy of this stack is typically ~2–3 minutes (measured ~153s for SHA `9ebeb24`), dominated by Docker image rebuilds—not file transfer.

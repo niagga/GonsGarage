@@ -144,3 +144,75 @@ func (h *AdminUserHandler) ListClients(c *gin.Context) {
 		"total": len(items),
 	})
 }
+
+// ListUsers returns all non-deleted users (optional role + q filter). Admin/manager only.
+// @Summary     Listar utilizadores (staff)
+// @Tags        admin
+// @Security    BearerAuth
+// @Produce     json
+// @Param       role query string false "Filtrar por papel: client, employee, manager, admin"
+// @Param       q query string false "Filtro por nome ou email"
+// @Param       limit query int false "Límite (default 100, max 200)"
+// @Param       offset query int false "Offset"
+// @Success     200 {object} map[string]interface{}
+// @Failure     403 {object} SwaggerMessage
+// @Router      /api/v1/admin/users [get]
+func (h *AdminUserHandler) ListUsers(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	roleFilter := strings.ToLower(strings.TrimSpace(c.Query("role")))
+	var users []*domain.User
+	var err error
+	switch roleFilter {
+	case "":
+		users, err = h.userRepo.List(c.Request.Context(), limit, offset)
+	case domain.RoleClient, domain.RoleEmployee, domain.RoleManager, domain.RoleAdmin:
+		users, err = h.userRepo.GetByRole(c.Request.Context(), roleFilter, limit, offset)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role filter"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list users"})
+		return
+	}
+
+	q := strings.TrimSpace(strings.ToLower(c.Query("q")))
+	items := make([]gin.H, 0, len(users))
+	for _, u := range users {
+		if u == nil {
+			continue
+		}
+		if q != "" {
+			fullName := strings.ToLower(strings.TrimSpace(u.FirstName + " " + u.LastName))
+			email := strings.ToLower(strings.TrimSpace(u.Email))
+			if !strings.Contains(fullName, q) && !strings.Contains(email, q) {
+				continue
+			}
+		}
+		items = append(items, gin.H{
+			"id":        u.ID,
+			"email":     u.Email,
+			"firstName": u.FirstName,
+			"lastName":  u.LastName,
+			"role":      u.Role,
+			"isActive":  u.IsActive,
+			"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"items": items,
+		"total": len(items),
+	})
+}

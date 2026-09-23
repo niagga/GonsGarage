@@ -36,11 +36,18 @@ export class IssuedInvoiceService {
     return apiClient.get<ItemsTotal<IssuedInvoice>>(`/invoices?limit=${limit}&offset=${offset}`);
   }
 
+  /** Staff: invoice linked to a repair (empty items if none). */
+  async getByRepair(repairId: string): Promise<ApiResponse<ItemsTotal<IssuedInvoice>>> {
+    const q = new URLSearchParams({ repairId });
+    return apiClient.get<ItemsTotal<IssuedInvoice>>(`/invoices?${q.toString()}`);
+  }
+
   async createStaff(body: {
     customerId: string;
     amount: number;
     status?: string;
     notes?: string;
+    repairId?: string;
   }): Promise<ApiResponse<IssuedInvoice>> {
     return apiClient.post<IssuedInvoice>('/invoices', body);
   }
