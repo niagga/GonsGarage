@@ -8,9 +8,10 @@ import { UserRole } from '@/types';
 const mockReplace = vi.fn();
 let searchParamsString = '';
 
-const { listMock, createMock } = vi.hoisted(() => ({
+const { listMock, createMock, summariesMock } = vi.hoisted(() => ({
   listMock: vi.fn(),
   createMock: vi.fn(),
+  summariesMock: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -43,6 +44,12 @@ vi.mock('@/lib/services/issued-invoice.service', () => ({
   },
 }));
 
+vi.mock('@/lib/services/fiscalization.service', () => ({
+  fiscalizationService: {
+    listSummaries: (...args: unknown[]) => summariesMock(...args),
+  },
+}));
+
 const emptyList = { success: true, data: { items: [], total: 0 } };
 
 const issuedRow = {
@@ -61,6 +68,7 @@ describe('IssuedInvoicesStaffListPage create modal', () => {
     searchParamsString = '';
     listMock.mockResolvedValue(emptyList);
     createMock.mockResolvedValue({ success: true, data: issuedRow });
+    summariesMock.mockResolvedValue({ success: true, data: { items: [] } });
   });
 
   it('opens the create dialog from the toolbar button', async () => {
@@ -158,6 +166,72 @@ describe('IssuedInvoicesStaffListPage create modal', () => {
     });
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('IssuedInvoicesStaffListPage fiscalization summaries', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    searchParamsString = '';
+    createMock.mockResolvedValue({ success: true, data: issuedRow });
+  });
+
+  it('loads batch summaries and shows provider-neutral fiscal badges without changing columns', async () => {
+    listMock.mockResolvedValue({
+      success: true,
+      data: { items: [issuedRow], total: 1 },
+    });
+    summariesMock.mockResolvedValue({
+      success: true,
+      data: {
+        items: [
+          {
+            invoiceId: 'ii-new-1',
+            status: 'draft',
+            lifecycle: 'draft',
+            allowedActions: ['view', 'edit'],
+          },
+        ],
+      },
+    });
+
+    render(<IssuedInvoicesStaffListPage />);
+
+    await waitFor(() => {
+      expect(summariesMock).toHaveBeenCalledWith(['ii-new-1']);
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/rascunho/i)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('columnheader', { name: 'Cliente (ID)' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Valor' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Estado' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /fiscalização/i })).toBeInTheDocument();
+  });
+
+  it('shows legacy_unfiscalized guidance for invoices without fiscal rows', async () => {
+    listMock.mockResolvedValue({
+      success: true,
+      data: { items: [issuedRow], total: 1 },
+    });
+    summariesMock.mockResolvedValue({
+      success: true,
+      data: {
+        items: [
+          {
+            invoiceId: 'ii-new-1',
+            status: 'legacy_unfiscalized',
+            allowedActions: [],
+          },
+        ],
+      },
+    });
+
+    render(<IssuedInvoicesStaffListPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/sem fiscalização|legado/i)).toBeInTheDocument();
     });
   });
 });

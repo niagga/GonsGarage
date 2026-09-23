@@ -15,6 +15,20 @@ export type {
 
 export { UserRole } from './auth';
 
+export type {
+  FiscalDraftRequest,
+  FiscalizationProjection,
+  FiscalizationSummary,
+  FiscalDocumentKind,
+  FiscalPresentationStatus,
+} from './fiscal';
+
+export {
+  fiscalPresentationLabel,
+  isTransientFiscalLifecycle,
+  canShowFiscalAction,
+} from './fiscal';
+
 // ✅ User management types (Unified per Agent.md)
 export type {
   CreateUserRequest,

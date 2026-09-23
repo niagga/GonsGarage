@@ -6,10 +6,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/stores';
 import AppShell from '@/components/layout/AppShell';
 import { issuedInvoiceService } from '@/lib/services/issued-invoice.service';
+import { fiscalizationService } from '@/lib/services/fiscalization.service';
 import type { IssuedInvoice } from '@/types/accounting';
+import type { FiscalizationProjection } from '@/types/fiscal';
+import { fiscalPresentationLabel } from '@/types/fiscal';
 import styles from '../../accounting.module.css';
 import { AppLoading } from '@/components/ui/AppLoading';
 import { Button } from '@/components/ui/button';
+import { FiscalDraftForm } from './FiscalDraftForm';
+import { FiscalActions } from './FiscalActions';
 
 export default function IssuedInvoiceStaffDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +26,7 @@ export default function IssuedInvoiceStaffDetailPage() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fiscal, setFiscal] = useState<FiscalizationProjection | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -34,6 +40,14 @@ export default function IssuedInvoiceStaffDetailPage() {
       setNotes(inv.notes ?? '');
     } else {
       setError(res.error?.message ?? 'Fatura não encontrada.');
+      return;
+    }
+    const proj = await fiscalizationService.getProjection(id);
+    if (proj.success && proj.data) {
+      setFiscal(proj.data);
+    } else if (proj.error?.status !== 404) {
+      // Keep operational form usable when fiscal feature is off or unavailable.
+      setFiscal(null);
     }
   }, [id]);
 
@@ -82,6 +96,12 @@ export default function IssuedInvoiceStaffDetailPage() {
     setError(res.error?.message ?? 'Erro ao eliminar.');
   }
 
+  const showDraft =
+    !fiscal ||
+    fiscal.status === 'draft' ||
+    fiscal.status === 'legacy_unfiscalized' ||
+    (fiscal.allowedActions ?? []).includes('edit');
+
   return (
     <AppShell
       user={user}
@@ -124,6 +144,32 @@ export default function IssuedInvoiceStaffDetailPage() {
               </Button>
             </div>
           </form>
+
+          <section className={styles.form} aria-labelledby="fiscal-heading">
+            <h2 id="fiscal-heading">Fiscalização</h2>
+            {fiscal ? (
+              <p>
+                Estado fiscal: <strong>{fiscalPresentationLabel(fiscal.status)}</strong>
+              </p>
+            ) : (
+              <p>Sem projeção fiscal carregada.</p>
+            )}
+            {id && showDraft ? (
+              <FiscalDraftForm
+                invoiceId={id}
+                projection={fiscal}
+                onSaved={(p) => setFiscal(p)}
+              />
+            ) : null}
+            {id && fiscal ? (
+              <FiscalActions
+                invoiceId={id}
+                projection={fiscal}
+                role={user.role}
+                onProjectionChange={setFiscal}
+              />
+            ) : null}
+          </section>
         </>
       ) : !error ? (
         <div className="loadingStack" aria-busy="true">

@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/stores';
 import AppShell from '@/components/layout/AppShell';
 import { issuedInvoiceService } from '@/lib/services/issued-invoice.service';
+import { fiscalizationService } from '@/lib/services/fiscalization.service';
 import type { IssuedInvoice } from '@/types/accounting';
+import { fiscalPresentationLabel, type FiscalizationSummary } from '@/types/fiscal';
 import styles from '../accounting.module.css';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +24,7 @@ function IssuedInvoicesListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [items, setItems] = useState<IssuedInvoice[]>([]);
+  const [summaries, setSummaries] = useState<Record<string, FiscalizationSummary>>({});
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const openedFromCreateQuery = useRef(false);
@@ -29,8 +32,26 @@ function IssuedInvoicesListContent() {
   const load = useCallback(async () => {
     setError(null);
     const res = await issuedInvoiceService.listStaff();
-    if (res.success && res.data) setItems(res.data.items);
-    else setError(res.error?.message ?? 'Não foi possível carregar as faturas.');
+    if (res.success && res.data) {
+      const rows = res.data.items;
+      setItems(rows);
+      if (rows.length > 0) {
+        const sumRes = await fiscalizationService.listSummaries(rows.map((r) => r.id));
+        if (sumRes.success && sumRes.data?.items) {
+          const map: Record<string, FiscalizationSummary> = {};
+          for (const s of sumRes.data.items) {
+            map[s.invoiceId] = s;
+          }
+          setSummaries(map);
+        } else {
+          setSummaries({});
+        }
+      } else {
+        setSummaries({});
+      }
+    } else {
+      setError(res.error?.message ?? 'Não foi possível carregar as faturas.');
+    }
   }, []);
 
   useEffect(() => {
@@ -85,21 +106,26 @@ function IssuedInvoicesListContent() {
               <th>Cliente (ID)</th>
               <th>Valor</th>
               <th>Estado</th>
+              <th>Fiscalização</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((inv) => (
-              <tr key={inv.id}>
-                <td>
-                  <Link href={`/accounting/issued-invoices/${inv.id}`}>{inv.customerId}</Link>
-                </td>
-                <td>{inv.amount.toFixed(2)}</td>
-                <td>{inv.status}</td>
-              </tr>
-            ))}
+            {items.map((inv) => {
+              const fiscal = summaries[inv.id];
+              return (
+                <tr key={inv.id}>
+                  <td>
+                    <Link href={`/accounting/issued-invoices/${inv.id}`}>{inv.customerId}</Link>
+                  </td>
+                  <td>{inv.amount.toFixed(2)}</td>
+                  <td>{inv.status}</td>
+                  <td>{fiscal ? fiscalPresentationLabel(fiscal.status) : '—'}</td>
+                </tr>
+              );
+            })}
             {items.length === 0 && !error ? (
               <tr>
-                <td colSpan={3}>
+                <td colSpan={4}>
                   Sem faturas.{' '}
                   <button type="button" className={styles.inlineTextButton} onClick={() => setCreateOpen(true)}>
                     Criar a primeira

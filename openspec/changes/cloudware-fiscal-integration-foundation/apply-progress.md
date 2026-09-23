@@ -1,7 +1,7 @@
 # Apply Progress: Cloudware fiscal integration foundation
 
 ## Status
-WU1–WU6 remain complete. **WU7 `additive HTTP API` is complete**: nested fiscalization routes (draft/detail/finalize/retry/reconcile/void), batch summaries registered before `/:id`, PDF streaming, strict decimal-string JSON + body/line limits, status mappings 403/404/409/422/202/503, client own-only projections/artifacts, manager/admin-only legal actions, legacy invoice contract regression, centralized safe response mapping, and swagger updates. No commit or PR was created. Work stayed inside the WU7 boundary (no WU8 UI).
+WU1–WU7 remain complete. **WU8 `staff fiscal UI` is complete**: provider-neutral fiscalization service + types, issued-invoices list batch summaries/badges, detail `FiscalDraftForm` / `FiscalActions` (decimal-string drafts, readiness, role-gated privileged actions, 202→capped polling, double-submit guard, mock label, PDF download wiring). Operational invoice columns/create/edit controls preserved. No commit or PR was created. Work stayed inside the WU8 boundary (stopped before WU9 client/admin UI).
 
 ## Completed tasks and persisted checkboxes
 - [x] 1.1–1.5 WU1 schema/migration (retained).
@@ -10,72 +10,72 @@ WU1–WU6 remain complete. **WU7 `additive HTTP API` is complete**: nested fisca
 - [x] 4.1–4.4 WU4 provider-neutral mock (retained).
 - [x] 5.1–5.4 WU5 outbox worker (retained).
 - [x] 6.1–6.4 WU6 artifact archive (retained).
-- [x] 7.1 RED — `fiscal_handler_test.go`, `fiscal_integration_handler_test.go`, `invoice_handler_test.go` for route ordering, strict decimals, body/line limits, 403/404/409/422/202, repeated actions, own-only, manager/admin-only legal actions. <!-- sdd-owner: implementation -->
-- [x] 7.2 GREEN — `fiscal_handler.go` DTOs/endpoints; `document_service.go`; register `/invoices/fiscalization-summaries` before `/:id` in `cmd/api/main.go`; service-level auth repeated. <!-- sdd-owner: implementation -->
-- [x] 7.3 TRIANGULATE — `p1_accounting_routes_test.go` + invoice handler/service tests: legacy list/create/own/detail/PATCH/delete envelopes, RFC3339, notes-only client patch, draft-vs-frozen delete conflicts. <!-- sdd-owner: implementation -->
-- [x] 7.4 REFACTOR — `fiscal_response.go` centralized error/projection sanitization; swagger models + regenerated `docs/swagger.yaml|json|docs.go`; secret/URL omission verified. <!-- sdd-owner: implementation -->
+- [x] 7.1–7.4 WU7 additive HTTP API (retained).
+- [x] 8.1 RED — Vitest/Testing Library: `fiscalization.service.test.ts`, `issued-invoices/page.test.tsx`, `[id]/FiscalDraftForm.test.tsx`, `FiscalActions.test.tsx`, `page.test.tsx` for summaries, FT/FR decimals, readiness, roles, 202 polling, cancellation, double-click, operational edits. <!-- sdd-owner: implementation -->
+- [x] 8.2 GREEN — `types/fiscal.ts`, `fiscalization.service.ts`, `FiscalDraftForm.tsx`, `FiscalActions.tsx`; extend list + detail pages. <!-- sdd-owner: implementation -->
+- [x] 8.3 TRIANGULATE — employee vs manager/admin, FT/FR/exempt, stale 409, unavailable/unknown, source refs, server totals, mock labels, capped polling stop; `fiscal.test.ts` helpers. <!-- sdd-owner: implementation -->
+- [x] 8.4 REFACTOR — reuse Button/form/apiClient patterns; preserve create modal + operational fields; pt_PT provider-neutral copy; `pnpm test`, `pnpm lint`, `pnpm typecheck`. <!-- sdd-owner: implementation -->
+- [x] 13.1 Parent delivery decision (retained).
 
-## Files changed (WU7 batch)
+## Files changed (WU8 batch)
 | File | Action | What was done |
 |------|--------|---------------|
-| `backend/internal/core/ports/fiscalization_service.go` | Created | Invoice-scoped FiscalizationService port + safe projection types |
-| `backend/internal/service/fiscal/document_service.go` | Created | DocumentService wrapping draft/finalization/artifact with ownership auth |
-| `backend/internal/handler/fiscal_handler.go` | Created | Nested fiscal HTTP endpoints + route registration helper |
-| `backend/internal/handler/fiscal_response.go` | Created | Centralized error mapping + projection sanitization |
-| `backend/internal/handler/fiscal_handler_test.go` | Created | RED/GREEN/triangulation HTTP coverage |
-| `backend/internal/handler/invoice_handler_test.go` | Created | Legacy snapshot + protected-history 409 |
-| `backend/internal/handler/fiscal_integration_handler_test.go` | Modified | Employee 403 on connection legal actions |
-| `backend/internal/handler/p1_accounting_routes_test.go` | Modified | Legacy invoice contract + additive summaries triangulation |
-| `backend/internal/handler/invoice_handler.go` | Modified | Map ErrFiscalHistoryProtected → 409 |
-| `backend/internal/handler/swagger_models.go` | Modified | Fiscalization swagger DTOs |
-| `backend/internal/service/invoice/invoice_service_test.go` | Modified | Frozen vs draft delete protection |
-| `backend/internal/domain/fiscal_document.go` | Modified | `legacy_unfiscalized` presentation constant |
-| `backend/cmd/api/main.go` | Modified | Wire DocumentService + RegisterInvoiceAndFiscalRoutes |
-| `backend/docs/swagger.yaml`, `swagger.json`, `docs.go` | Modified | Regenerated with fiscalization paths (LeftDelim stripped for swag v1.8.12) |
-| `openspec/.../tasks.md` | Modified | Mark 7.1–7.4 `[x]` |
-| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU7 progress |
+| `frontend/src/types/fiscal.ts` | Created | Decimal-string DTOs, presentation helpers, privileged-action gate |
+| `frontend/src/types/fiscal.test.ts` | Created | Helper triangulation (labels, polling states, roles) |
+| `frontend/src/types/index.ts` | Modified | Re-export fiscal types/helpers |
+| `frontend/src/lib/services/fiscalization.service.ts` | Created | Draft/actions/summaries/artifact client |
+| `frontend/src/lib/services/fiscalization.service.test.ts` | Created | Contract tests for paths + decimal payloads + PDF fetch |
+| `frontend/src/lib/services/index.ts` | Modified | Export fiscalization service |
+| `frontend/src/app/accounting/issued-invoices/page.tsx` | Modified | Batch summaries + Fiscalização column |
+| `frontend/src/app/accounting/issued-invoices/page.test.tsx` | Modified | Summary badges + legacy guidance; keep create-modal safety net |
+| `frontend/src/app/accounting/issued-invoices/[id]/page.tsx` | Modified | Fiscal panel beside operational edit form |
+| `frontend/src/app/accounting/issued-invoices/[id]/page.test.tsx` | Created | Operational controls + projection load |
+| `frontend/src/app/accounting/issued-invoices/[id]/FiscalDraftForm.tsx` | Created | Manual FT/FR lines, decimals, readiness, source refs |
+| `frontend/src/app/accounting/issued-invoices/[id]/FiscalDraftForm.test.tsx` | Created | Draft form behavioral coverage |
+| `frontend/src/app/accounting/issued-invoices/[id]/FiscalActions.tsx` | Created | Privileged actions, polling, double-submit, PDF, mock label |
+| `frontend/src/app/accounting/issued-invoices/[id]/FiscalActions.test.tsx` | Created | Role/polling/conflict/mock coverage |
+| `openspec/.../tasks.md` | Modified | Mark 8.1–8.4 `[x]` |
+| `openspec/.../apply-progress.md` | Modified | Cumulative WU1–WU8 progress |
 
 ## Verification
-- `cd backend && go test ./internal/handler/ ./internal/service/fiscal/ ./internal/service/invoice/ ./internal/domain/ -count=1` → PASS
-- `cd backend && go build ./cmd/api/` → PASS
-- `gofmt` applied to touched Go files
-- Race detector: `go test -race` requires CGO; Windows agent reports CGO/gcc unavailable (same limitation as WU2–WU6). Non-race tests pass; CI/Linux should run `-race`.
+- Focused: `pnpm exec vitest run` on WU8 test files → **34 passed**
+- Full: `cd frontend && pnpm test -- --passWithNoTests` → **32 files / 151 tests passed**
+- `pnpm lint` → PASS (exit 0)
+- `pnpm typecheck` → PASS (exit 0)
 
-## Work Unit Evidence (WU7)
+## Work Unit Evidence (WU8)
 
 | Evidence | Result |
 |---|---|
-| Focused test command | `go test ./internal/handler/ ./internal/service/fiscal/ ./internal/service/invoice/ ./internal/domain/ -count=1` → PASS |
-| Runtime harness | N/A — WU7 is HTTP handler/service unit coverage with gin httptest stubs; no new runtime/provider boundary beyond existing fiscal feature flag wiring in `cmd/api` |
-| Rollback boundary | Disable `FISCAL_FEATURE_ENABLED` (fiscalHandler nil → only legacy invoice routes); revert WU7 handler/service/port/docs without touching WU1–WU6 persistence/worker |
+| Focused test command | `pnpm exec vitest run src/lib/services/fiscalization.service.test.ts src/types/fiscal.test.ts src/app/accounting/issued-invoices/page.test.tsx src/app/accounting/issued-invoices/[id]/FiscalDraftForm.test.tsx src/app/accounting/issued-invoices/[id]/FiscalActions.test.tsx src/app/accounting/issued-invoices/[id]/page.test.tsx` → **34 passed** |
+| Runtime harness | N/A — WU8 is Vitest/Testing Library against mocked API client; no browser E2E in tooling inventory |
+| Rollback boundary | Hide fiscal column/panel (revert WU8 frontend files); operational issued-invoice list/create/edit remain; no backend schema change |
 
-## TDD Cycle Evidence (WU7)
+## TDD Cycle Evidence (WU8)
 
 | Task | Test file/layer | Safety net | RED | GREEN | TRIANGULATE | REFACTOR |
 |---|---|---|---|---|---|---|
-| 7.1 | `fiscal_handler_test.go` + integration/invoice handler tests / unit+httptest | ✅ `go test ./internal/handler` PASS before changes | Compile-fail refs to NewFiscalHandler / RegisterInvoiceAndFiscalRoutes / MaxFiscal* | — | Covered with 7.3 | N/A in RED |
-| 7.2 | same + `document_service.go` | N/A (new) | Ports + handler APIs from RED | Handler + DocumentService + main wiring; tests PASS | — | Route helper + MaxBytesReader |
-| 7.3 | `p1_accounting_routes_test.go` + `invoice_service_test.go` | unit green | Legacy envelope/RFC3339/notes-only + frozen delete 409 | Behaviors pass; summaries additive | All listed legacy scenarios | Stub CreateInvoice timestamps |
-| 7.4 | `fiscal_response.go` + sanitize test | ✅ handler PASS | Secret/URL redaction assertions | Centralized mapping; swagger regen | Projection omit secrets | Extract fiscal_response.go |
+| 8.1 | service + page + `[id]/*` tests / unit+RTL | ✅ prior issued-invoices create-modal tests PASS (123 suite baseline) | ✅ Written (import fail / missing UI) | — | Covered with 8.3 | N/A in RED |
+| 8.2 | same + production modules | N/A (new) | From 8.1 | ✅ types/service/forms/pages; focused PASS | — | Shared Button/styles/apiClient |
+| 8.3 | + `fiscal.test.ts` | unit green | Role/FT/FR/exempt/409/unknown/mock/poll cases | Behaviors PASS | ✅ All listed scenarios | Helpers extracted |
+| 8.4 | full frontend quality | ✅ focused green | Approval tests preserved | lint+typecheck+full test | — | Exports + alert role + submit ref |
 
 ## Prior work unit evidence (retained)
 
-### WU6
+### WU7
 | Evidence | Result |
 |---|---|
-| Focused tests | fiscalartifact + fiscal service + FiscalArtifact PG → PASS |
-| Runtime harness | PostgreSQL archive/access-log → PASS |
-| Rollback | Disable issuance; retain bytes/metadata |
+| Focused tests | handler/fiscal + invoice + domain PASS |
+| Runtime harness | N/A httptest stubs |
+| Rollback | Disable `FISCAL_FEATURE_ENABLED` |
 
-### WU5 / WU4 / WU3 / WU2 / WU1
-Retained: outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
+### WU6 / WU5 / WU4 / WU3 / WU2 / WU1
+Retained: artifact archive; outbox worker; mock provider; draft/finalization repos; domain packages; migration 011.
 
 ## Deviations, budget, and remaining work
-- **Budget / size:exception**: Authored WU7 volume is estimated ~1,400–2,000 lines including new handler/service/port/tests (plus large swagger regeneration churn). Completing WU7 coherently required HTTP surface + DocumentService + legacy regression + swagger (same pattern as WU3–WU6). Documented as **size:exception** under parent-authorized manual WU7 slice (~600 preferred).
-- **Deviation**: Artifact download wiring in production `cmd/api` leaves ArtifactService nil until object/local store is composed for the API process (worker already has it); OpenArtifact returns unavailable until wired — projection/status paths still work.
-- **Swagger**: `swag init` (CLI v1.16.4) emitted `LeftDelim`/`RightDelim` incompatible with module `swag v1.8.12`; fields removed post-generation so `go build ./cmd/api` succeeds.
-- Race/`gcc`: deferred to CI (same as WU2–WU6).
-- Delivery: Parent authorized manual WU7 only; agent created **no commits/PRs**.
+- **Budget / size:exception**: Authored WU8 volume is estimated ~1,200–1,800 lines including tests/components (preferred ~600). Completing WU8 coherently required service + types + list/detail wiring + RTL coverage (same pattern as WU3–WU7). Documented as **size:exception** under parent-authorized manual WU8 slice.
+- **PDF download**: UI wires `downloadArtifact` when `artifactId`/`artifactStatus` present. WU7 projection still omits `artifactId`; API process `ArtifactService` may remain nil (503 / unavailable guidance). Optional note: PDF UX needs projection `artifactId` + API ArtifactService composition for reliable downloads.
+- Delivery: Parent authorized manual WU8 only; agent created **no commits/PRs**. Stopped before WU9.
 
 ## Deferred parent lifecycle actions
 - [ ] 13.2 Production fiscal-policy, issuer/series, retention, storage, backup, access-log, and legal-void decisions. <!-- sdd-owner: parent -->
@@ -107,7 +107,7 @@ contextFiles:
   verifyReport: []
   syncReport: []
 artifacts: { proposal: done, specs: done, design: done, tasks: done, applyProgress: done, verifyReport: missing, syncReport: missing }
-taskProgress: { total: 58, complete: 34, remaining: 24 }
+taskProgress: { total: 58, complete: 38, remaining: 20 }
 deferredParentActions: { total: 5, complete: 1, remaining: 4 }
 taskArtifactErrors: []
 applyState: ready
@@ -118,15 +118,14 @@ actionContext:
   allowedEditRoots:
     - D:/Repos/GonsGarage
   warnings:
-    - "WU7 authored ~1400-2000 lines (>600 preferred); size:exception like WU3–WU6"
-    - "go test -race unavailable locally: CGO/gcc missing on Windows agent host"
-    - "API process ArtifactService nil until local/object store composed for downloads"
+    - "WU8 authored ~1200-1800 lines (>600 preferred); size:exception like WU3–WU7"
+    - "PDF download needs artifactId on projection + API ArtifactService (may be nil)"
 nextRecommended: sdd-verify
 isNonAuthoritative: false
 ```
 
-WU7 finish state is satisfied: additive fiscal HTTP APIs, legacy invoice regression, and safe projections pass unit tests. Next unit starts at Phase 8 (frontend) only after parent/verify.
+WU8 finish state is satisfied: staff can prepare drafts and authorized managers/admins can act using provider-neutral projections on issued-invoice pages. Next: `sdd-verify`, then WU9 only after parent/verify.
 
 ## Remaining implementation tasks (verbatim start of next unit)
 
-- [ ] 8.1 RED — Add Vitest coverage for fiscalization service client, shared components, and accounting badge integration covering decimal-string payloads, 202→poll, own-only client views, and unchanged legacy invoice columns/actions. <!-- sdd-owner: implementation -->
+- [ ] 9.1 RED — Extend my-invoices tests and add admin fiscal integration page tests for own-only status/PDF and role-gated settings. <!-- sdd-owner: implementation -->
