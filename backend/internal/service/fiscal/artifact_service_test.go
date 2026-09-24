@@ -180,6 +180,17 @@ func (r *artifactInvoiceRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.
 	cp := *inv
 	return &cp, nil
 }
+
+func (r *artifactInvoiceRepo) GetByRepairID(_ context.Context, repairID uuid.UUID) (*domain.Invoice, error) {
+	for _, inv := range r.byID {
+		if inv != nil && inv.RepairID != nil && *inv.RepairID == repairID {
+			cp := *inv
+			return &cp, nil
+		}
+	}
+	return nil, domain.ErrInvoiceNotFound
+}
+
 func (r *artifactInvoiceRepo) Create(context.Context, *domain.Invoice) error { return nil }
 func (r *artifactInvoiceRepo) Update(context.Context, *domain.Invoice) error { return nil }
 func (r *artifactInvoiceRepo) Delete(context.Context, uuid.UUID) error       { return nil }

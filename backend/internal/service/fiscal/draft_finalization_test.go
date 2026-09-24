@@ -56,6 +56,17 @@ func (r *fakeInvoiceRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.Invo
 	cp := *inv
 	return &cp, nil
 }
+
+func (r *fakeInvoiceRepo) GetByRepairID(_ context.Context, repairID uuid.UUID) (*domain.Invoice, error) {
+	for _, inv := range r.byID {
+		if inv != nil && inv.RepairID != nil && *inv.RepairID == repairID {
+			cp := *inv
+			return &cp, nil
+		}
+	}
+	return nil, domain.ErrInvoiceNotFound
+}
+
 func (r *fakeInvoiceRepo) Create(context.Context, *domain.Invoice) error { return nil }
 func (r *fakeInvoiceRepo) Update(context.Context, *domain.Invoice) error { return nil }
 func (r *fakeInvoiceRepo) Delete(context.Context, uuid.UUID) error       { return nil }
