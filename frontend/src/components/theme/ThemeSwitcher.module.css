@@ -33,6 +33,13 @@
   padding: 0.35rem 1.75rem 0.35rem 0.5rem;
   cursor: pointer;
   max-width: 8.5rem;
+  color-scheme: inherit;
+}
+
+.select option,
+.select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .select:focus-visible {

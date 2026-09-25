@@ -58,6 +58,15 @@
   border-radius: 0.375rem;
   font: inherit;
   font-weight: 500;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.fieldInline select option,
+.fieldInline select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .tableWrap {
@@ -110,11 +119,19 @@
 }
 
 .select {
-  border: 1px solid var(--border, #e2e8f0);
+  border: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0.375rem;
   padding: 0.5rem 0.65rem;
   font-size: 1rem;
-  background: var(--background, #fff);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.select option,
+.select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .error {

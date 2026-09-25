@@ -42,6 +42,13 @@
   padding: var(--space-3) var(--space-10) var(--space-3) var(--space-3);
   transition: all var(--transition-fast);
   width: 100%;
+  color-scheme: inherit;
+}
+
+.select option,
+.select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .select:focus {

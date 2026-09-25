@@ -53,7 +53,16 @@
   min-width: 18rem;
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
-  border: 1px solid var(--border, #ccc);
+  border: 1px solid var(--border-default, #ccc);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.select select option,
+.select select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .table {

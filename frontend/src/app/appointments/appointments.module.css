@@ -462,6 +462,15 @@
   font-size: 0.875rem;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   font-family: inherit;
+  background-color: var(--surface-panel);
+  color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.formGroup select option,
+.formGroup select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .formGroup input:focus,

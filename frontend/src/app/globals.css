@@ -17,7 +17,7 @@ html {
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
   font-size: 16px;
-  color-scheme: light dark;
+  /* color-scheme comes from tokens.css per html[data-theme] */
 }
 
 body {
@@ -30,6 +30,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+/*
+ * Native <select> dropdowns often keep a light list popup while inheriting
+ * light text from the page in dark theme → unreadable options. Pin both
+ * the closed control and <option> rows to theme surfaces.
+ */
+select,
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='submit']):not([type='button']):not([type='reset']):not([type='image']),
+textarea {
+  background-color: var(--surface-panel);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+  color-scheme: inherit;
+}
+
+select option,
+select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+select:disabled,
+input:disabled,
+textarea:disabled {
+  background-color: var(--surface-muted);
+  color: var(--text-muted);
+  opacity: 0.85;
 }
 
 @media (min-width: 768px) {

@@ -505,6 +505,13 @@
   outline: none;
   background: var(--surface-panel);
   color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.formGroup select option,
+.formGroup select optgroup {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .formGroup input:focus,

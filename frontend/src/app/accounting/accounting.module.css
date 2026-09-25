@@ -152,7 +152,14 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
   font: inherit;
-  background: var(--surface-page);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  color-scheme: inherit;
+}
+
+.field select option,
+.field select optgroup {
+  background-color: var(--surface-elevated);
   color: var(--text-primary);
 }
 
