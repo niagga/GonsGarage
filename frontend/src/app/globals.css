@@ -60,6 +60,29 @@ textarea:disabled {
   opacity: 0.85;
 }
 
+/*
+ * Chromium date/time picker glyphs stay dark even when the page is dark-
+ * themed, so the calendar icon vanishes on --surface-panel. Force dark
+ * color-scheme for the control chrome and invert the WebKit indicator.
+ */
+html[data-theme='dark'] input[type='date'],
+html[data-theme='dark'] input[type='datetime-local'],
+html[data-theme='dark'] input[type='time'],
+html[data-theme='dark'] input[type='month'],
+html[data-theme='dark'] input[type='week'] {
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] input[type='date']::-webkit-calendar-picker-indicator,
+html[data-theme='dark'] input[type='datetime-local']::-webkit-calendar-picker-indicator,
+html[data-theme='dark'] input[type='time']::-webkit-calendar-picker-indicator,
+html[data-theme='dark'] input[type='month']::-webkit-calendar-picker-indicator,
+html[data-theme='dark'] input[type='week']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1);
+  opacity: 0.9;
+}
+
 @media (min-width: 768px) {
   body {
     font-size: 1rem;
