@@ -14,3 +14,6 @@ backend/api.exe
 # Caché local de pnpm (nunca commitear)
 .pnpm-store/
 **/.pnpm-store/
+
+# Memoria local de Engram (estado de máquina, nunca commitear)
+.engram/
