@@ -191,7 +191,7 @@ class ApiClient {
   constructor() {
     const origin = getPublicApiOrigin().replace(/\/+$/, '');
     this.baseURL = `${origin}/api/v1`;
-    if (typeof window !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       // Same session as Zustand / api-client (auth_token); legacy key was "token"
       this.token = localStorage.getItem('auth_token') || localStorage.getItem('token');
     }
@@ -208,14 +208,14 @@ class ApiClient {
   clearToken() {
     primaryHttpClient.clearToken();
     this.token = null;
-    if (typeof window !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('token');
     }
   }
 
   /** Token Bearer: preferir localStorage no browser (login via Zustand só actualiza @/lib/api-client). */
   private bearerToken(): string | null {
-    if (typeof window !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       return localStorage.getItem('auth_token') || localStorage.getItem('token') || this.token;
     }
     return this.token;
