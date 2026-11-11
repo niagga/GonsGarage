@@ -86,7 +86,7 @@ export class ApiClient {
     this.baseURL = baseURL || `${getPublicApiOrigin()}/api/${API_VERSION}`;
     
     // ✅ Initialize token from localStorage (client-side only)
-    if (typeof window !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       this.token = localStorage.getItem('auth_token');
     }
   }
@@ -192,8 +192,8 @@ export class ApiClient {
       const { body, timeout: configTimeout, skipAuth: configSkipAuth, baseURL: configBaseURL, retry: configRetry, retryDelay: configRetryDelay, ...restConfig } = processedConfig;
 
       // ✅ Keep Authorization in sync with Zustand-persisted session (singleton may be stale after login)
-      if (typeof window !== 'undefined' && !configSkipAuth) {
-        this.token = window.localStorage.getItem('auth_token');
+      if (typeof localStorage !== 'undefined' && !configSkipAuth) {
+        this.token = localStorage.getItem('auth_token');
       }
       
       // ✅ Build complete URL
