@@ -274,6 +274,43 @@ describe('IssuedInvoicesStaffListPage create modal', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
+
+  it('prefills the amount when a completed repair is selected', async () => {
+    const user = userEvent.setup();
+    render(<IssuedInvoicesStaffListPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Nova fatura' })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: 'Nova fatura' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /cli@test\.com/ })).toBeInTheDocument();
+    });
+    await user.selectOptions(screen.getByLabelText('Cliente'), '22222222-2222-2222-2222-222222222222');
+    await user.selectOptions(screen.getByLabelText('Viatura'), 'cccccccc-cccc-cccc-cccc-cccccccccccc');
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /Revisão/ })).toBeInTheDocument();
+    });
+    await user.selectOptions(
+      screen.getByLabelText('Reparação concluída'),
+      'rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr',
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Valor')).toHaveValue('250');
+    });
+  });
+
+  it('prefills the amount from the repairId query parameter', async () => {
+    searchParamsString =
+      'create=1&customerId=22222222-2222-2222-2222-222222222222&carId=cccccccc-cccc-cccc-cccc-cccccccccccc&repairId=rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr';
+    render(<IssuedInvoicesStaffListPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Valor')).toHaveValue('250');
+    });
+  });
 });
 
 describe('IssuedInvoicesStaffListPage fiscalization summaries', () => {

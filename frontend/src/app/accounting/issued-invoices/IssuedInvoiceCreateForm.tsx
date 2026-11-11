@@ -48,6 +48,7 @@ export function IssuedInvoiceCreateForm({
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [repairId, setRepairId] = useState(initialRepairId);
   const [amount, setAmount] = useState('');
+  const [amountEdited, setAmountEdited] = useState(false);
   const [status, setStatus] = useState('open');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -94,11 +95,7 @@ export function IssuedInvoiceCreateForm({
   }, [clientQuery, loadClients]);
 
   useEffect(() => {
-    if (!customerId) {
-      setCars([]);
-      setCarId('');
-      return;
-    }
+    if (!customerId) return;
     let cancelled = false;
     void (async () => {
       const res = await carService.getCarsByOwner(customerId);
@@ -118,11 +115,7 @@ export function IssuedInvoiceCreateForm({
   }, [customerId, initialCarId]);
 
   useEffect(() => {
-    if (!carId) {
-      setRepairs([]);
-      setRepairId('');
-      return;
-    }
+    if (!carId) return;
     let cancelled = false;
     void (async () => {
       const { data, error: err } = await legacyApi.getRepairs(carId);
@@ -142,20 +135,19 @@ export function IssuedInvoiceCreateForm({
     };
   }, [carId, initialRepairId]);
 
-  useEffect(() => {
-    if (!repairId) return;
-    const r = repairs.find((x) => x.id === repairId);
-    if (r && r.cost > 0) {
-      setAmount(String(r.cost));
-    }
-  }, [repairId, repairs]);
-
   const completedRepairs = useMemo(
     () => repairs.filter((r) => r.status === 'completed'),
     [repairs],
   );
 
   const selectedRepair = repairs.find((r) => r.id === repairId);
+
+  // Derived instead of synced in an effect: the repair cost prefills the amount until
+  // the user types their own value. Deriving also keeps the `?repairId=` deep link
+  // working, where repairs arrive asynchronously after mount.
+  const suggestedAmount =
+    selectedRepair && selectedRepair.cost > 0 ? String(selectedRepair.cost) : '';
+  const amountValue = amountEdited ? amount : suggestedAmount;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -171,7 +163,7 @@ export function IssuedInvoiceCreateForm({
       setError('Só é possível faturar reparações concluídas.');
       return;
     }
-    const amt = Number.parseFloat(amount.replace(',', '.'));
+    const amt = Number.parseFloat(amountValue.replace(',', '.'));
     if (Number.isNaN(amt) || amt <= 0) {
       setError('Indique um valor numérico válido.');
       return;
@@ -218,8 +210,10 @@ export function IssuedInvoiceCreateForm({
             value={customerId}
             onChange={(ev) => {
               setCustomerId(ev.target.value);
+              setCars([]);
               setCarId('');
               setRepairId('');
+              setAmountEdited(false);
             }}
             required
           >
@@ -239,7 +233,9 @@ export function IssuedInvoiceCreateForm({
             value={carId}
             onChange={(ev) => {
               setCarId(ev.target.value);
+              setRepairs([]);
               setRepairId('');
+              setAmountEdited(false);
             }}
             required
             disabled={!customerId}
@@ -258,7 +254,10 @@ export function IssuedInvoiceCreateForm({
           <select
             id="ii-repair"
             value={repairId}
-            onChange={(ev) => setRepairId(ev.target.value)}
+            onChange={(ev) => {
+              setRepairId(ev.target.value);
+              setAmountEdited(false);
+            }}
             required
             disabled={!carId}
           >
@@ -278,7 +277,15 @@ export function IssuedInvoiceCreateForm({
 
         <div className={styles.field}>
           <label htmlFor="ii-amt">Valor</label>
-          <input id="ii-amt" value={amount} onChange={(ev) => setAmount(ev.target.value)} required />
+          <input
+            id="ii-amt"
+            value={amountValue}
+            onChange={(ev) => {
+              setAmount(ev.target.value);
+              setAmountEdited(true);
+            }}
+            required
+          />
         </div>
         <div className={styles.field}>
           <label htmlFor="ii-st">Estado</label>
