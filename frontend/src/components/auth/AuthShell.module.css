@@ -12,6 +12,12 @@
   width: 100%;
 }
 
+.themeRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+
 .card {
   background-color: var(--surface-panel);
   border: 1px solid var(--border-default);

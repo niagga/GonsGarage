@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { THEME_INLINE_SCRIPT } from "@/lib/theme-inline-script";
 import "./globals.css";
 
@@ -34,7 +33,6 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: THEME_INLINE_SCRIPT }}
         />
-        <ThemeSwitcher />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

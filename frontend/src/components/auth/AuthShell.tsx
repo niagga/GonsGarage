@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import ThemeSwitcher from '@/components/theme/ThemeSwitcher';
 import styles from './AuthShell.module.css';
 
 export type AuthShellBanner = {
@@ -20,6 +21,9 @@ export function AuthShell({ title, subtitle, banner, children }: Readonly<AuthSh
   return (
     <div className={styles.pageOuter}>
       <div className={styles.column}>
+        <div className={styles.themeRow}>
+          <ThemeSwitcher />
+        </div>
         <div className={styles.card}>
           <header className={styles.header}>
             <div className={styles.logoWrap}>
