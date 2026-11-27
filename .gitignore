@@ -17,3 +17,6 @@ backend/api.exe
 
 # Memoria local de Engram (estado de máquina, nunca commitear)
 .engram/
+
+# Salidas de verificación locales de cambios OpenSpec (_verify_wuN_*.out)
+openspec/changes/**/_verify_*.out

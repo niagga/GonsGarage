@@ -17,10 +17,12 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-9 w-9",
+        // 44px touch goal: every size keeps a >=44px box, so `size` controls
+        // visual weight (padding, type) instead of shrinking the target.
+        default: "min-h-11 px-4 py-2",
+        sm: "min-h-11 rounded-md px-3 text-xs",
+        lg: "min-h-12 rounded-md px-8",
+        icon: "min-h-11 min-w-11",
       },
     },
     defaultVariants: {

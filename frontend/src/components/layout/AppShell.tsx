@@ -6,6 +6,7 @@ import { BrandLogo } from '@/components/brand/BrandLogo';
 import type { User } from '@/types';
 import { canManageUsers, isClient, isWorkshopStaff } from '@/types/user';
 import { Button } from '@/components/ui/button';
+import ThemeSwitcher from '@/components/theme/ThemeSwitcher';
 import { cn } from '@/lib/utils';
 import styles from './AppShell.module.css';
 
@@ -81,6 +82,7 @@ export default function AppShell({
             </div>
           </Button>
           <div className={styles.userSection}>
+            <ThemeSwitcher />
             <span>
               Olá, {user.firstName} {user.lastName}
             </span>

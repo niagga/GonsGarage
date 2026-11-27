@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GonsGarage — Tema 03 · Alto contraste</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --page:#000000; --panel:#0A0A0A; --elevated:#141414; --muted:#1F1F1F; --header:#000000;
+    --border:#4A4A4A; --border-strong:#7A7A7A;
+    --text:#FFFFFF; --text-2:#E6E6E6; --text-3:#C4C4C4;
+    --primary:#FFD400; --primary-fg:#000000; --primary-hover:#FFE04D;
+    --success:#4ADE80; --warning:#FBBF24; --danger:#FF8A8A;
+    --info-bg:#0E2A3A; --success-bg:#0C2A1A; --warning-bg:#2E2400; --danger-bg:#33100F;
+    --radius-sm:0; --radius:0; --radius-md:0; --radius-lg:0;
+    --shadow:none;
+    --focus:0 0 0 3px #000000, 0 0 0 6px var(--primary);
+    --sans:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--sans); background:var(--page); color:var(--text); font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+
+  .shell { max-width:1200px; margin:0 auto; overflow-x:clip; }
+  header.top { background:var(--header); border-bottom:2px solid var(--border-strong); }
+  .headerRow { max-width:1200px; margin:0 auto; min-height:72px; display:flex; align-items:center; gap:1rem; padding:.625rem 1rem; }
+  .brand { display:flex; align-items:center; gap:.75rem; margin-right:auto; }
+  .mark { width:40px; height:40px; background:var(--primary); color:var(--primary-fg); display:grid; place-items:center; font-weight:900; font-size:.875rem; letter-spacing:-.02em; }
+  .brand b { display:block; font-size:1.0625rem; font-weight:800; letter-spacing:-.01em; line-height:1.2; }
+  .brand span { display:block; font-size:.75rem; color:var(--text-3); font-weight:600; }
+  .headerTools { display:flex; align-items:center; gap:.625rem; }
+  .themeSel { font-family:inherit; font-size:.8125rem; font-weight:600; min-height:2.75rem; padding:0 .75rem; background:var(--panel); color:var(--text); border:2px solid var(--border-strong); }
+  .themeSel:focus-visible { outline:none; box-shadow:var(--focus); }
+  .user { display:flex; align-items:center; gap:.625rem; padding:.25rem .75rem .25rem .25rem; border:2px solid var(--border); }
+  .avatar { width:32px; height:32px; background:var(--elevated); color:var(--text); display:grid; place-items:center; font-size:.75rem; font-weight:800; border:2px solid var(--border-strong); }
+  .user i { font-style:normal; font-size:.8125rem; color:var(--text-2); font-weight:600; }
+
+  nav.tabs { border-bottom:2px solid var(--border-strong); background:var(--header); }
+  .tabStrip { max-width:1200px; margin:0 auto; display:flex; flex-wrap:nowrap; gap:0; overflow-x:auto; padding:0 .5rem; }
+  .tabStrip a { flex:0 0 auto; display:inline-flex; align-items:center; min-height:2.75rem; padding:0 1rem; font-size:.875rem; font-weight:700; color:var(--text-3); text-decoration:none; border-bottom:4px solid transparent; }
+  .tabStrip a:hover { color:var(--text); background:var(--elevated); }
+  .tabStrip a:focus-visible { outline:none; box-shadow:var(--focus); }
+  .tabStrip a[aria-current="page"] { color:var(--primary); border-bottom-color:var(--primary); }
+
+  main.content { max-width:1200px; margin:0 auto; padding:1.75rem 1rem 4rem; }
+
+  .toolbar { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; padding-bottom:1rem; border-bottom:2px solid var(--border-strong); margin-bottom:1.5rem; }
+  .toolbar h1 { font-size:1.625rem; line-height:1.2; margin:0; letter-spacing:-.015em; font-weight:800; }
+  .toolbar p { margin:.375rem 0 0; font-size:.8125rem; color:var(--text-3); font-weight:600; }
+  .count { display:inline-block; min-width:1.75rem; text-align:center; padding:.05rem .4rem; margin-left:.5rem; background:var(--primary); color:var(--primary-fg); font-size:.875rem; font-weight:900; font-family:var(--mono); vertical-align:.1em; }
+  .toolbar .grow { margin-left:auto; }
+
+  .btn { font-family:inherit; font-size:.9375rem; font-weight:800; min-height:2.75rem; padding:0 1.125rem; border:2px solid transparent; display:inline-flex; align-items:center; justify-content:center; gap:.5rem; cursor:pointer; }
+  .btn:focus-visible { outline:none; box-shadow:var(--focus); }
+  .btn-primary { background:var(--primary); color:var(--primary-fg); border-color:var(--primary); }
+  .btn-primary:hover { background:var(--primary-hover); border-color:var(--primary-hover); }
+  .btn-ghost { background:transparent; color:var(--text); border-color:var(--border-strong); }
+  .btn-ghost:hover { background:var(--elevated); border-color:var(--text); }
+
+  .filters { display:flex; gap:.625rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+  .filters input, .filters select { font-family:inherit; font-size:.9375rem; font-weight:600; min-height:2.75rem; padding:0 .75rem; background:var(--panel); color:var(--text); border:2px solid var(--border-strong); }
+  .filters input { flex:1 1 16rem; }
+  .filters input::placeholder { color:var(--text-3); }
+  .filters input:focus-visible, .filters select:focus-visible { outline:none; border-color:var(--primary); box-shadow:var(--focus); }
+
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(13.5rem, 1fr)); gap:.625rem; margin-bottom:1.75rem; }
+  .kpi { background:var(--panel); border:2px solid var(--border-strong); padding:1rem 1.125rem; }
+  .kpi span { display:block; font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); font-weight:800; }
+  .kpi strong { display:block; font-family:var(--mono); font-size:1.625rem; line-height:1.15; margin-top:.5rem; letter-spacing:-.02em; font-weight:800; }
+  .kpi em { display:block; font-style:normal; font-size:.8125rem; margin-top:.375rem; color:var(--text-3); font-weight:600; }
+  .kpi.hot { border-color:var(--primary); }
+  .kpi.hot strong { color:var(--warning); }
+  .kpi.hot span { color:var(--primary); }
+  .kpi.ok strong { color:var(--success); }
+
+  .panel { background:var(--panel); border:2px solid var(--border-strong); }
+  .panelHead { display:flex; align-items:center; gap:.5rem; padding:.875rem 1.125rem; border-bottom:2px solid var(--border-strong); }
+  .panelHead h2 { margin:0; font-size:.8125rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text); font-weight:800; }
+  .panelHead .grow { margin-left:auto; }
+
+  .tableWrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.875rem; }
+  th { text-align:left; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text); background:var(--elevated); padding:.625rem 1rem; border-bottom:2px solid var(--border-strong); white-space:nowrap; font-weight:800; }
+  td { padding:.875rem 1rem; border-bottom:1px solid var(--border); color:var(--text-2); white-space:nowrap; font-weight:500; }
+  tbody tr:last-child td { border-bottom:0; }
+  td b { color:var(--text); font-weight:800; }
+  td .num { font-family:var(--mono); color:var(--text); font-weight:700; }
+  tbody tr:hover td { background:var(--elevated); }
+  tbody tr:focus-within td { background:var(--elevated); }
+
+  .chip { display:inline-flex; align-items:center; font-size:.6875rem; font-weight:900; padding:.15rem .5rem; border:2px solid; white-space:nowrap; text-transform:uppercase; letter-spacing:.06em; }
+  .c-info { background:var(--info-bg); color:var(--primary); border-color:var(--primary); }
+  .c-success { background:var(--success-bg); color:var(--success); border-color:var(--success); }
+  .c-warning { background:var(--warning-bg); color:var(--warning); border-color:var(--warning); }
+  .c-danger { background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
+  .c-neutral { background:var(--elevated); color:var(--text); border-color:var(--border-strong); }
+
+  .rowAction { font-family:inherit; font-size:.8125rem; font-weight:800; min-height:2.75rem; padding:0 .875rem; background:transparent; border:2px solid var(--border-strong); color:var(--text); cursor:pointer; }
+  .rowAction:hover { border-color:var(--primary); color:var(--primary); }
+  .rowAction:focus-visible { outline:none; box-shadow:var(--focus); }
+
+  .demo { margin-top:3.5rem; border-top:2px solid var(--border-strong); padding-top:2rem; }
+  .demo h2 { font-size:1.25rem; margin:0 0 .375rem; font-weight:800; letter-spacing:-.01em; }
+  .demo > p { margin:0 0 1.5rem; font-size:.875rem; color:var(--text-2); max-width:70ch; }
+  .frames { display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start; }
+  .frameLabel { font-size:.75rem; color:var(--text); font-weight:800; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.5rem; }
+  .frameShell { overflow:hidden; border:2px solid var(--border-strong); background:var(--page); }
+  .f768 { width:768px; max-width:100%; }
+  .f390 { width:390px; max-width:100%; }
+
+  .cq { container-type:inline-size; }
+  @container (max-width:820px) {
+    .cq .headerRow { flex-wrap:wrap; row-gap:.625rem; padding:.625rem .75rem; }
+    .cq .brand { flex:1 1 100%; }
+    .cq .headerTools { flex:1 1 100%; justify-content:flex-end; }
+    .cq .content { padding:1.25rem .75rem 2rem; }
+    .cq .toolbar h1 { font-size:1.375rem; }
+  }
+  @container (max-width:500px) {
+    .cq .toolbar { flex-direction:column; align-items:stretch; }
+    .cq .toolbar .grow { margin-left:0; }
+    .cq .toolbar .btn { min-height:2.75rem; width:100%; }
+    .cq .kpis { grid-template-columns:1fr; }
+    .cq .filters { flex-direction:column; }
+    .cq .filters input, .cq .filters select { flex:1 1 auto; width:100%; min-height:2.75rem; }
+    .cq .user i { display:none; }
+    .cq table, .cq thead, .cq tbody, .cq tr, .cq td { display:block; }
+    .cq thead { display:none; }
+    .cq tr { padding:.75rem .875rem; border-bottom:2px solid var(--border); }
+    .cq tbody tr:last-child { border-bottom:0; }
+    .cq td { display:flex; justify-content:space-between; align-items:center; gap:.75rem; padding:.3125rem 0; border:0; white-space:normal; }
+    .cq td::before { content:attr(data-l); font-size:.6875rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3); font-weight:800; }
+    .cq td[data-l="Orden"] { padding-bottom:.5rem; }
+    .cq td[data-l="Orden"]::before { content:none; }
+    .cq td[data-l="Orden"] b { font-family:var(--mono); font-size:1.0625rem; }
+    .cq .rowAction { width:100%; margin-top:.5rem; }
+    .cq td[data-l="Acciones"] { padding-top:.625rem; }
+    .cq td[data-l="Acciones"]::before { content:none; }
+  }
+  @media (max-width:768px) {
+    main.content { padding:1.25rem .75rem 3rem; }
+    .headerRow { flex-wrap:wrap; row-gap:.625rem; }
+    .brand { flex:1 1 100%; }
+    .headerTools { flex:1 1 100%; justify-content:flex-end; }
+  }
+  @media (max-width:480px) {
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .toolbar .grow { margin-left:0; }
+    .toolbar .btn { width:100%; }
+  }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+
+  .note { border:2px solid var(--primary); padding:.875rem 1rem; font-size:.875rem; color:var(--text); margin-top:1.75rem; }
+  .note b { color:var(--primary); font-weight:800; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="headerRow">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">GG</div>
+      <div><b>GonsGarage</b><span>Taller · Sucursal Centro</span></div>
+    </div>
+    <div class="headerTools">
+      <label for="theme" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Tema</label>
+      <select id="theme" class="themeSel"><option>Tema: alto contraste</option><option>Sistema</option><option>Nocturno</option></select>
+      <div class="user"><span class="avatar" aria-hidden="true">LP</span><i>Luciano Paredes · Admin</i></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Secciones del taller">
+  <div class="tabStrip">
+    <a href="#" aria-current="page">Taller</a><a href="#">Reparaciones</a><a href="#">Coches</a><a href="#">Citas</a><a href="#">Contabilidad</a><a href="#">Repuestos</a><a href="#">Usuarios</a><a href="#">Fiscal</a>
+  </div>
+</nav>
+
+<main class="content">
+  <div class="toolbar">
+    <div>
+      <h1>Órdenes en taller <span class="count">7</span></h1>
+      <p>Actualizado hace 4 minutos · turno mañana</p>
+    </div>
+    <div class="grow"></div>
+    <button class="btn btn-ghost" type="button">Exportar CSV</button>
+    <button class="btn btn-primary" type="button">Nueva orden</button>
+  </div>
+
+  <div class="filters">
+    <label for="q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Buscar</label>
+    <input id="q" type="search" placeholder="Buscar por patente, cliente u orden…">
+    <label for="estado" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Estado</label>
+    <select id="estado"><option>Todos los estados</option><option>En taller</option><option>Espera repuesto</option><option>Lista</option></select>
+    <label for="tec" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Técnico</label>
+    <select id="tec"><option>Cualquier técnico</option><option>L. Gómez</option><option>J. Paredes</option></select>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><span>En taller</span><strong>7</strong><em>2 ingresaron hoy</em></div>
+    <div class="kpi hot"><span>Espera repuesto</span><strong>3</strong><em>1 hace más de 5 días</em></div>
+    <div class="kpi ok"><span>Listas para entregar</span><strong>2</strong><em>Cliente avisado</em></div>
+    <div class="kpi"><span>Facturado del mes</span><strong>$2.480.000</strong><em>+12% vs. octubre</em></div>
+  </div>
+
+  <section class="panel" aria-labelledby="h-orders">
+    <div class="panelHead"><h2 id="h-orders">Órdenes abiertas</h2><div class="grow"></div><span class="chip c-info">Tiempo real</span></div>
+    <div class="tableWrap">
+      <table>
+        <thead><tr><th>Orden</th><th>Vehículo</th><th>Cliente</th><th>Estado</th><th>Técnico</th><th>Ingreso</th><th>Total</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr><td data-l="Orden"><b>#4821</b></td><td data-l="Vehículo">AB 123 CD · Fiat Cronos</td><td data-l="Cliente">Marta Ferreyra</td><td data-l="Estado"><span class="chip c-info">En taller</span></td><td data-l="Técnico">L. Gómez</td><td data-l="Ingreso">19 nov</td><td data-l="Total"><span class="num">$148.500</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir</button></td></tr>
+          <tr><td data-l="Orden"><b>#4820</b></td><td data-l="Vehículo">AC 456 EF · VW Gol</td><td data-l="Cliente">Ramiro Duarte</td><td data-l="Estado"><span class="chip c-success">Lista</span></td><td data-l="Técnico">J. Paredes</td><td data-l="Ingreso">18 nov</td><td data-l="Total"><span class="num">$62.300</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir</button></td></tr>
+          <tr><td data-l="Orden"><b>#4819</b></td><td data-l="Vehículo">AD 789 GH · Renault Sandero</td><td data-l="Cliente">Silvia Alcaraz</td><td data-l="Estado"><span class="chip c-warning">Espera repuesto</span></td><td data-l="Técnico">—</td><td data-l="Ingreso">14 nov</td><td data-l="Total"><span class="num">$91.700</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir</button></td></tr>
+          <tr><td data-l="Orden"><b>#4818</b></td><td data-l="Vehículo">AE 012 IJ · Toyota Etios</td><td data-l="Cliente">Diego Bustos</td><td data-l="Estado"><span class="chip c-danger">Anulada</span></td><td data-l="Técnico">L. Gómez</td><td data-l="Ingreso">12 nov</td><td data-l="Total"><span class="num">$0</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="note"><b>Criterio del tema:</b> legibilidad por encima de todo. Fondo negro puro, texto blanco y grises que nunca bajan de <span style="font-family:var(--mono)">#C4C4C4</span>, ámbar de alta visibilidad para la acción, esquinas rectas, bordes de 2 px, objetivos de 44 px en todos los controles y un anillo de foco de 6 px que no se puede perder. Es la mejor dirección bajo reflejo, para visión reducida y en un taller a plena luz del sol; es visualmente tosca y resigna toda la calidez de marca.</p>
+
+  <section class="demo" aria-labelledby="h-resp">
+    <h2 id="h-resp">Verificación de reflow</h2>
+    <p>Mismas piezas, layout estrecho. A 768 px el header apila marca y herramientas; a 390 px la toolbar pasa a columna con botones a ancho completo, los filtros ocupan todo el ancho y la tabla se vuelve filas apiladas sin perder ningún dato de decisión.</p>
+    <div class="frames">
+      <div>
+        <div class="frameLabel">768 px</div>
+        <div class="frameShell f768 cq">
+          <header class="top"><div class="headerRow">
+            <div class="brand"><div class="mark" aria-hidden="true">GG</div><div><b>GonsGarage</b><span>Taller · Centro</span></div></div>
+            <div class="headerTools"><select class="themeSel" aria-label="Tema"><option>Alto contraste</option></select><div class="user"><span class="avatar" aria-hidden="true">LP</span><i>Luciano Paredes</i></div></div>
+          </div></header>
+          <nav class="tabs" aria-label="Secciones angosto 768"><div class="tabStrip"><a href="#" aria-current="page">Taller</a><a href="#">Reparaciones</a><a href="#">Coches</a><a href="#">Citas</a><a href="#">Contabilidad</a><a href="#">Repuestos</a><a href="#">Usuarios</a></div></nav>
+          <main class="content">
+            <div class="toolbar"><div><h1>Órdenes en taller <span class="count">7</span></h1><p>Turno mañana</p></div><div class="grow"></div><button class="btn btn-primary" type="button">Nueva orden</button></div>
+            <div class="kpis"><div class="kpi"><span>En taller</span><strong>7</strong></div><div class="kpi hot"><span>Espera repuesto</span><strong>3</strong></div><div class="kpi ok"><span>Listas</span><strong>2</strong></div></div>
+            <section class="panel"><div class="tableWrap"><table>
+              <thead><tr><th>Orden</th><th>Vehículo</th><th>Estado</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr><td data-l="Orden"><b>#4821</b></td><td data-l="Vehículo">AB 123 CD</td><td data-l="Estado"><span class="chip c-info">En taller</span></td><td data-l="Total"><span class="num">$148.500</span></td></tr>
+                <tr><td data-l="Orden"><b>#4820</b></td><td data-l="Vehículo">AC 456 EF</td><td data-l="Estado"><span class="chip c-success">Lista</span></td><td data-l="Total"><span class="num">$62.300</span></td></tr>
+              </tbody>
+            </table></div></section>
+          </main>
+        </div>
+      </div>
+      <div>
+        <div class="frameLabel">390 px</div>
+        <div class="frameShell f390 cq">
+          <header class="top"><div class="headerRow">
+            <div class="brand"><div class="mark" aria-hidden="true">GG</div><div><b>GonsGarage</b><span>Centro</span></div></div>
+            <div class="headerTools"><select class="themeSel" aria-label="Tema"><option>Contraste</option></select><div class="user"><span class="avatar" aria-hidden="true">LP</span><i>Luciano</i></div></div>
+          </div></header>
+          <nav class="tabs" aria-label="Secciones angosto 390"><div class="tabStrip"><a href="#" aria-current="page">Taller</a><a href="#">Reparaciones</a><a href="#">Coches</a><a href="#">Citas</a><a href="#">Contab.</a></div></nav>
+          <main class="content">
+            <div class="toolbar"><div><h1>Órdenes <span class="count">7</span></h1><p>Turno mañana</p></div><div class="grow"></div><button class="btn btn-primary" type="button">Nueva orden</button></div>
+            <div class="filters"><input type="search" placeholder="Buscar patente o cliente…" aria-label="Buscar"><select aria-label="Estado"><option>Todos los estados</option></select></div>
+            <div class="kpis"><div class="kpi"><span>En taller</span><strong>7</strong><em>2 hoy</em></div><div class="kpi hot"><span>Espera repuesto</span><strong>3</strong></div></div>
+            <section class="panel"><div class="tableWrap"><table>
+              <thead><tr><th>Orden</th><th>Vehículo</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead>
+              <tbody>
+                <tr><td data-l="Orden"><b>#4821</b></td><td data-l="Vehículo">AB 123 CD · Fiat Cronos</td><td data-l="Cliente">Marta Ferreyra</td><td data-l="Estado"><span class="chip c-info">En taller</span></td><td data-l="Total"><span class="num">$148.500</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir orden</button></td></tr>
+                <tr><td data-l="Orden"><b>#4819</b></td><td data-l="Vehículo">AD 789 GH · Renault Sandero</td><td data-l="Cliente">Silvia Alcaraz</td><td data-l="Estado"><span class="chip c-warning">Espera repuesto</span></td><td data-l="Total"><span class="num">$91.700</span></td><td data-l="Acciones"><button class="rowAction" type="button">Abrir orden</button></td></tr>
+              </tbody>
+            </table></div></section>
+          </main>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -22,7 +22,7 @@ Sistema de gestión para **taller mecánico** (una instancia = un taller): usuar
 - **Swagger:** `GET /swagger/*any` (swaggo)
 - **Salud:** `GET /health`, `GET /ready`
 - **Prefijo API:** `/api/v1`
-- **CORS:** con `GIN_MODE=release`, orígenes = localhost:3000/3001 más **`CORS_ORIGINS`** (coma-separado). Ver `corsMiddleware` en `main.go`. Despliegue Docker/LAN: [`deploy/README.md`](./deploy/README.md).
+- **CORS:** con `GIN_MODE=release`, orígenes = localhost:3000/3001 más **`CORS_ORIGINS`** (coma-separado). Ver `corsMiddleware` en `main.go`. Despliegue Docker/LAN: [`deploy/README.md`](../deploy/README.md).
 
 ## Rutas API expuestas (resumen)
 

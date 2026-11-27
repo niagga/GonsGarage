@@ -79,17 +79,17 @@
 | ID | Tarea | Criterio de hecho |
 |----|--------|-------------------|
 | 4.1 | Definir **URL base** del front y del API (aunque sea IP + puerto) y anotarlas abajo | **Hecho** (repo) — bloque [Entorno remoto](#entorno-remoto-servidor-de-pruebas); mismo origen `http://192.168.1.100:8102` vía nginx. |
-| 4.2 | **Secretos:** `JWT_SECRET` fuerte; `DATABASE_URL` / Redis solo en el servidor (no en git) | **Hecho** (repo) — [`.env.prod.example`](../.env.prod.example), `.gitignore` → `.env.prod`; sección **Secretos** en [`deploy/README.md`](./deploy/README.md). Rellenar secretos reales solo en el servidor. |
-| 4.3 | **Backend:** build (`go build -o … ./cmd/api`) o imagen Docker; proceso bajo systemd/supervisor o compose en el servidor | **Hecho** (LAN, 2026-04-17) — imagen Docker + compose prod; smoke `curl …/health` y `/ready` OK vía nginx; criterios en [`deploy/README.md`](./deploy/README.md) §**Verificación**. |
+| 4.2 | **Secretos:** `JWT_SECRET` fuerte; `DATABASE_URL` / Redis solo en el servidor (no en git) | **Hecho** (repo) — [`.env.prod.example`](../.env.prod.example), `.gitignore` → `.env.prod`; sección **Secretos** en [`deploy/README.md`](../deploy/README.md). Rellenar secretos reales solo en el servidor. |
+| 4.3 | **Backend:** build (`go build -o … ./cmd/api`) o imagen Docker; proceso bajo systemd/supervisor o compose en el servidor | **Hecho** (LAN, 2026-04-17) — imagen Docker + compose prod; smoke `curl …/health` y `/ready` OK vía nginx; criterios en [`deploy/README.md`](../deploy/README.md) §**Verificación**. |
 | 4.4 | **Frontend:** `pnpm build` con `NEXT_PUBLIC_API_URL` apuntando al API del servidor; servir con lo que elijas (nginx, Node, etc.) | **Hecho** (LAN, 2026-04-17) — build en imagen + nginx; login y navegación (coche, cita, repairs en lectura donde aplique) contra `http://192.168.1.100:8102`; mismo doc §**Verificación**. |
-| 4.5 | **HTTPS** si el servidor es expuesto (certificado Let’s Encrypt o TLS detrás de proxy) | **Hecho** (doc) — excepción **HTTP en LAN** y cuándo pasar a TLS: [`deploy/README.md`](./deploy/README.md) §**HTTPS vs HTTP en LAN**. |
-| 4.6 | **Rollback:** una página o sección “cómo volver atrás” (versión anterior binario + migración si aplica) | **Hecho** (doc) — §**Rollback** en [`deploy/README.md`](./deploy/README.md). |
+| 4.5 | **HTTPS** si el servidor es expuesto (certificado Let’s Encrypt o TLS detrás de proxy) | **Hecho** (doc) — excepción **HTTP en LAN** y cuándo pasar a TLS: [`deploy/README.md`](../deploy/README.md) §**HTTPS vs HTTP en LAN**. |
+| 4.6 | **Rollback:** una página o sección “cómo volver atrás” (versión anterior binario + migración si aplica) | **Hecho** (doc) — §**Rollback** en [`deploy/README.md`](../deploy/README.md). |
 
 ### Entorno remoto (servidor de pruebas)
 
 - URL API (misma entrada nginx, ej.): `http://192.168.1.100:8102` — rutas bajo `/api/v1/...`, `/health`, `/swagger/`
 - URL frontend: `http://192.168.1.100:8102` — mismo origen; `NEXT_PUBLIC_API_URL` = esa base (sin `/api/v1`)
-- Notas (proveedor, SSH, etc.): plantilla Docker en [`deploy/README.md`](./deploy/README.md), [`docker-compose.prod.yml`](../docker-compose.prod.yml), Postgres en host (`DATABASE_URL` → `host.docker.internal` en el compose prod)
+- Notas (proveedor, SSH, etc.): plantilla Docker en [`deploy/README.md`](../deploy/README.md), [`docker-compose.prod.yml`](../docker-compose.prod.yml), Postgres en host (`DATABASE_URL` → `host.docker.internal` en el compose prod)
 
 ---
 
@@ -97,9 +97,9 @@
 
 | ID | Tarea | Criterio de hecho |
 |----|--------|-------------------|
-| 5.1 | **CORS:** origen permitido = URL real del front de pruebas (no `*` en `release` si podés evitarlo) | **Hecho** (doc) — `CORS_ORIGINS` en [`.env.prod.example`](../.env.prod.example) y criterio en [`deploy/README.md`](./deploy/README.md) §**CORS, `GIN_MODE=release` y `JWT_SECRET`**. |
+| 5.1 | **CORS:** origen permitido = URL real del front de pruebas (no `*` en `release` si podés evitarlo) | **Hecho** (doc) — `CORS_ORIGINS` en [`.env.prod.example`](../.env.prod.example) y criterio en [`deploy/README.md`](../deploy/README.md) §**CORS, `GIN_MODE=release` y `JWT_SECRET`**. |
 | 5.2 | **`GIN_MODE=release`** en el servidor de pruebas si simulás prod | **Hecho** (doc) — `GIN_MODE=release` en `.env.prod.example` y checklist servidor en `deploy/README.md` § anterior. |
-| 5.3 | **Backup BD:** comando o política mínima (pg_dump semanal, etc.) | **Hecho** (doc) — §**Backup de BD** en [`deploy/README.md`](./deploy/README.md) (`pg_dump` + política mínima). |
+| 5.3 | **Backup BD:** comando o política mínima (pg_dump semanal, etc.) | **Hecho** (doc) — §**Backup de BD** en [`deploy/README.md`](../deploy/README.md) (`pg_dump` + política mínima). |
 
 ---
 

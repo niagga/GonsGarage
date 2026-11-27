@@ -7,6 +7,7 @@ import { BrandLogo } from '@/components/brand/BrandLogo';
 import { BrandHeroBanner } from '@/components/brand/BrandHeroBanner';
 import styles from './landing.module.css';
 import { AppLoading } from '@/components/ui/AppLoading';
+import ThemeSwitcher from '@/components/theme/ThemeSwitcher';
 
 export default function LandingPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -134,6 +135,7 @@ export default function LandingPage() {
           </nav>
 
           <div className={styles.authButtons}>
+            <ThemeSwitcher />
             <button type="button" onClick={handleLogin} className={styles.loginButton}>
               Iniciar sessão
             </button>

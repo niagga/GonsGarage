@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GonsGarage — Design system</title>
+<style>
+  /* ---------- tokens: light (source of truth: frontend/src/styles/tokens.css) ---------- */
+  :root {
+    --brand-navy:#0a1628; --brand-navy-muted:#132337; --brand-steel:#334155;
+    --brand-accent:#1d4ed8; --brand-accent-soft:#3b82f6; --brand-signal:#dc2626;
+    --color-primary:#1d4ed8; --color-primary-hover:#1e40af; --color-secondary:#64748b;
+    --color-success:#059669; --color-warning:#d97706; --color-error:#dc2626;
+    --color-white:#ffffff; --color-black:#020617;
+    --g50:#f4f6f9; --g100:#eef2f7; --g200:#e2e8f0; --g300:#cbd5e1;
+    --g400:#94a3b8; --g500:#64748b; --g600:#475569; --g700:#334155;
+    --g800:#1e293b; --g900:#0f172a;
+    --surface-page:var(--g50); --surface-panel:#ffffff; --surface-elevated:#ffffff;
+    --surface-muted:var(--g100); --surface-header:#ffffff;
+    --border-default:#e2e8f0; --border-strong:#cbd5e1;
+    --text-primary:#0f172a; --text-secondary:#475569; --text-muted:#64748b;
+    --text-on-primary:#ffffff; --text-on-signal:#ffffff;
+    --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+    --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem;
+    --space-12:3rem; --space-16:4rem; --space-20:5rem;
+    --radius-sm:.125rem; --radius:.375rem; --radius-md:.5rem;
+    --radius-lg:.75rem; --radius-xl:1rem; --radius-full:9999px;
+    --shadow-sm:0 1px 2px 0 rgb(15 23 42 / .04);
+    --shadow:0 1px 3px 0 rgb(15 23 42 / .06), 0 1px 2px -1px rgb(15 23 42 / .06);
+    --shadow-md:0 4px 12px -2px rgb(15 23 42 / .08), 0 2px 6px -2px rgb(15 23 42 / .06);
+    --shadow-lg:0 12px 24px -4px rgb(15 23 42 / .1);
+    --transition-fast:150ms ease-in-out; --transition-base:250ms ease-in-out;
+    --focus-ring:0 0 0 3px rgb(37 99 235 / .25);
+    --ring-focus-input:0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent);
+    --chip-info-bg:color-mix(in srgb, var(--color-primary) 10%, var(--surface-panel));
+    --chip-info-fg:var(--brand-accent);
+    --chip-info-border:color-mix(in srgb, var(--color-primary) 28%, var(--border-default));
+    --chip-success-bg:color-mix(in srgb, var(--color-success) 12%, var(--surface-panel));
+    --chip-success-fg:color-mix(in srgb, var(--color-success) 55%, var(--g900));
+    --chip-success-border:color-mix(in srgb, var(--color-success) 32%, var(--border-default));
+    --chip-warning-bg:color-mix(in srgb, var(--color-warning) 14%, var(--surface-panel));
+    --chip-warning-fg:color-mix(in srgb, var(--color-warning) 70%, var(--g900));
+    --chip-warning-border:color-mix(in srgb, var(--color-warning) 38%, var(--border-default));
+    --chip-danger-bg:color-mix(in srgb, var(--color-error) 10%, var(--surface-panel));
+    --chip-danger-fg:var(--color-error);
+    --chip-danger-border:color-mix(in srgb, var(--color-error) 32%, var(--border-default));
+    --chip-neutral-bg:var(--surface-muted); --chip-neutral-fg:var(--text-secondary);
+    --chip-neutral-border:var(--border-default);
+    --app-loading-size-sm:1.25rem; --app-loading-size-md:1.75rem; --app-loading-size-lg:2.25rem;
+  }
+
+  /* ---------- tokens: dark (html[data-theme='dark'] in tokens.css) ---------- */
+  [data-theme="dark"] {
+    --color-primary:#38BDF8; --color-primary-hover:#5FCCFA; --color-secondary:#A9B7C6;
+    --color-success:#34D399; --color-warning:#F59E0B; --color-error:#F87171;
+    --color-white:#0B0F14; --color-black:#F2F6FA;
+    --g50:#0B0F14; --g100:#0E141A; --g200:#141C26; --g300:#1A232C;
+    --g400:#7E8C9B; --g500:#A9B7C6; --g600:#C6D0DB; --g700:#DCE4EC;
+    --g800:#EBF1F7; --g900:#E9F0F7;
+    --surface-page:#0B0F14; --surface-panel:#131A22; --surface-elevated:#1A232C;
+    --surface-muted:#0E141A; --surface-header:#101821;
+    --border-default:#253040; --border-strong:#36455A;
+    --text-primary:#E9F0F7; --text-secondary:#A9B7C6; --text-muted:#7E8C9B;
+    --text-on-primary:#041016; --text-on-signal:#ffffff;
+    --shadow-sm:0 1px 2px 0 rgb(0 0 0 / .2);
+    --shadow:0 4px 6px -1px rgb(0 0 0 / .3);
+    --shadow-md:0 10px 15px -3px rgb(0 0 0 / .4);
+    --shadow-lg:0 16px 40px -8px rgb(0 0 0 / .5);
+    --focus-ring:0 0 0 3px rgb(56 189 248 / .4);
+    --chip-info-fg:var(--color-primary);
+    --chip-success-fg:color-mix(in srgb, var(--color-success) 65%, var(--text-primary));
+    --chip-warning-fg:color-mix(in srgb, var(--color-warning) 55%, var(--text-primary));
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: var(--space-8) var(--space-6) var(--space-20); }
+  header.sys-head { border-bottom: 1px solid var(--border-default); padding-bottom: var(--space-6); margin-bottom: var(--space-10); }
+  h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 var(--space-3); }
+  h2 { font-size: 1.25rem; line-height: 1.3; margin: var(--space-16) 0 var(--space-2); letter-spacing: -.01em; }
+  h2:first-of-type { margin-top: var(--space-10); }
+  h3 { font-size: .8125rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin: var(--space-6) 0 var(--space-3); font-weight: 600; }
+  p.lede { color: var(--text-secondary); margin: 0; max-width: 72ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-4); font-size: .8125rem; color: var(--text-muted); }
+  .meta code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .75rem; background: var(--surface-muted); padding: .1rem .35rem; border-radius: var(--radius-sm); border: 1px solid var(--border-default); }
+
+  /* swatches */
+  .ramp { display: grid; grid-template-columns: repeat(11, 1fr); gap: var(--space-2); }
+  .sw { border-radius: var(--radius-md); border: 1px solid var(--border-default); overflow: hidden; background: var(--surface-panel); }
+  .sw .chip { height: 56px; }
+  .sw .lab { padding: var(--space-2); font-size: .6875rem; line-height: 1.3; }
+  .sw .lab b { display: block; font-weight: 600; color: var(--text-primary); }
+  .sw .lab span { color: var(--text-muted); font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .625rem; }
+
+  table.tok { width: 100%; border-collapse: collapse; font-size: .875rem; }
+  table.tok th, table.tok td { text-align: left; padding: var(--space-3); border-bottom: 1px solid var(--border-default); vertical-align: middle; }
+  table.tok th { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 600; }
+  table.tok td code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .8125rem; }
+  .pair { display: inline-flex; align-items: center; gap: var(--space-2); font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .75rem; color: var(--text-secondary); }
+  .dot { width: 14px; height: 14px; border-radius: var(--radius-full); border: 1px solid rgb(0 0 0 / .15); flex: 0 0 auto; }
+
+  /* panels in both themes */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  .panel { background: var(--surface-panel); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); }
+  .theme-tag { display: inline-flex; align-items: center; gap: var(--space-2); font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: var(--space-3); }
+  .surface-stack { display: grid; gap: var(--space-2); }
+  .surface-stack > div { border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-3); font-size: .75rem; display: flex; justify-content: space-between; gap: var(--space-3); }
+  .surface-stack code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .6875rem; color: var(--text-muted); }
+
+  /* type scale */
+  .scale > div { border-bottom: 1px solid var(--border-default); padding: var(--space-3) 0; display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; }
+  .scale > div:last-child { border-bottom: 0; }
+  .scale .spec { flex: 0 0 9rem; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .6875rem; color: var(--text-muted); }
+
+  /* spacing */
+  .spacing { display: grid; gap: var(--space-2); }
+  .spacing > div { display: flex; align-items: center; gap: var(--space-3); }
+  .spacing .bar { height: 12px; background: var(--color-primary); border-radius: var(--radius-sm); opacity: .75; }
+  .spacing .name { flex: 0 0 7rem; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .75rem; color: var(--text-secondary); }
+
+  /* radius + shadow */
+  .radius-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-3); }
+  .radius-grid > div { background: var(--surface-panel); border: 1px solid var(--border-strong); height: 72px; display: grid; place-items: center; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .6875rem; color: var(--text-muted); }
+  .shadow-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); }
+  .shadow-grid > div { background: var(--surface-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-4); font-size: .75rem; }
+  .shadow-grid code { display: block; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .6875rem; color: var(--text-muted); margin-bottom: var(--space-1); }
+
+  /* components */
+  .comp { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .btn { font-family: inherit; font-size: .875rem; font-weight: 500; min-height: 2.5rem; padding: 0 var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2); transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast); }
+  .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn-primary { background: var(--color-primary); color: var(--text-on-primary); }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-secondary { background: var(--surface-panel); color: var(--text-primary); border-color: var(--border-strong); }
+  .btn-secondary:hover { background: var(--surface-muted); }
+  .btn-danger { background: var(--color-error); color: var(--text-on-signal); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--color-error) 86%, #000); }
+  .btn-sm { min-height: 2rem; font-size: .8125rem; padding: 0 var(--space-3); }
+  .btn-lg { min-height: 2.75rem; font-size: 1rem; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+  .field { display: grid; gap: var(--space-1); max-width: 20rem; }
+  .field label { font-size: .8125rem; font-weight: 500; color: var(--text-secondary); }
+  .field input { font-family: inherit; font-size: .875rem; min-height: 2.5rem; padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--surface-panel); color: var(--text-primary); }
+  .field input::placeholder { color: var(--text-muted); }
+  .field input:focus-visible { outline: none; border-color: var(--color-primary); box-shadow: var(--ring-focus-input); }
+  .field .hint { font-size: .75rem; color: var(--text-muted); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .chip-s { display: inline-flex; align-items: center; gap: var(--space-2); font-size: .75rem; font-weight: 500; padding: .2rem var(--space-2); border-radius: var(--radius-full); border: 1px solid; }
+  .chip-s::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; }
+  .c-info { background: var(--chip-info-bg); color: var(--chip-info-fg); border-color: var(--chip-info-border); }
+  .c-success { background: var(--chip-success-bg); color: var(--chip-success-fg); border-color: var(--chip-success-border); }
+  .c-warning { background: var(--chip-warning-bg); color: var(--chip-warning-fg); border-color: var(--chip-warning-border); }
+  .c-danger { background: var(--chip-danger-bg); color: var(--chip-danger-fg); border-color: var(--chip-danger-border); }
+  .c-neutral { background: var(--chip-neutral-bg); color: var(--chip-neutral-fg); border-color: var(--chip-neutral-border); }
+
+  .tableWrap { overflow-x: auto; border: 1px solid var(--border-default); border-radius: var(--radius-md); }
+  table.data { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+  table.data th { text-align: left; font-size: .6875rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); background: var(--surface-muted); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-default); white-space: nowrap; }
+  table.data td { padding: var(--space-3); border-bottom: 1px solid var(--border-default); color: var(--text-secondary); white-space: nowrap; }
+  table.data tr:last-child td { border-bottom: 0; }
+  table.data td strong { color: var(--text-primary); font-weight: 600; }
+
+  .spinner { width: var(--app-loading-size-md); height: var(--app-loading-size-md); border-radius: var(--radius-full); border: 2px solid var(--border-default); border-top-color: var(--color-primary); animation: spin 800ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; border-top-color: var(--color-primary); } .btn { transition: none; } }
+
+  .note { border-left: 3px solid var(--color-warning); background: var(--surface-muted); border-radius: var(--radius-md); padding: var(--space-4); font-size: .875rem; color: var(--text-secondary); margin-top: var(--space-4); }
+  .note strong { color: var(--text-primary); }
+  .note ul { margin: var(--space-2) 0 0; padding-left: 1.15rem; }
+  .note li { margin-bottom: var(--space-1); }
+  code.inline { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .8125rem; background: var(--surface-muted); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: .05rem .3rem; }
+
+  @media (max-width: 900px) {
+    .split { grid-template-columns: 1fr; }
+    .ramp { grid-template-columns: repeat(4, 1fr); }
+    .shadow-grid { grid-template-columns: repeat(2, 1fr); }
+    .radius-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="sys-head">
+    <h1>GonsGarage · Design system</h1>
+    <p class="lede">Los tokens reales del proyecto, renderizados desde sus propias fuentes. Este tablero es la referencia obligatoria de cualquier artboard: colores, tipografía, espaciado, radios, sombras y las reglas de los componentes que existen hoy.</p>
+    <div class="meta">
+      <span>Sincronizado el <strong>27 nov 2026</strong></span>
+      <span>Fuentes: <code>tokens.css</code> <code>shadcn-theme.css</code> <code>tailwind.config.ts</code></span>
+      <span>Tema por atributo: <code>html[data-theme="dark"]</code></span>
+      <span>48 tokens de color · 11 de espaciado · 6 de radio · 4 de sombra</span>
+    </div>
+  </header>
+
+  <h2>Marca</h2>
+  <p class="lede">El bloque de marca define la personalidad: navy de base, azul de confianza para interacción, rojo solo para señalización y acciones destructivas.</p>
+  <h3>Swatches de marca</h3>
+  <div class="ramp" style="grid-template-columns:repeat(6,1fr)">
+    <div class="sw"><div class="chip" style="background:#0a1628"></div><div class="lab"><b>navy</b><span>#0a1628</span></div></div>
+    <div class="sw"><div class="chip" style="background:#132337"></div><div class="lab"><b>navy-muted</b><span>#132337</span></div></div>
+    <div class="sw"><div class="chip" style="background:#334155"></div><div class="lab"><b>steel</b><span>#334155</span></div></div>
+    <div class="sw"><div class="chip" style="background:#1d4ed8"></div><div class="lab"><b>accent</b><span>#1d4ed8</span></div></div>
+    <div class="sw"><div class="chip" style="background:#3b82f6"></div><div class="lab"><b>accent-soft</b><span>#3b82f6</span></div></div>
+    <div class="sw"><div class="chip" style="background:#dc2626"></div><div class="lab"><b>signal</b><span>#dc2626</span></div></div>
+  </div>
+
+  <h2>Colores semánticos</h2>
+  <p class="lede">Los mismos nombres resuelven valores distintos por tema. Nunca se escribe el hex en un componente: se usa el token.</p>
+  <table class="tok">
+    <thead><tr><th>Token</th><th>Claro</th><th>Oscuro</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><code>--color-primary</code></td><td><span class="pair"><i class="dot" style="background:#1d4ed8"></i>#1d4ed8</span></td><td><span class="pair"><i class="dot" style="background:#38BDF8"></i>#38BDF8</span></td><td>Interacción principal, enlaces, foco</td></tr>
+      <tr><td><code>--color-success</code></td><td><span class="pair"><i class="dot" style="background:#059669"></i>#059669</span></td><td><span class="pair"><i class="dot" style="background:#34D399"></i>#34D399</span></td><td>Completado, entregado, pagado</td></tr>
+      <tr><td><code>--color-warning</code></td><td><span class="pair"><i class="dot" style="background:#d97706"></i>#d97706</span></td><td><span class="pair"><i class="dot" style="background:#F59E0B"></i>#F59E0B</span></td><td>Pendiente, vence pronto, atención</td></tr>
+      <tr><td><code>--color-error</code></td><td><span class="pair"><i class="dot" style="background:#dc2626"></i>#dc2626</span></td><td><span class="pair"><i class="dot" style="background:#F87171"></i>#F87171</span></td><td>Error, anulado, acción destructiva</td></tr>
+      <tr><td><code>--color-secondary</code></td><td><span class="pair"><i class="dot" style="background:#64748b"></i>#64748b</span></td><td><span class="pair"><i class="dot" style="background:#A9B7C6"></i>#A9B7C6</span></td><td>Texto de apoyo, iconografía neutra</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Rampa neutra</h2>
+  <p class="lede">El tema oscuro no es un gris azulado: es un <strong>carbón cálido</strong> y la rampa se invierte — <code class="inline">--color-white</code> es el valor más oscuro. Cualquier componente que fije un gris a mano queda invertido en uno de los dos temas.</p>
+  <h3>Claro</h3>
+  <div class="ramp">
+    <div class="sw"><div class="chip" style="background:#f4f6f9"></div><div class="lab"><b>50</b><span>#f4f6f9</span></div></div>
+    <div class="sw"><div class="chip" style="background:#eef2f7"></div><div class="lab"><b>100</b><span>#eef2f7</span></div></div>
+    <div class="sw"><div class="chip" style="background:#e2e8f0"></div><div class="lab"><b>200</b><span>#e2e8f0</span></div></div>
+    <div class="sw"><div class="chip" style="background:#cbd5e1"></div><div class="lab"><b>300</b><span>#cbd5e1</span></div></div>
+    <div class="sw"><div class="chip" style="background:#94a3b8"></div><div class="lab"><b>400</b><span>#94a3b8</span></div></div>
+    <div class="sw"><div class="chip" style="background:#64748b"></div><div class="lab"><b>500</b><span>#64748b</span></div></div>
+    <div class="sw"><div class="chip" style="background:#475569"></div><div class="lab"><b>600</b><span>#475569</span></div></div>
+    <div class="sw"><div class="chip" style="background:#334155"></div><div class="lab"><b>700</b><span>#334155</span></div></div>
+    <div class="sw"><div class="chip" style="background:#1e293b"></div><div class="lab"><b>800</b><span>#1e293b</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0f172a"></div><div class="lab"><b>900</b><span>#0f172a</span></div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff"></div><div class="lab"><b>white</b><span>#ffffff</span></div></div>
+  </div>
+  <h3>Oscuro</h3>
+  <div class="ramp">
+    <div class="sw"><div class="chip" style="background:#0B0F14"></div><div class="lab"><b>50</b><span>#0B0F14</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0E141A"></div><div class="lab"><b>100</b><span>#0E141A</span></div></div>
+    <div class="sw"><div class="chip" style="background:#141C26"></div><div class="lab"><b>200</b><span>#141C26</span></div></div>
+    <div class="sw"><div class="chip" style="background:#1A232C"></div><div class="lab"><b>300</b><span>#1A232C</span></div></div>
+    <div class="sw"><div class="chip" style="background:#7E8C9B"></div><div class="lab"><b>400</b><span>#7E8C9B</span></div></div>
+    <div class="sw"><div class="chip" style="background:#A9B7C6"></div><div class="lab"><b>500</b><span>#A9B7C6</span></div></div>
+    <div class="sw"><div class="chip" style="background:#C6D0DB"></div><div class="lab"><b>600</b><span>#C6D0DB</span></div></div>
+    <div class="sw"><div class="chip" style="background:#DCE4EC"></div><div class="lab"><b>700</b><span>#DCE4EC</span></div></div>
+    <div class="sw"><div class="chip" style="background:#EBF1F7"></div><div class="lab"><b>800</b><span>#EBF1F7</span></div></div>
+    <div class="sw"><div class="chip" style="background:#E9F0F7"></div><div class="lab"><b>900</b><span>#E9F0F7</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0B0F14"></div><div class="lab"><b>white</b><span>#0B0F14</span></div></div>
+  </div>
+
+  <h2>Superficies y texto, en los dos temas</h2>
+  <p class="lede">La jerarquía se construye por elevación de superficie, no por bordes duros. Cada nivel sube un escalón desde la página.</p>
+  <div class="split">
+    <div>
+      <div class="theme-tag">◆ Tema claro</div>
+      <div class="panel" data-theme="light">
+        <div class="surface-stack">
+          <div style="background:var(--surface-page)"><code>--surface-page</code><span>#f4f6f9</span></div>
+          <div style="background:var(--surface-panel)"><code>--surface-panel</code><span>#ffffff</span></div>
+          <div style="background:var(--surface-elevated)"><code>--surface-elevated</code><span>#ffffff</span></div>
+          <div style="background:var(--surface-muted)"><code>--surface-muted</code><span>#eef2f7</span></div>
+        </div>
+        <h3 style="margin-top:var(--space-5)">Texto</h3>
+        <p style="color:var(--text-primary);margin:0 0 var(--space-1);font-weight:600">Primario — dato y título</p>
+        <p style="color:var(--text-secondary);margin:0 0 var(--space-1)">Secundario — descripción y apoyo</p>
+        <p style="color:var(--text-muted);margin:0">Terciario — metadato y placeholder</p>
+      </div>
+    </div>
+    <div>
+      <div class="theme-tag">◆ Tema oscuro</div>
+      <div class="panel" data-theme="dark">
+        <div class="surface-stack">
+          <div style="background:var(--surface-page)"><code>--surface-page</code><span>#0B0F14</span></div>
+          <div style="background:var(--surface-panel)"><code>--surface-panel</code><span>#131A22</span></div>
+          <div style="background:var(--surface-elevated)"><code>--surface-elevated</code><span>#1A232C</span></div>
+          <div style="background:var(--surface-muted)"><code>--surface-muted</code><span>#0E141A</span></div>
+        </div>
+        <h3 style="margin-top:var(--space-5)">Texto</h3>
+        <p style="color:var(--text-primary);margin:0 0 var(--space-1);font-weight:600">Primario — dato y título</p>
+        <p style="color:var(--text-secondary);margin:0 0 var(--space-1)">Secundario — descripción y apoyo</p>
+        <p style="color:var(--text-muted);margin:0">Terciario — metadato y placeholder</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Tipografía</h2>
+  <p class="lede">No hay escala declarada como token: los tamaños salen de la escala por defecto de Tailwind y del CSS de cada módulo. La familia sí es un token, y resuelve <strong>Geist</strong> vía <code class="inline">next/font</code>; aquí se muestra su stack de fallback porque el canvas no admite fuentes externas.</p>
+  <div class="panel">
+    <div class="scale">
+      <div><span class="spec">2rem / 1.15 · 700</span><span style="font-size:2rem;font-weight:700;letter-spacing:-.02em">Orden de reparación 4821</span></div>
+      <div><span class="spec">1.5rem / 1.25 · 600</span><span style="font-size:1.5rem;font-weight:600;letter-spacing:-.01em">Facturación emitida</span></div>
+      <div><span class="spec">1.25rem / 1.3 · 600</span><span style="font-size:1.25rem;font-weight:600">Repuestos con stock bajo</span></div>
+      <div><span class="spec">1rem / 1.5 · 400</span><span style="font-size:1rem">Cuerpo: el cliente confirmó la cita para el martes a las 9:30.</span></div>
+      <div><span class="spec">0.875rem / 1.5 · 400</span><span style="font-size:.875rem;color:var(--text-secondary)">Apoyo: última actualización hace 4 minutos.</span></div>
+      <div><span class="spec">0.75rem / 1.4 · 600 · caps</span><span style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Etiqueta de tabla</span></div>
+      <div><span class="spec">mono · 0.875rem</span><span style="font-family:ui-monospace,'SFMono-Regular',Consolas,monospace;font-size:.875rem">PAT-4471-B · $148.500,00</span></div>
+    </div>
+  </div>
+
+  <h2>Espaciado</h2>
+  <p class="lede">Escala de once pasos sobre una base de 4px. El shell usa <code class="inline">--space-6</code> vertical y <code class="inline">--space-4</code> horizontal en el contenido principal.</p>
+  <div class="panel spacing">
+    <div><span class="name">--space-1 · 4</span><span class="bar" style="width:4px"></span></div>
+    <div><span class="name">--space-2 · 8</span><span class="bar" style="width:8px"></span></div>
+    <div><span class="name">--space-3 · 12</span><span class="bar" style="width:12px"></span></div>
+    <div><span class="name">--space-4 · 16</span><span class="bar" style="width:16px"></span></div>
+    <div><span class="name">--space-5 · 20</span><span class="bar" style="width:20px"></span></div>
+    <div><span class="name">--space-6 · 24</span><span class="bar" style="width:24px"></span></div>
+    <div><span class="name">--space-8 · 32</span><span class="bar" style="width:32px"></span></div>
+    <div><span class="name">--space-12 · 48</span><span class="bar" style="width:48px"></span></div>
+    <div><span class="name">--space-20 · 80</span><span class="bar" style="width:80px"></span></div>
+  </div>
+
+  <h2>Radios y sombras</h2>
+  <div class="split">
+    <div class="panel">
+      <h3 style="margin-top:0">Radio</h3>
+      <div class="radius-grid">
+        <div style="border-radius:.125rem">sm</div>
+        <div style="border-radius:.375rem">base</div>
+        <div style="border-radius:.5rem">md</div>
+        <div style="border-radius:.75rem">lg</div>
+        <div style="border-radius:1rem">xl</div>
+        <div style="border-radius:9999px">full</div>
+      </div>
+      <div class="note" style="margin-top:var(--space-4)">
+        <strong>Conflicto detectado:</strong> <code class="inline">--radius</code> se declara dos veces — <code class="inline">0.375rem</code> en <code class="inline">tokens.css</code> y <code class="inline">0.5rem</code> en <code class="inline">shadcn-theme.css</code>. Gana el último import.
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Sombra</h3>
+      <div class="shadow-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div style="box-shadow:var(--shadow-sm)"><code>sm</code>Tarjeta en reposo</div>
+        <div style="box-shadow:var(--shadow)"><code>base</code>Tarjeta elevada</div>
+        <div style="box-shadow:var(--shadow-md)"><code>md</code>Popover y menú</div>
+        <div style="box-shadow:var(--shadow-lg)"><code>lg</code>Diálogo modal</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Componentes</h2>
+  <p class="lede">Los primitivos que existen de verdad en <code class="inline">frontend/src/components/</code>. Las alturas marcadas son las declaradas hoy, no las ideales.</p>
+
+  <h3>Botones</h3>
+  <div class="split">
+    <div class="panel" data-theme="light">
+      <div class="theme-tag">◆ Claro</div>
+      <div class="comp">
+        <button class="btn btn-primary">Crear reparación</button>
+        <button class="btn btn-secondary">Cancelar</button>
+        <button class="btn btn-danger">Anular factura</button>
+        <button class="btn btn-primary" disabled>Guardando…</button>
+      </div>
+      <div class="comp" style="margin-top:var(--space-3)">
+        <button class="btn btn-secondary btn-sm">sm · 32px</button>
+        <button class="btn btn-primary">base · 40px</button>
+        <button class="btn btn-primary btn-lg">lg · 44px</button>
+      </div>
+      <p class="hint" style="font-size:.75rem;color:var(--text-muted);margin:var(--space-3) 0 0">Foco visible: anillo de 3px con <code class="inline">--focus-ring</code>. Probá con Tab.</p>
+    </div>
+    <div class="panel" data-theme="dark">
+      <div class="theme-tag">◆ Oscuro</div>
+      <div class="comp">
+        <button class="btn btn-primary">Crear reparación</button>
+        <button class="btn btn-secondary">Cancelar</button>
+        <button class="btn btn-danger">Anular factura</button>
+        <button class="btn btn-primary" disabled>Guardando…</button>
+      </div>
+      <div class="comp" style="margin-top:var(--space-3)">
+        <button class="btn btn-secondary btn-sm">sm · 32px</button>
+        <button class="btn btn-primary">base · 40px</button>
+        <button class="btn btn-primary btn-lg">lg · 44px</button>
+      </div>
+      <p class="hint" style="font-size:.75rem;color:var(--text-muted);margin:var(--space-3) 0 0">En oscuro, <code class="inline">--text-on-primary</code> se invierte a casi negro sobre azul claro.</p>
+    </div>
+  </div>
+
+  <h3>Campos y chips de estado</h3>
+  <div class="split">
+    <div class="panel" data-theme="light">
+      <div class="theme-tag">◆ Claro</div>
+      <div class="field">
+        <label for="i1">Patente del vehículo</label>
+        <input id="i1" placeholder="AB123CD">
+        <span class="hint">Formato Mercosur, sin espacios.</span>
+      </div>
+      <div class="chips" style="margin-top:var(--space-4)">
+        <span class="chip-s c-neutral">Borrador</span>
+        <span class="chip-s c-info">En taller</span>
+        <span class="chip-s c-success">Entregado</span>
+        <span class="chip-s c-warning">Vence en 3 días</span>
+        <span class="chip-s c-danger">Anulado</span>
+      </div>
+    </div>
+    <div class="panel" data-theme="dark">
+      <div class="theme-tag">◆ Oscuro</div>
+      <div class="field">
+        <label for="i2">Patente del vehículo</label>
+        <input id="i2" placeholder="AB123CD">
+        <span class="hint">Formato Mercosur, sin espacios.</span>
+      </div>
+      <div class="chips" style="margin-top:var(--space-4)">
+        <span class="chip-s c-neutral">Borrador</span>
+        <span class="chip-s c-info">En taller</span>
+        <span class="chip-s c-success">Entregado</span>
+        <span class="chip-s c-warning">Vence en 3 días</span>
+        <span class="chip-s c-danger">Anulado</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Tabla de datos con contenedor de scroll</h3>
+  <p class="lede" style="margin-bottom:var(--space-3);font-size:.875rem">La regla del proyecto: toda tabla vive dentro de un <code class="inline">.tableWrap</code> con <code class="inline">overflow-x: auto</code>. Sin eso, en un teléfono las columnas se comprimen en lugar de desplazarse.</p>
+  <div class="panel" data-theme="dark" style="padding:var(--space-4)">
+    <div class="theme-tag">◆ Oscuro · tabla de reparaciones</div>
+    <div class="tableWrap">
+      <table class="data">
+        <thead><tr><th>Orden</th><th>Vehículo</th><th>Cliente</th><th>Estado</th><th>Técnico</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td><strong>#4821</strong></td><td>AB123CD</td><td>Marta Ferreyra</td><td><span class="chip-s c-info">En taller</span></td><td>L. Gómez</td><td>$148.500</td></tr>
+          <tr><td><strong>#4820</strong></td><td>AC456EF</td><td>Ramiro Duarte</td><td><span class="chip-s c-success">Entregado</span></td><td>J. Paredes</td><td>$62.300</td></tr>
+          <tr><td><strong>#4819</strong></td><td>AD789GH</td><td>Silvia Alcaraz</td><td><span class="chip-s c-warning">Espera repuesto</span></td><td>—</td><td>$91.700</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Estados vacío, carga y error</h3>
+  <div class="split">
+    <div class="panel" data-theme="light">
+      <div class="theme-tag">◆ Claro · vacío</div>
+      <div style="border:1px dashed var(--border-strong);border-radius:var(--radius-md);padding:var(--space-8) var(--space-4);text-align:center">
+        <p style="margin:0 0 var(--space-1);font-weight:600">Todavía no hay facturas emitidas</p>
+        <p style="margin:0 0 var(--space-4);font-size:.875rem;color:var(--text-secondary)">Cuando emitas la primera, aparece acá con su estado fiscal.</p>
+        <button class="btn btn-primary btn-sm">Emitir factura</button>
+      </div>
+    </div>
+    <div class="panel" data-theme="dark">
+      <div class="theme-tag">◆ Oscuro · carga y error</div>
+      <div class="comp" style="margin-bottom:var(--space-4)"><span class="spinner" role="status" aria-label="Cargando"></span><span style="font-size:.875rem;color:var(--text-secondary)">Cargando órdenes del taller…</span></div>
+      <div style="border:1px solid var(--chip-danger-border);background:var(--chip-danger-bg);border-radius:var(--radius-md);padding:var(--space-3);font-size:.875rem;color:var(--chip-danger-fg)">
+        <strong>No se pudo guardar.</strong> Tu texto sigue acá. Reintentar es seguro: no se envió nada.
+      </div>
+    </div>
+  </div>
+
+  <h2>Límites conocidos del sistema</h2>
+  <div class="note">
+    <strong>Lo que este tablero documenta y no oculta:</strong>
+    <ul>
+      <li>No existe sidebar en ninguna ruta: el shell es header + tira de tabs con scroll horizontal + contenido centrado a 1200px.</li>
+      <li>Los controles de shadcn miden <code class="inline">h-9</code> (36px) y los inputs igual; el objetivo táctil de 44px solo se alcanza con <code class="inline">lg</code> y con la tira de navegación (2.75rem).</li>
+      <li>No hay componente de tabla ni de tarjeta: cada página duplica su marcado. <code class="inline">Card.module.css</code> existe sin <code class="inline">Card.tsx</code>.</li>
+      <li><code class="inline">dark:</code> de Tailwind está configurado pero no se usa: el tema es el atributo <code class="inline">data-theme</code>.</li>
+      <li>Ningún <code class="inline">.tableWrap</code> declara <code class="inline">min-width</code> en la tabla, así que las columnas siempre se comprimen antes de desplazarse.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 ## Context
 Shadcn-style canonical primitives in `frontend/src/components/ui/`, mapped to brand tokens.
 
-**Primary specification:** [openspec/specs/ui-component-system/spec.md](openspec/specs/ui-component-system/spec.md)
+**Primary specification:** [openspec/specs/ui-component-system/spec.md](../openspec/specs/ui-component-system/spec.md)
 
 ## Traceability Matrix
 

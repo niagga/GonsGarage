@@ -65,10 +65,22 @@
   color: var(--text-primary);
 }
 
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+}
+
+.tableWrap .table {
+  /* Sin un mínimo, en el teléfono las columnas se comprimen en vez de desplazarse. */
+  min-width: 34rem;
+  margin-top: 0;
 }
 
 .table th,

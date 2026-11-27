@@ -7,6 +7,27 @@ globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
+// jsdom does not implement `matchMedia`, every browser does, and the theme
+// switcher reads `prefers-color-scheme` as soon as it mounts in a shell header.
+// Same rationale as the Web Storage shim below: fill the gap the environment
+// lacks rather than weakening the component.
+if (typeof globalThis.matchMedia !== 'function') {
+  Object.defineProperty(globalThis, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string): MediaQueryList => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  });
+}
+
 // Node 22+ exposes a global `localStorage` getter that stays `undefined` unless the
 // process runs with --experimental-webstorage. Vitest's jsdom environment assigns
 // `window = globalThis`, so that Node getter shadows jsdom's own Web Storage and

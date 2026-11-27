@@ -11,7 +11,7 @@ This task tracks the documentation and traceability of the **P1 Accounting** pro
 ## Action Plan
 1. [x] Audit existing links from MVP v1 closure docs to the P1 change set. (Completed)
 2. [x] Verify glossary definition: *Invoices* (received) vs *Billing* (emitted). (Completed)
-3. [ ] Create a consolidated traceability document (in ODD format) linking `invoices`, `billing`, and `suppliers` specs to the P1 implementation scope.
+3. [x] Create a consolidated traceability document (in ODD format) linking `invoices`, `billing`, and `suppliers` specs to the P1 implementation scope. — Delivered as `docs/p1-accounting-traceability.md` (28 lines: glossary, P1 scope table, archive reference, spec links).
 
 ## Next Step
 - Module blindado con RDD.
