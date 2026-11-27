@@ -8,5 +8,18 @@ phases:
   design: skipped
   tasks: pending
   apply: pending
-  verify: complete
+  # Corrected 2026-11-27: this phase was recorded as `complete`, but
+  # `verify-report.md` verdict is FAIL ("no es verificable ... falta `tasks.md`"),
+  # and the same report records the phase as `pending`. The change has only
+  # `proposal.md` + `state.yaml`: no `tasks.md`, no `design.md`, no `apply-progress.md`,
+  # no `specs/`.
+  verify: pending
   archive: pending
+# Disposition (2026-11-27): the in-repo scope of `proposal.md` is delivered and was
+# reconciled directly: `docs/mvp-minimum-phases.md` Fase C coherent with the checklist,
+# `docs/mvp-solo-checklist.md` Fase 6 carrying the explicit "CI->servidor: opcional / no
+# priorizado" line, `docs/roadmap.md` Fase 0 linking the Arnela matrix, and Fase 4/5
+# boxes corrected against the code. What remains is outside this repository: creating
+# the GitHub tracker issue from `docs/github-issue-p1-employees-admin.md` and the Arnela
+# P2 issues. Those live in `docs/mvp-next-steps.md`, so this change has no further
+# in-repo work. Archiving it is a pending owner decision, not a verification pass.

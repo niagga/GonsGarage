@@ -3,9 +3,9 @@
 ## Context
 P1 **invoices** in the catalogue are documents **received** by the workshop (accounts payable / purchases). They are not client-emitted invoices and not payroll/IRS billing.
 
-**Primary specification:** [openspec/specs/invoices/spec.md](openspec/specs/invoices/spec.md)
+**Primary specification:** [openspec/specs/invoices/spec.md](../openspec/specs/invoices/spec.md)
 
-**Reference archive:** [openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/](openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/)
+**Reference archive:** [openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/](../openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/)
 
 Related: [docs/billing-traceability.md](./billing-traceability.md)
 

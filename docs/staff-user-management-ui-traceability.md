@@ -3,9 +3,9 @@
 ## Context
 Staff who `canManageUsers` (`admin`/`manager`) reach `/admin/users` from AppShell without typing the URL.
 
-**Primary specification:** [openspec/specs/staff-user-management-ui/spec.md](openspec/specs/staff-user-management-ui/spec.md)
+**Primary specification:** [openspec/specs/staff-user-management-ui/spec.md](../openspec/specs/staff-user-management-ui/spec.md)
 
-**Archive:** [openspec/changes/archive/2026-04-21-ui-admin-users-discoverability/](openspec/changes/archive/2026-04-21-ui-admin-users-discoverability/)
+**Archive:** [openspec/changes/archive/2026-04-21-ui-admin-users-discoverability/](../openspec/changes/archive/2026-04-21-ui-admin-users-discoverability/)
 
 ## Traceability Matrix
 

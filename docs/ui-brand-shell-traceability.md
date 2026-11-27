@@ -3,7 +3,7 @@
 ## Context
 Brand palette as a single source of truth, plus light/dark coherence on cars and appointments.
 
-**Primary specification:** [openspec/specs/ui-brand-shell/spec.md](openspec/specs/ui-brand-shell/spec.md)
+**Primary specification:** [openspec/specs/ui-brand-shell/spec.md](../openspec/specs/ui-brand-shell/spec.md)
 
 ## Traceability Matrix
 

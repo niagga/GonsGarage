@@ -3,11 +3,11 @@
 ## Context
 This document provides a consolidated traceability overview for the `parts-inventory` module. It links the catalogue specification, archived OpenSpec changes, and the audited implementation surfaces.
 
-**Primary specification:** [openspec/specs/parts-inventory/spec.md](openspec/specs/parts-inventory/spec.md)
+**Primary specification:** [openspec/specs/parts-inventory/spec.md](../openspec/specs/parts-inventory/spec.md)
 
 **Reference archives:**
-- [openspec/changes/archive/2026-04-24-spare-parts-inventory/](openspec/changes/archive/2026-04-24-spare-parts-inventory/) — catalogue promotion (stock, UoM, barcode, role gate)
-- [openspec/changes/archive/2026-04-27-ui-homogeneity-modal-workshop-parts/](openspec/changes/archive/2026-04-27-ui-homogeneity-modal-workshop-parts/) — list-first create flow (modal / query)
+- [openspec/changes/archive/2026-04-24-spare-parts-inventory/](../openspec/changes/archive/2026-04-24-spare-parts-inventory/) — catalogue promotion (stock, UoM, barcode, role gate)
+- [openspec/changes/archive/2026-04-27-ui-homogeneity-modal-workshop-parts/](../openspec/changes/archive/2026-04-27-ui-homogeneity-modal-workshop-parts/) — list-first create flow (modal / query)
 
 ## Glossary
 - **Part item:** Inventory spare with stable id, internal code/reference, brand, name, quantity ≥ 0, and a closed UoM set (`unit`, `liter`).
@@ -32,4 +32,4 @@ The module covers:
 
 ## Related Documentation
 - Working ODD task: [odd/tasks/parts-inventory.md](odd/tasks/parts-inventory.md)
-- Role catalogue: [openspec/specs/mvp-role-access/](openspec/specs/mvp-role-access/)
+- Role catalogue: [openspec/specs/mvp-role-access/](../openspec/specs/mvp-role-access/)
