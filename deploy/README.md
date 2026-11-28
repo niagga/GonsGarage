@@ -70,26 +70,28 @@ bash scripts/deploy-prod.sh status
 Solo si necesitás empujar el working tree local sin pasar por Git (emergencia). Es más lento y no deja un SHA limpio.
 
 1. **`git pull`** en el clon local.
-2. **`.\deploy.ps1`** en PowerShell desde la raíz del repo (copia `backend/`, `frontend/`, `nginx/`, compose; no copia `.git`).
+2. **`.\deploy.ps1 -DryRun`** primero: corre las guardas y muestra el comando compose y el bloque que se ejecutaría en el servidor, sin tocar la red.
+3. **`.\deploy.ps1`** en PowerShell desde la raíz del repo (copia `backend/`, `frontend/`, `nginx/` y `docker-compose.prod.yml`; no copia `.git` ni el override de red Arnela).
 
-Si `DATABASE_URL` usa `arnela-postgres`, en `deploy.ps1` dejá `$COMPOSE_OVERRIDE = "docker-compose.prod.arnela-network.yml"`.
+`deploy.ps1` aplica **las mismas guardas** que `scripts/deploy-prod.sh` (ver la sección siguiente). `-ComposeOverride` existe sólo para casos puntuales: un valor que acople Arnela se rechaza con exit 1 antes de copiar nada.
 
 ---
 
 ## Script del servidor e aislamiento de Arnela
 
-Tras el cutover **P0-T1**, GonsGarage PROD usa su propio servicio `postgres` en `docker-compose.prod.yml`.  
-`scripts/deploy-prod.sh` **rechaza**:
+Tras el cutover **P0-T1**, GonsGarage PROD usa su propio servicio `postgres` en `docker-compose.prod.yml`. Ambos caminos de deploy —`scripts/deploy-prod.sh` en el servidor y `deploy.ps1` desde tu PC— **rechazan**:
 
 - `COMPOSE_OVERRIDE` que contenga `arnela`
 - `DATABASE_URL` con host `arnela-postgres`
 - compose sin servicio `postgres`
 
-El fichero `docker-compose.prod.arnela-network.yml` queda como **legado** (no usarlo en deploys normales).
+`deploy.ps1` valida el override en tu máquina (guarda local) y además ejecuta la guarda de `.env.prod` y del compose **en el servidor antes de cada `up`**; si algo no cumple, el deploy no se aplica.
+
+El fichero `docker-compose.prod.arnela-network.yml` queda como **legado**: no se copia al servidor y no hay camino soportado que lo use en producción. Si `.env.prod` todavía apunta a `arnela-postgres`, el primer paso es el cutover de `DATABASE_URL` al servicio `postgres`; el incidente y su contexto están en [mvp-next-steps](../docs/mvp-next-steps.md#incidente-dns-arnela-postgres).
 
 ## Paridad Arnela (checklist histórico)
 
-1. **Red Docker** — [Opción B (misma red que Arnela)](#opción-b-recomendada-misma-red-docker-que-arnela); en el servidor, `export COMPOSE_OVERRIDE=…` antes del script bash, o `$COMPOSE_OVERRIDE` en `deploy.ps1`.
+1. **Red Docker** — **cerrado en producción.** La [Opción B (misma red que Arnela)](#opción-b-histórico-misma-red-docker-que-arnela) queda como histórico pre-P0-T1: `scripts/deploy-prod.sh` y `deploy.ps1` rechazan cualquier `COMPOSE_OVERRIDE` que acople Arnela.
 2. **`DATABASE_URL`** — Host resoluble desde el contenedor del API; [Postgres compartido con Arnela](#postgres-compartido-con-arnela-mismo-homeos). Si ves *lookup arnela-postgres*, revisá también [Incidente DNS en mvp-next-steps](../docs/mvp-next-steps.md#incidente-dns-arnela-postgres).
 3. **`CORS_ORIGINS` / `GIN_MODE` / `JWT_SECRET`** — [CORS, `GIN_MODE=release` y `JWT_SECRET`](#cors-gin_moderelease-y-jwt_secret-checklist-51-52).
 4. **`/health` y `/ready`** — [Verificación tras el primer `up`](#verificación-tras-el-primer-up-43--44).
@@ -112,7 +114,7 @@ Archivos en la **raíz del repo**:
 | [`nginx/default.conf`](../nginx/default.conf) | `/` → front, `/api/` y `/swagger/` → API. |
 | [`backend/Dockerfile`](../backend/Dockerfile) | Binario `gonsgarage-api`. |
 | [`frontend/Dockerfile`](../frontend/Dockerfile) | Activa `DOCKER_BUILD=1` para `output: "standalone"` (solo en build Linux/Docker; `pnpm build` local en Windows sigue sin standalone). |
-| [`docker-compose.prod.arnela-network.yml`](../docker-compose.prod.arnela-network.yml) | **Opción B (recomendada con Arnela):** une el API a la red Docker de Arnela y usá `arnela-postgres` como host en `DATABASE_URL`. |
+| [`docker-compose.prod.arnela-network.yml`](../docker-compose.prod.arnela-network.yml) | **Legado (pre-P0-T1):** unía el API a la red Docker de Arnela con `arnela-postgres` como host. Rechazado por las guardas de `scripts/deploy-prod.sh` y `deploy.ps1`; se conserva sólo como referencia histórica. |
 
 
 ## Fiscal integration (dark launch)
@@ -134,10 +136,11 @@ Core `/ready` remains PostgreSQL-only; fiscal provider health is exposed at `/fi
 
 ## Postgres compartido con Arnela (mismo `homeos`)
 
+> **Histórico (pre-P0-T1).** Producción ya no comparte Postgres con Arnela: el stack usa su propio servicio `postgres`. Esta sección explica el incidente y las opciones que se evaluaron en su momento; los comandos con `-f docker-compose.prod.arnela-network.yml` **no** están soportados hoy y las guardas de deploy los rechazan.
 
 Si `docker ps` muestra `arnela-postgres` con **`5432/tcp` sin** `0.0.0.0:5432->…`, el Postgres **no está publicado en el host**: por eso fallan `host.docker.internal`, `172.17.0.1` y la IP LAN.
 
-### Opción **B** (recomendada): misma red Docker que Arnela
+### Opción **B** (histórico): misma red Docker que Arnela
 
 - No abrís el puerto 5432 a la LAN.
 - El API resuelve el hostname **`arnela-postgres`** (nombre del contenedor de Arnela).

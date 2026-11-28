@@ -1,4 +1,15 @@
-# Opcional: API en la misma red Docker que Arnela → Postgres por nombre `arnela-postgres:5432`
+# LEGADO (pre-P0-T1) — NO usar en producción.
+#
+# Unía el API a la red Docker de Arnela para llegar a `arnela-postgres` por nombre, sin publicar 5432.
+# Producción ya no comparte Postgres con Arnela: GonsGarage usa su propio servicio `postgres`
+# en docker-compose.prod.yml, y tanto scripts/deploy-prod.sh como deploy.ps1 RECHAZAN un
+# COMPOSE_OVERRIDE que contenga "arnela" (ver deploy/README.md, sección de aislamiento).
+#
+# Se conserva sólo como referencia histórica del incidente DNS:
+# docs/mvp-next-steps.md#incidente-dns-arnela-postgres
+#
+# Contexto original (sin soporte actual):
+# Optativo: API en la misma red Docker que Arnela → Postgres por nombre `arnela-postgres:5432`
 # (sin publicar 5432 en el host).
 #
 # 1) Nombre real de la red (sustituí `name:` abajo si no coincide):
