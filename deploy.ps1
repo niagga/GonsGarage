@@ -176,14 +176,23 @@ Write-Host ""
 
 Assert-LocalIsolation
 
+# Comando completo que se ejecuta en el servidor, en este orden:
+#   1. cd al directorio de deploy: la guarda mira archivos relativos, asi que sin el cd
+#      inspecciona el home del usuario de ssh y aborta todo deploy.
+#   2. guarda de aislamiento: corta antes de tocar contenedores si algo no cumple.
+#   3. rebuild + up.
+# Ojo: un here-string de PowerShell NO incluye el salto de linea final, por eso el `n
+# explicito: sin el, el cd queda pegado al `set -eu` de la guarda.
+$remoteCommand = "cd ${REMOTE_DIR}`n" + (Get-RemoteGuardScript) + (ConvertTo-Lf @"
+
+docker compose ${composeArgs} --env-file .env.prod up -d --build
+"@)
+
 if ($DryRun) {
     Write-Host "[DryRun] Guarda local OK." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "[DryRun] Guarda remota que se ejecutaria en ${REMOTE_DIR}:" -ForegroundColor Yellow
-    Write-Host (Get-RemoteGuardScript)
-    Write-Host ""
-    Write-Host "[DryRun] Comando de build + up:" -ForegroundColor Yellow
-    Write-Host "  docker compose $composeArgs --env-file .env.prod up -d --build"
+    Write-Host "[DryRun] Comando completo que se enviaria a ${USER}@${SERVER}:" -ForegroundColor Yellow
+    Write-Host $remoteCommand
     Write-Host ""
     Write-Host "[DryRun] Nada se copio ni se ejecuto en ${USER}@${SERVER}." -ForegroundColor Yellow
     exit 0
@@ -218,16 +227,6 @@ fi
 ssh "${USER}@${SERVER}" $envBootstrap
 
 Write-Host "[4/4] guardas + build + up (Docker)..." -ForegroundColor Yellow
-# El `cd` va PRIMERO: la guarda inspecciona archivos relativos (.env.prod y el compose),
-# asi que tiene que correr ya dentro de REMOTE_DIR. Si corre antes del cd mira el home
-# del usuario de ssh, no encuentra el compose y aborta todo deploy.
-# Ojo: un here-string de PowerShell NO incluye el salto de linea final, por eso el `n
-# explicito: sin el, el cd queda pegado al `set -eu` de la guarda.
-$remoteCommand = "cd ${REMOTE_DIR}`n" + (Get-RemoteGuardScript) + (ConvertTo-Lf @"
-
-docker compose ${composeArgs} --env-file .env.prod up -d --build
-"@)
-
 ssh "${USER}@${SERVER}" $remoteCommand
 if ($LASTEXITCODE -ne 0) {
     Fail "El deploy en el servidor fallo (exit $LASTEXITCODE). Revisar la salida de arriba; rollback: bash scripts/deploy-prod.sh rollback"
