@@ -3,7 +3,7 @@
 ## Context
 Login (`/auth/login`) and registration (`/auth/register`) share one auth experience: shell, tokens, feedback, and a single `useAuth` consumer.
 
-**Primary specification:** [openspec/specs/client-auth-shell/spec.md](openspec/specs/client-auth-shell/spec.md)
+**Primary specification:** [openspec/specs/client-auth-shell/spec.md](../openspec/specs/client-auth-shell/spec.md)
 
 ## Traceability Matrix
 

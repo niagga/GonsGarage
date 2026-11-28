@@ -3,9 +3,9 @@
 ## Context
 Four Contabilidade lists create records in-context via modal. Domain rules stay in P1 specs.
 
-**Primary specification:** [openspec/specs/ui-accounting-staff/spec.md](openspec/specs/ui-accounting-staff/spec.md)
+**Primary specification:** [openspec/specs/ui-accounting-staff/spec.md](../openspec/specs/ui-accounting-staff/spec.md)
 
-**Archive:** [openspec/changes/archive/2026-04-21-ui-accounting-modal-create-flows/](openspec/changes/archive/2026-04-21-ui-accounting-modal-create-flows/)
+**Archive:** [openspec/changes/archive/2026-04-21-ui-accounting-modal-create-flows/](../openspec/changes/archive/2026-04-21-ui-accounting-modal-create-flows/)
 
 ## Traceability Matrix
 

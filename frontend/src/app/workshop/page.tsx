@@ -178,6 +178,7 @@ export default function WorkshopListPage() {
         {todayJobs.length === 0 ? (
           <p className={styles.muted}>Nenhuma visita neste dia.</p>
         ) : (
+          <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -202,6 +203,7 @@ export default function WorkshopListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
       <p className={styles.hint}>Seleccione um veículo para listar e abrir visitas de oficina.</p>
@@ -223,6 +225,7 @@ export default function WorkshopListPage() {
       </div>
       {err ? <p className={styles.err}>{err}</p> : null}
       {listLoading ? <p>A carregar…</p> : null}
+      <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
@@ -247,6 +250,7 @@ export default function WorkshopListPage() {
           ))}
         </tbody>
       </table>
+      </div>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md" aria-describedby={undefined}>

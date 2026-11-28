@@ -3,9 +3,9 @@
 ## Context
 Authenticated `POST /api/v1/admin/users` with a caller × target role matrix. No self-service **admin** creation on this flow.
 
-**Primary specification:** [openspec/specs/staff-user-provisioning/spec.md](openspec/specs/staff-user-provisioning/spec.md)
+**Primary specification:** [openspec/specs/staff-user-provisioning/spec.md](../openspec/specs/staff-user-provisioning/spec.md)
 
-**Archive:** [openspec/changes/archive/2026-04-20-admin-provision-user-roles/](openspec/changes/archive/2026-04-20-admin-provision-user-roles/)
+**Archive:** [openspec/changes/archive/2026-04-20-admin-provision-user-roles/](../openspec/changes/archive/2026-04-20-admin-provision-user-roles/)
 
 ## Surface
 `GinBearerJWT` → `RequireStaffManagers` → `AdminUserHandler.ProvisionUser` → `AuthService.ProvisionUser`

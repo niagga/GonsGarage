@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { RepairForm } from "@/components/repairs/RepairForm";
 import { apiClient, Repair } from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
+import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 
 export default function EditRepairPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -46,6 +47,9 @@ export default function EditRepairPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="p-6">
+      <div className="mb-4 flex justify-end">
+        <ThemeSwitcher />
+      </div>
       <h1 className="text-2xl font-bold mb-4">Edit Repair</h1>
       <RepairForm 
         initialValues={{

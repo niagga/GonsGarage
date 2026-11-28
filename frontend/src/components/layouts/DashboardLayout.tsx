@@ -5,6 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/stores';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import ThemeSwitcher from '@/components/theme/ThemeSwitcher';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import styles from './DashboardLayout.module.css';
@@ -65,6 +66,7 @@ export default function DashboardLayout({
           </div>
           
           <div className={styles.userSection}>
+            <ThemeSwitcher />
             <span>Welcome, {user?.firstName} {user?.lastName}</span>
             <Button type="button" variant="outline" size="sm" onClick={logout} className={styles.logoutButton}>
               Logout

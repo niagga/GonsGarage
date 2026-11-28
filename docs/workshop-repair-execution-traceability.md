@@ -3,11 +3,11 @@
 ## Context
 The **service job** (visita) is the workshop visit aggregate: reception, close, optional OBD/estimate stubs, day listing, and repair links.
 
-**Primary specification:** [openspec/specs/workshop-repair-execution/spec.md](openspec/specs/workshop-repair-execution/spec.md)
+**Primary specification:** [openspec/specs/workshop-repair-execution/spec.md](../openspec/specs/workshop-repair-execution/spec.md)
 
 **Reference archives:**
-- [openspec/changes/archive/2026-04-22-workshop-mechanic-vehicle-lifecycle/](openspec/changes/archive/2026-04-22-workshop-mechanic-vehicle-lifecycle/)
-- [openspec/changes/archive/2026-04-20-taller-benchmark-mvp-priorities/](openspec/changes/archive/2026-04-20-taller-benchmark-mvp-priorities/)
+- [openspec/changes/archive/2026-04-22-workshop-mechanic-vehicle-lifecycle/](../openspec/changes/archive/2026-04-22-workshop-mechanic-vehicle-lifecycle/)
+- [openspec/changes/archive/2026-04-20-taller-benchmark-mvp-priorities/](../openspec/changes/archive/2026-04-20-taller-benchmark-mvp-priorities/)
 
 ## HTTP / UI
 - HTTP: `/api/v1/service-jobs` (`RequireWorkshopStaff`)

@@ -1,0 +1,27 @@
+{
+  "title": "Temas GonsGarage",
+  "brief": "Tres direcciones de tema visual para el panel de GonsGarage (taller mecánico), cada una aplicada al AppShell real con datos de ejemplo y con prueba de reflow a 768 y 390 px.",
+  "artboards": [
+    {
+      "file": "01-taller-nocturno.html",
+      "title": "Taller nocturno",
+      "tradeoff": "Frío y técnico: escaneo y contraste excelentes en luz baja y cifras alineadas en monoespaciada; más áspero para el área de cliente y menos cálido que el carbón actual.",
+      "width": 1440,
+      "height": 2400
+    },
+    {
+      "file": "02-papel-y-tinta.html",
+      "title": "Papel y tinta",
+      "tradeoff": "Editorial y claro: serif en títulos, filetes de 1 px en vez de sombras y cifras tabulares; el mejor para formularios largos, facturas e impresión, el más débil en un taller con poca luz.",
+      "width": 1440,
+      "height": 2400
+    },
+    {
+      "file": "03-alto-contraste.html",
+      "title": "Alto contraste",
+      "tradeoff": "Accesibilidad primero: negro puro, ámbar de alta visibilidad, esquinas rectas, bordes de 2 px y objetivos de 44 px; máxima legibilidad bajo reflejo y para visión reducida, a costa de toda la calidez de marca.",
+      "width": 1440,
+      "height": 2400
+    }
+  ]
+}

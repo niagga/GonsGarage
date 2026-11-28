@@ -19,12 +19,15 @@ Workshop **service job** is the visit aggregate (reception, close; OBD/estimate 
 - **GAP (remediado):** incomplete reception (`{}` / missing `odometer_km`) MUST NOT be 2xx. Handler requires presence; explicit `0` remains 2xx; negative still invalid in the service.
 
 ## Next Step
-- Reception GAP remediating/done (presence required). Leave Review for parent.
+- Closed (2026-11-27).
 
 ## Progress
 - [x] Planning
 - [x] Audit
 - [x] Documentation refinement
 - [x] Reception GAP remediating/done (`odometer_km` presence required)
-- [ ] Review
+- [x] Review
 - [x] RDD Enabled (globally on)
+
+### Review outcome (2026-11-27)
+Parent review closed. Reception GAP verified in code: missing `odometer_km` returns `400 {"error":"odometer_km is required"}` (`backend/internal/handler/service_job_handler_gin.go:210`) with coverage in `backend/internal/handler/mvp_role_access_test.go`. Route group `/service-jobs` registered at `backend/cmd/api/main.go:631`; `docs/workshop-repair-execution-traceability.md` present (37 lines).

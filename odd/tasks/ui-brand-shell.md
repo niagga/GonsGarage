@@ -15,12 +15,15 @@ Brand palette, light/dark on in-scope routes, lint warning budget. Spec: `opensp
 - Lint/build not run.
 
 ## Next Step
-- Review (parent).
+- Closed (2026-11-27).
 
 ## Progress
 - [x] Planning
 - [x] Audit
 - [x] Documentation refinement
 - [x] GAP remediado (cars/appointments hex → tokens)
-- [ ] Review
+- [x] Review
 - [x] RDD Enabled (globally on)
+
+### Review outcome (2026-11-27)
+Parent review closed. Verified: no orphan hex remaining in `frontend/src/components/**/*.tsx` (grep for 6-digit hex returns none); `docs/ui-brand-shell-traceability.md` present (24 lines). Lint/build were not re-run in this session — the frontend gate is CI's, and it is green on `main` through PR #3 (`fix/frontend-ci-gates`).

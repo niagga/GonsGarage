@@ -310,10 +310,22 @@
 
 .serviceOption {
   cursor: pointer;
+  position: relative;
 }
 
+/* Visually hidden but still focusable, same technique as `appointments.module.css`.
+   `display: none` removed the radio from the tab order, so keyboard users could
+   not reach or change the service at all. */
 .serviceOption input[type="radio"] {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.serviceOption input[type="radio"]:focus-visible + .serviceCard {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .serviceCard {

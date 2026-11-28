@@ -3,9 +3,9 @@
 ## Context
 P1 **suppliers** is the workshop vendor master. Received invoices **MAY** reference a supplier; they **MUST** be creatable without one.
 
-**Primary specification:** [openspec/specs/suppliers/spec.md](openspec/specs/suppliers/spec.md)
+**Primary specification:** [openspec/specs/suppliers/spec.md](../openspec/specs/suppliers/spec.md)
 
-**Reference archive:** [openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/](openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/)
+**Reference archive:** [openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/](../openspec/changes/archive/2026-04-20-p1-invoices-billing-suppliers/)
 
 Related: [docs/invoices-traceability.md](./invoices-traceability.md), [docs/billing-traceability.md](./billing-traceability.md)
 
