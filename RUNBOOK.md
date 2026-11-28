@@ -47,7 +47,8 @@ curl -s -o /dev/null -w "prod_ready:%{http_code}\n"  http://127.0.0.1:8102/ready
 ## Safety invariants
 
 - Production deploy is **isolated**. Do not attach to Arnela network/database.
-- `COMPOSE_OVERRIDE` is blocked by production deploy script.
+- `COMPOSE_OVERRIDE` is blocked by the production deploy script, and by `deploy.ps1` on the PC path (`-DryRun` shows the guards without touching the server).
+- `deploy.ps1` no longer ships `docker-compose.prod.arnela-network.yml`; it is legacy only.
 - `.env.prod` must not reference `arnela-postgres`.
 - Always deploy through scripts (they pin compose project names).
 
