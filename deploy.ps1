@@ -131,9 +131,10 @@ function Assert-LocalIsolation {
     $override = $COMPOSE_OVERRIDE.Trim()
 
     # La guarda remota embute el override en un literal bash con comillas simples y lo
-    # usa sin comillas: una comilla simple o un espacio en la ruta rompen esa guarda.
-    if ($override -match "['\s]") {
-        Fail "COMPOSE_OVERRIDE=$override contiene una comilla simple o un espacio, que rompe la guarda remota. Renombrar el archivo sin comillas ni espacios."
+    # usa sin comillas, y ademas el nombre entra en la linea de `docker compose` sin
+    # citar: solo se acepta un charset seguro.
+    if ($override -notmatch '^[A-Za-z0-9._/-]+$') {
+        Fail "COMPOSE_OVERRIDE=$override contiene caracteres no permitidos. Solo letras, numeros, punto, guion, guion bajo y barra: la guarda remota no puede citar el nombre de forma segura."
     }
 
     if ($override -match "(?i)arnela") {
@@ -163,6 +164,12 @@ $items = @(
     "frontend",
     "nginx"
 )
+
+# El override se valida localmente contra el repo, asi que tambien hay que copiarlo:
+# sin esto la guarda remota no lo encuentra y aborta cualquier uso de -ComposeOverride.
+if ($COMPOSE_OVERRIDE.Trim().Length -gt 0) {
+    $items += $COMPOSE_OVERRIDE.Trim()
+}
 
 Write-Host "=== GonsGarage deploy ===" -ForegroundColor Cyan
 Write-Host ""
@@ -211,9 +218,13 @@ fi
 ssh "${USER}@${SERVER}" $envBootstrap
 
 Write-Host "[4/4] guardas + build + up (Docker)..." -ForegroundColor Yellow
-$remoteCommand = (Get-RemoteGuardScript) + (ConvertTo-Lf @"
+# El `cd` va PRIMERO: la guarda inspecciona archivos relativos (.env.prod y el compose),
+# asi que tiene que correr ya dentro de REMOTE_DIR. Si corre antes del cd mira el home
+# del usuario de ssh, no encuentra el compose y aborta todo deploy.
+# Ojo: un here-string de PowerShell NO incluye el salto de linea final, por eso el `n
+# explicito: sin el, el cd queda pegado al `set -eu` de la guarda.
+$remoteCommand = "cd ${REMOTE_DIR}`n" + (Get-RemoteGuardScript) + (ConvertTo-Lf @"
 
-cd ${REMOTE_DIR}
 docker compose ${composeArgs} --env-file .env.prod up -d --build
 "@)
 
